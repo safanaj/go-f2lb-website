@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+import "members.proto";
+
+option go_package = "go-f2lb/pb";
+
+service AddonQueueService {
+  rpc Records(google.protobuf.Empty) returns (Members) {};
+  rpc ListQueue(google.protobuf.Empty) returns (Members) {};
+  rpc Served(google.protobuf.Empty) returns (Member) {};
+}

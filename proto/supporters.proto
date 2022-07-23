@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "go-f2lb/pb";
+
+service SupporterService {
+  rpc List(google.protobuf.Empty) returns (Supporters) {}
+}
+
+message Supporters {
+  repeated Supporter supporters = 1;
+}
+
+message Supporter {
+  string discordId = 1;
+}

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "go-f2lb/pb";
+
+service MemberService {
+  rpc List(google.protobuf.Empty) returns (Members) {}
+}
+
+message Members {
+  repeated Member members = 1;
+}
+
+message Member {
+  string discordId = 1;
+  string ticker = 2;
+  string stakeKey = 3;
+  string stakeAddr = 4;
+  uint32 adaDelegated = 5;
+  uint32 epochGranted = 6;
+  string poolId = 7;
+  string mainQCurrPos = 8;
+}
