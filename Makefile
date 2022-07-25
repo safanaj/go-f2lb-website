@@ -7,52 +7,69 @@ GO ?= go
 LDFLAGS ?= -s -w
 
 SRCS = ./main.go
+PROTO_SRCS = proto/*.proto
 
 golang:
 	@echo "--> Go Version"
 	@$(GO) version
 
 clean:
-	rm -f main $(COMPONENT)
-	rm -rf webui/dist pb webui/pb
+	rm -f $(COMPONENT) pkg/pb/*.pb.go
+	rm -f webui/src/lib/pb/*_pb.* webui/src/lib/pb/*_pb_service.*
+	rm -f proto/.built
+	rm -rf webui/dist webui/build
 
 clean-all: clean
 	rm -rf webui/node_modules vendor
 
 go-deps:
-	mkdir -p $(CURDIR)/pb && echo "package pb" > $(CURDIR)/pb/doc.go
-	$(GO) mod tidy -v && $(GO) mod vendor -v && $(GO) mod verify
+	$(GO) mod tidy -v && $(GO) mod vendor -v
+
+go-deps-verify: go-deps
+	$(GO) mod verify
+
+proto/.built: $(PROTO_SRCS)
+	$(MAKE) build-proto
+	touch $@
 
 build-proto:
-	mkdir -p $(CURDIR)/pb $(CURDIR)/webui/pb
+	mkdir -p $(CURDIR)/webui/src/lib/pb
 	cd $(CURDIR)/proto ; protoc *.proto -I. -I/usr/include \
-		--go_out=paths=source_relative:$(CURDIR)/pb \
-		--go-grpc_out=paths=source_relative:$(CURDIR)/pb \
-		--js_out=import_style=commonjs,binary:$(CURDIR)/webui/pb \
-		--ts_out=service=grpc-web,import_style=es6:$(CURDIR)/webui/pb
+		--go_out=paths=source_relative:$(CURDIR)/pkg/pb \
+		--go-grpc_out=paths=source_relative:$(CURDIR)/pkg/pb \
+		--js_out=import_style=commonjs,binary:$(CURDIR)/webui/src/lib/pb \
+		--ts_out=service=grpc-web,import_style=es6:$(CURDIR)/webui/src/lib/pb
 
-	for f in $(CURDIR)/webui/pb/*_pb.js; do cat $${f} | ./scripts/fix-js-for-es6.py | sponge $${f} ; done
+	for f in $(CURDIR)/webui/src/lib/pb/*_pb.js; do cat $${f} | ./scripts/fix-js-for-es6.py | sponge $${f} ; done
 
 webui/node_modules:
 	cd webui ; yarn install
 
-build-webui: build-proto webui/node_modules
+build-webui: webui/node_modules proto/.built
 	cd webui ; yarn build
 
-build-go:
+webui/build:
+	$(MAKE) build-webui
+	touch $@
+
+vendor:
+	$(MAKE) go-deps
+	touch $@
+
+build-go: vendor webui/build proto/.built
 	$(ENVVAR) GOOS=$(GOOS) $(GO) build -mod=vendor \
 		-gcflags "-e" \
-		-ldflags "$(LDFLAGS) -X main.version=${VERSION} -X main.progname=${COMPONENT}" \
-		-v -o ${COMPONENT} $(SRCS)
+		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
+		-v -o $(COMPONENT) $(SRCS)
 
-build-static-go:
+build-static-go: proto/.built
 	@echo "--> Compiling the static binary"
 	$(ENVVAR) GOARCH=amd64 GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
 		-gcflags "-e" \
-		-ldflags "$(LDFLAGS) -X main.version=${VERSION} -X main.progname=${COMPONENT}" \
-		-v -o ${COMPONENT} $(SRCS)
+		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
+		-v -o $(COMPONENT) $(SRCS)
 
-build: build-proto build-webui build-go
+build: proto/.built build-webui build-go
 
 start: build
-	./${COMPONENT}
+	./$(COMPONENT)

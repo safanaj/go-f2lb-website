@@ -35,7 +35,7 @@ type AddonQueueRec struct {
 	addonQStatus          string // H
 	missedEpochs          string // J
 	addedToGoogleGroup    string // K
-	poolId                string // L
+	PoolId                string // L
 	discordID             string // M
 	initialAdaDeclaration string // N
 }
@@ -130,7 +130,7 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB) error {
 			aqRec.addedToGoogleGroup = v[10].(string) // K
 		}
 		if len(v) > 11 {
-			aqRec.poolId = v[11].(string) // L
+			aqRec.PoolId = v[11].(string) // L
 		}
 		if len(v) > 12 {
 			aqRec.discordID = v[12].(string) // M

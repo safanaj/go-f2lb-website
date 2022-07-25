@@ -67,11 +67,15 @@ func (m *Supporters) Refresh(f2lb *F2LB) error {
 		sRec := &Supporter{
 			DiscordName: v[0].(string),
 			Ticker:      v[1].(string),
-			discordID:   v[3].(string),
 		}
+		if len(v) > 3 {
+			sRec.discordID = v[3].(string)
+		}
+
 		if sRec.Ticker == "-" {
 			sRec.Ticker = ""
 		}
+
 		for _, val := range regexp.MustCompile("[[:space:]]").Split(v[2].(string), -1) {
 			if val == "" {
 				continue

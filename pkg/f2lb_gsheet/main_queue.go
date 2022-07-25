@@ -35,7 +35,7 @@ type MainQueueRec struct {
 	addonQStatus          string // H
 	missedEpochs          string // J
 	addedToGoogleGroup    string // K
-	poolId                string // L
+	PoolId                string // L
 	discordID             string // M
 	initialAdaDeclaration string // N
 }
@@ -120,7 +120,7 @@ func (mq *MainQueue) Refresh(f2lb *F2LB) error {
 			addonQStatus:          v[7].(string),  // H
 			missedEpochs:          v[9].(string),  // J
 			addedToGoogleGroup:    v[10].(string), // K
-			poolId:                v[11].(string), // L
+			PoolId:                v[11].(string), // L
 			discordID:             v[12].(string), // M
 			initialAdaDeclaration: v[13].(string), // N
 		}
