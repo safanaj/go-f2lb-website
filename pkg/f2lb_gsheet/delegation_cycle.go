@@ -3,6 +3,8 @@ package f2lb_gsheet
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/safanaj/go-f2lb/pkg/logging"
 )
 
 // google spreadsheet ranges
@@ -25,6 +27,7 @@ func (m *DelegationCycle) Refresh(vr *ValueRange) {
 	if vr == nil || len(vr.Values) < 2 {
 		return
 	}
+	log := logging.GetLogger()
 	first := vr.Values[0]
 	epochVal, _ := strconv.ParseUint(first[0].(string), 10, 32)
 	m.epoch = uint32(epochVal)
@@ -32,7 +35,7 @@ func (m *DelegationCycle) Refresh(vr *ValueRange) {
 	remaining := uint32(0)
 	for _, v := range vr.Values[1:] {
 		if m.topTicker != v[4].(string) {
-			fmt.Printf("DelegationCycle.Refresh: top ticker: %s - remaining: %d - found: %v - f t: %s\n", m.topTicker, remaining, v, v[4].(string))
+			log.V(3).Info("DelegationCycle.Refresh", "top ticker", m.topTicker, "remaining", remaining, "found", v[4].(string))
 			break
 		}
 		remaining++

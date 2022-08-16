@@ -73,6 +73,7 @@ func main() {
 	//webSrv.SetPathsForPages(append(paths, "/favicon.svg"), append(pages, "favicon.svg"))
 	webSrv.SetPathsForPages(paths, pages)
 
+	log.Info("Starting Web Server", "in", time.Since(startControllerAt).String())
 	go func() {
 		if err := webSrv.Start(true); err != nil {
 			log.Error(err, "webserver")

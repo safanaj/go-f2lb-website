@@ -3,13 +3,15 @@ package webserver
 import (
 	"context"
 	"fmt"
-	"log"
+	// "log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
+
+	"github.com/safanaj/go-f2lb/pkg/logging"
 )
 
 type rootHandler struct {
@@ -23,8 +25,10 @@ type ctxKey struct{ name string }
 const IdKey = "ruuid"
 
 var IdCtxKey = &ctxKey{name: "id"}
+var log logging.Logger
 
 func NewRootHandler(engine *gin.Engine) *rootHandler {
+	log = logging.GetLogger()
 	grpcServer := grpc.NewServer()
 	wrappedServer := grpcweb.WrapServer(grpcServer, grpcweb.WithWebsockets(true))
 	if engine == nil {
@@ -51,7 +55,7 @@ func (h *rootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		h.grpcwebHandler.IsAcceptableGrpcCorsRequest(req) ||
 		contentType == "application/grpc-web+proto" ||
 		(upgrade == "websocket" && wsProtocol == "grpc-websockets") {
-		log.Printf("A content for GRPC-Web: %s %s %s", req.Proto, req.Method, req.URL.Path)
+		log.Info("A content for GRPC-Web", "proto", req.Proto, "method", req.Method, "path", req.URL.Path)
 		h.grpcwebHandler.ServeHTTP(w, req.WithContext(rctx))
 		return
 	}
