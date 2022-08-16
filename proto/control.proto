@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "go-f2lb/pb";
+
+service ControlMsgService {
+  rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
+  rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+message ControlMsg {
+  string date = 1;
+  string epoch = 2;
+  string slot = 3;
+
+  enum Type {
+    NONE = 0;
+    REFRESH = 1;
+  }
+  Type type = 4;
+  string data = 5;
+}

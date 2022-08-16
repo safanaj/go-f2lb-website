@@ -3,20 +3,25 @@
 </svelte:head>
 
 <script>
-  import { addonQueueMembers, serviceClients } from '$lib/stores'
+  import { addonQueueMembers } from '$lib/stores'
   import Member from '$lib/Member.svelte'
+  // import { doCallInPromise } from '$lib/utils'
+  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
 
-  if ($addonQueueMembers.length == 0) {
-      new Promise((resolve, reject) => {
-          $serviceClients.AddonQueue.listQueue(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
-      }).then(r => addonQueueMembers.set(r.toObject().membersList))
-  }
+  // if ($addonQueueMembers.length == 0) {
+  //     // doCallInPromise($serviceClients, 'AddonQueue', 'listQueue', addonQueueMembers, 'membersList')
+  // }
 </script>
 
 
 <section>
   <article>
-    <h2>Addon Queue</h2>
+    <h2>Addon Queue <a class="is-hidden-desktop" href="/">
+        <span class="icon is-small has-text-dark">
+          <FaArrowLeft />
+        </span>
+      </a>
+    </h2>
     <div class="box">
       {#each $addonQueueMembers as m}
         <Member member={m} />

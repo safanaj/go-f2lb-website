@@ -1,6 +1,9 @@
 import { readable, writable } from 'svelte/store';
 
+import {grpc} from "@improbable-eng/grpc-web";
 // import {Empty} from "google-protobuf/google/protobuf/empty_pb";
+
+import {ControlMsgServiceClient} from '$lib/pb/control_pb_service'
 
 // import {Supporter, Supporters} from '$lib/pb/supporters_pb'
 import {/*SupporterService,*/ SupporterServiceClient} from '$lib/pb/supporters_pb_service'
@@ -13,6 +16,8 @@ import {/*MainQueueService,*/ MainQueueServiceClient} from '$lib/pb/main_queue_p
 
 const createServiceClients = () => {
   const serviceClients = {
+    Control: null,
+    ControlHandler: null,
     Supporter: null,
     Member: null,
     AddonQueue: null,
@@ -26,6 +31,13 @@ const createServiceClients = () => {
 
   return {
     subscribe,
+    getControlServiceClient: (url) => {
+      if (serviceClients.Control == null) {
+        serviceClients.Control = new ControlMsgServiceClient(url, {transport: grpc.WebsocketTransport()})
+      }
+      serviceClients.ControlHandler = serviceClients.Control.control()
+      return serviceClients.Control
+    },
     getSupporterServiceClient: (url) => {
       if (serviceClients.Supporter == null) {
         serviceClients.Supporter = new SupporterServiceClient(url)
@@ -54,7 +66,7 @@ const createServiceClients = () => {
 }
 
 export const serviceClients = createServiceClients()
-
+export const epochData = writable({})
 export const supportersList = writable([])
 export const membersList = writable([])
 export const mainQueueMembers = writable([])

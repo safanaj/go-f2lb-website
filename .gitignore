@@ -10,3 +10,4 @@ webui/.svelte-kit
 webui/build
 webui/src/lib/pb/*_pb.*
 webui/src/lib/pb/*_pb_service.*
+tests

@@ -3,23 +3,26 @@
 </svelte:head>
 
 <script>
-  import { mainQueueMembers, serviceClients } from '$lib/stores'
+  import { mainQueueMembers, epochData } from '$lib/stores'
   import Member from '$lib/Member.svelte'
+  // import { doCallInPromise } from '$lib/utils'
+  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
 
-  if ($mainQueueMembers.length == 0) {
-      new Promise((resolve, reject) => {
-          $serviceClients.MainQueue.listQueue(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
-      }).then(r => mainQueueMembers.set(r.toObject().membersList))
-  }
+  $: mainServed = $mainQueueMembers[0];
+  $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
+
+  // if ($mainQueueMembers.length == 0) {
+  //     // doCallInPromise($serviceClients, 'MainQueue', 'listQueue', mainQueueMembers, 'membersList')
+  // }
 </script>
 
 
 <section>
   <article>
-    <h2>Main Queue</h2>
+    <h2>Main Queue <a class="is-hidden-desktop" href="/"><span class="icon is-small has-text-dark"><FaArrowLeft /></span></a></h2>
     <div class="box">
       {#each $mainQueueMembers as m}
-        <Member member={m} />
+        <Member member={m} epochProgress={epochProgress} mainServed={mainServed} />
       {/each}
     </div>
   </article>

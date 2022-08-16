@@ -1,6 +1,15 @@
 <script>
+  import { tick } from 'svelte';
   import { page } from '$app/stores';
   import f2lbLogo from '$lib/assets/f2lb_small.png';
+  import {Empty} from "google-protobuf/google/protobuf/empty_pb";
+  import { serviceClients } from '$lib/stores'
+
+  const doRefresh = () => {
+      return new Promise((resolve, reject) => {
+          $serviceClients.Control.refresh(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(tick)
+  }
 </script>
 
 <header>
@@ -10,24 +19,28 @@
 		</a>
 	</div>
 
-	<nav>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
-		</svg>
-		<ul>
-			<li class:active={$page.url.pathname === '/'}><a href="/">Welcome</a></li>
-			<li class:active={$page.url.pathname === '/about'}><a href="/about">About</a></li>
-			<li class:active={$page.url.pathname === '/main-queue'}><a href="/main-queue">Main Queue</a></li>
-			<li class:active={$page.url.pathname === '/addon-queue'}><a href="/addon-queue">Addon Queue</a></li>
+	<nav class="is-hidden-mobile">
+	  <svg viewBox="0 0 2 3" aria-hidden="true">
+		<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
+	  </svg>
+	  <ul>
+		<li class:active={$page.url.pathname === '/'}><a href="/">Welcome</a></li>
+		<li class:active={$page.url.pathname === '/about'}><a href="/about">About</a></li>
+		<li class:active={$page.url.pathname === '/main-queue'}><a href="/main-queue">Main Queue</a></li>
+		<li class:active={$page.url.pathname === '/addon-queue'}><a href="/addon-queue">Addon Queue</a></li>
+        <!--
 			<li class:active={$page.url.pathname === '/members'}><a href="/members">Members</a></li>
-			<li class:active={$page.url.pathname === '/rules'}><a href="/rules">Rules</a></li>
-			<li class:active={$page.url.pathname === '/supporters'}><a href="/supporters">Supporters</a></li>
-			<li><button class="button">Connect</button></li>
-		</ul>
-		<svg viewBox="0 0 2 3" aria-hidden="true">
-			<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
-		</svg>
+		<li class:active={$page.url.pathname === '/rules'}><a href="/rules">Rules</a></li>
+        -->
+		<li class:active={$page.url.pathname === '/supporters'}><a href="/supporters">Supporters</a></li>
+		<li><button class="button" on:click={doRefresh} disabled>Connect</button></li>
+	  </ul>
+	  <svg viewBox="0 0 2 3" aria-hidden="true">
+		<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
+	  </svg>
 	</nav>
+
+
 
 </header>
 

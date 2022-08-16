@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,6 +18,7 @@ func SetupShutdownSignals(parentCtx context.Context) context.Context {
 	go func() {
 		<-c
 		cancel()
+		fmt.Println("Received shutdown signal, context cancelled.")
 		<-c
 		os.Exit(1) // second signal. Exit directly.
 	}()

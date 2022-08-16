@@ -1,10 +1,13 @@
 package webserver
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
 )
@@ -15,9 +18,15 @@ type rootHandler struct {
 	grpcServer     *grpc.Server
 }
 
+type ctxKey struct{ name string }
+
+const IdKey = "ruuid"
+
+var IdCtxKey = &ctxKey{name: "id"}
+
 func NewRootHandler(engine *gin.Engine) *rootHandler {
 	grpcServer := grpc.NewServer()
-	wrappedServer := grpcweb.WrapServer(grpcServer)
+	wrappedServer := grpcweb.WrapServer(grpcServer, grpcweb.WithWebsockets(true))
 	if engine == nil {
 		engine = gin.Default()
 	}
@@ -30,15 +39,24 @@ func NewRootHandler(engine *gin.Engine) *rootHandler {
 
 func (h *rootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	contentType := req.Header.Get("Content-Type")
+	upgrade := req.Header.Get("Upgrade")
+	wsProtocol := req.Header.Get("Sec-Websocket-Protocol")
+	idCookie, err := req.Cookie(IdKey)
+	if err == http.ErrNoCookie {
+		idCookie = &http.Cookie{Name: IdKey, Value: fmt.Sprintf("%s", uuid.New())}
+	}
+	http.SetCookie(w, idCookie)
+	rctx := context.WithValue(req.Context(), IdCtxKey, idCookie.Value)
 	if h.grpcwebHandler.IsGrpcWebRequest(req) ||
 		h.grpcwebHandler.IsAcceptableGrpcCorsRequest(req) ||
-		contentType == "application/grpc-web+proto" {
+		contentType == "application/grpc-web+proto" ||
+		(upgrade == "websocket" && wsProtocol == "grpc-websockets") {
 		log.Printf("A content for GRPC-Web: %s %s %s", req.Proto, req.Method, req.URL.Path)
-		h.grpcwebHandler.ServeHTTP(w, req)
+		h.grpcwebHandler.ServeHTTP(w, req.WithContext(rctx))
 		return
 	}
 	// log.Printf("A content for Gin: %s %s %s", req.Proto, req.Method, req.URL.Path)
-	h.ginHandler.ServeHTTP(w, req)
+	h.ginHandler.ServeHTTP(w, req.WithContext(rctx))
 }
 
 func (h *rootHandler) GetGrpcServer() *grpc.Server { return h.grpcServer }

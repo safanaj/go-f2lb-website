@@ -19,8 +19,13 @@ message Member {
   string ticker = 2;
   string stakeKey = 3;
   string stakeAddr = 4;
-  uint32 adaDelegated = 5;
-  uint32 epochGranted = 6;
-  string poolId = 7;
-  string mainQCurrPos = 8;
+  uint32 adaDeclared = 5;
+  uint32 adaDelegated = 6;
+  uint32 epochGranted = 7;
+  string poolIdHex = 8;
+  string poolIdBech32 = 9;
+  string delegatedPool = 10;
+  uint32 mainQCurrPos = 11;
+  uint32 startingEpoch = 12;
+  string startingTime = 13;
 }

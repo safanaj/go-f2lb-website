@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,11 +21,12 @@ const addonQueueRange = "A2:N"
 
 type AddonQueueRec struct {
 	// columns
-	DiscordName string `json:"discord_name" yaml:"discord_name"`    // A
-	QPP         uint16 `json:"qpp" yaml:"qpp"`                      // B
-	Ticker      string `json:"ticker" yaml:"ticker"`                // C
-	AD          uint16 `json:"ada_delegated" yaml:"ada_delegated"`  // D
-	EG          uint16 `json:"epoch_granted" yaaml:"epoch_granted"` // E
+	DiscordName  string `json:"discord_name" yaml:"discord_name"` // A
+	QPP          uint16 `json:"qpp" yaml:"qpp"`                   // B
+	Ticker       string `json:"ticker" yaml:"ticker"`             // C
+	AD           uint16 `json:"ada_declared" yaml:"ada_declared"` // D
+	AdaDelegated uint16 `json:"ada_delegated" yaml:"ada_delegated"`
+	EG           uint16 `json:"epoch_granted" yaaml:"epoch_granted"` // E
 	// computed column I
 	StakeKeys  []string `json:"stake_keys" yaml:"stake_keys"`
 	StakeAddrs []string `json:"stake_addresses" yaml:"stake_addresses"`
@@ -35,7 +37,8 @@ type AddonQueueRec struct {
 	addonQStatus          string // H
 	missedEpochs          string // J
 	addedToGoogleGroup    string // K
-	PoolId                string // L
+	PoolIdHex             string // L
+	PoolIdBech32          string
 	discordID             string // M
 	initialAdaDeclaration string // N
 }
@@ -50,12 +53,17 @@ func (r *AddonQueueRec) MarshalYAML() (any, error) {
 
 type AddonQueue struct {
 	mu      sync.RWMutex
+	ordered []string
+
+	// below code to be deprecated
 	records []*AddonQueueRec
 	served  *AddonQueueRec
 
-	cacheByTicker    sync.Map
-	cacheByStakeAddr sync.Map
-	cacheByStakeKey  sync.Map
+	cacheByTicker       sync.Map
+	cacheByStakeAddr    sync.Map
+	cacheByStakeKey     sync.Map
+	cacheByPoolIdBech32 sync.Map
+	cacheByPoolIdHex    sync.Map
 
 	// epoch when served was computed
 	refreshedInEpoch utils.Epoch
@@ -79,7 +87,7 @@ func (aq *AddonQueue) MarshalYAML() (any, error) {
 
 func NewAddonQueue(f2lb *F2LB) (*AddonQueue, error) {
 	aq := &AddonQueue{}
-	err := aq.Refresh(f2lb)
+	err := aq.Refresh(f2lb, nil)
 	var cwarn *CacheWarn
 	if err != nil && !errors.As(err, &cwarn) {
 		return nil, err
@@ -95,25 +103,49 @@ func NewAddonQueueOrDie(f2lb *F2LB) *AddonQueue {
 	return aq
 }
 
-func (aq *AddonQueue) Refresh(f2lb *F2LB) error {
-	res, err := f2lb.Spreadsheets.Values.BatchGet(f2lbSpreadSheetID).MajorDimension("ROWS").Ranges(
-		fmt.Sprintf("%s!%s", addonQueueSheet, addonQueueRange)).Do()
-	if err != nil {
-		return err
+func (aq *AddonQueue) GetRange() string {
+	return fmt.Sprintf("%s!%s", addonQueueSheet, addonQueueRange)
+}
+
+func (aq *AddonQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
+	var aqRec *AddonQueueRec
+	if vr == nil {
+		res, err := f2lb.Spreadsheets.Values.BatchGet(
+			f2lbSpreadSheetID).MajorDimension("ROWS").Ranges(
+			aq.GetRange()).Do()
+		if err != nil {
+			return err
+		}
+		vr = res.ValueRanges[0]
 	}
-	records := make([]*AddonQueueRec, 0, len(res.ValueRanges[0].Values))
-	for _, v := range res.ValueRanges[0].Values {
+
+	orderedTickers := make([]string, 0, len(vr.Values))
+	records := make([]*AddonQueueRec, 0, len(vr.Values))
+
+	for _, v := range vr.Values {
 		qppVal, _ := strconv.ParseUint(v[1].(string), 10, 16)
 		adVal, _ := strconv.ParseUint(v[3].(string), 10, 16)
 		egVal, _ := strconv.ParseUint(v[4].(string), 10, 16)
 
-		aqRec := &AddonQueueRec{
-			DiscordName: v[0].(string),  // A
-			QPP:         uint16(qppVal), // B
-			Ticker:      v[2].(string),  // C
-			AD:          uint16(adVal),  // D
-			EG:          uint16(egVal),  // E
+		ticker := v[2].(string) // C
+		orderedTickers = append(orderedTickers, ticker)
+
+		aqRec = (*AddonQueueRec)(nil)
+		if aqRecI, ok := aq.cacheByTicker.Load(ticker); ok {
+			if aqRec_, ok := aqRecI.(*AddonQueueRec); ok {
+				aqRec = aqRec_
+			}
 		}
+		if aqRec == nil {
+			aqRec = &AddonQueueRec{
+				DiscordName: v[0].(string),  // A
+				QPP:         uint16(qppVal), // B
+				Ticker:      ticker,         // C
+				AD:          uint16(adVal),  // D
+				EG:          uint16(egVal),  // E
+			}
+		}
+
 		if len(v) > 5 {
 			aqRec.delegStatus = v[5].(string) // F
 		}
@@ -130,13 +162,18 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB) error {
 			aqRec.addedToGoogleGroup = v[10].(string) // K
 		}
 		if len(v) > 11 {
-			aqRec.PoolId = v[11].(string) // L
+			aqRec.PoolIdHex = v[11].(string) // L
 		}
 		if len(v) > 12 {
 			aqRec.discordID = v[12].(string) // M
 		}
 		if len(v) > 13 {
 			aqRec.initialAdaDeclaration = v[13].(string) // N
+		}
+
+		if strings.HasPrefix(aqRec.PoolIdHex, "pool") {
+			aqRec.PoolIdBech32 = aqRec.PoolIdHex
+			aqRec.PoolIdHex = ""
 		}
 
 		// compute for column I
@@ -156,34 +193,16 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB) error {
 		records = append(records, aqRec)
 	}
 
-	// determine served pool on top, at position 1 in the queue
-	onTopIdx := -1
-	timeToCheckForServed := utils.CurrentEpoch() > aq.refreshedInEpoch
-	if timeToCheckForServed {
-		resSheets, err := f2lb.Spreadsheets.Get(f2lbSpreadSheetID).Ranges(
-			fmt.Sprintf("%s!A2:A%d", addonQueueSheet, len(records)+1)).IncludeGridData(true).Do()
-		utils.CheckErr(err)
-		for i, rowData := range resSheets.Sheets[0].Data[0].RowData {
-			if len(rowData.Values) == 0 {
-				continue
-			}
-			if rowData.Values[0].EffectiveFormat.BackgroundColorStyle.ThemeColor == "" {
-				continue
-			}
-			onTopIdx = i
-			break
-		}
-	}
-
 	// now lock and prepare caches
 	aq.mu.Lock()
 	defer aq.mu.Unlock()
+	aq.ordered = orderedTickers
+
+	// below code to be deprecated
 	aq.records = records
 
-	if onTopIdx >= 0 {
-		aq.served = records[onTopIdx]
-		aq.refreshedInEpoch = utils.CurrentEpoch()
-	}
+	aq.served = records[0]
+	aq.refreshedInEpoch = utils.CurrentEpoch()
 
 	warn := &CacheWarn{}
 	for _, rec := range records {
@@ -219,16 +238,19 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB) error {
 	return nil
 }
 
+func (aq *AddonQueue) GetOrdered() []string {
+	aq.mu.RLock()
+	defer aq.mu.RUnlock()
+	tickers := make([]string, len(aq.ordered))
+	copy(tickers, aq.ordered)
+
+	return tickers
+}
+
+// below code to be deprecated
 func (aq *AddonQueue) GetRecords() []*AddonQueueRec {
 	aq.mu.RLock()
 	defer aq.mu.RUnlock()
-
-	// return aq.records
-
-	// records := make([]*AddonQueueRec, 0, len(aq.records))
-	// for _, rec := range aq.records {
-	// 	records = append(records, rec)
-	// }
 
 	records := make([]*AddonQueueRec, len(aq.records))
 	copy(records, aq.records)
@@ -240,6 +262,14 @@ func (aq *AddonQueue) GetServed() *AddonQueueRec {
 	aq.mu.RLock()
 	defer aq.mu.RUnlock()
 	return aq.served
+}
+
+func (aq *AddonQueue) ResetCaches() {
+	aq.cacheByTicker = sync.Map{}
+	aq.cacheByStakeAddr = sync.Map{}
+	aq.cacheByStakeKey = sync.Map{}
+	aq.cacheByPoolIdBech32 = sync.Map{}
+	aq.cacheByPoolIdHex = sync.Map{}
 }
 
 func (aq *AddonQueue) getBy(key string, cache sync.Map) *AddonQueueRec {

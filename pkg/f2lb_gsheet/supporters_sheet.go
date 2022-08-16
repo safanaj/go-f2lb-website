@@ -35,7 +35,7 @@ type Supporters struct {
 
 func NewSupporters(f2lb *F2LB) (*Supporters, error) {
 	s := &Supporters{}
-	err := s.Refresh(f2lb)
+	err := s.Refresh(f2lb, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,14 +56,22 @@ func (s *Supporters) toMarshalable() any {
 func (s *Supporters) MarshalJSON() ([]byte, error) { return json.Marshal(s.toMarshalable()) }
 func (s *Supporters) MarshalYAML() (any, error)    { return s.toMarshalable(), nil }
 
-func (m *Supporters) Refresh(f2lb *F2LB) error {
-	res, err := f2lb.Spreadsheets.Values.BatchGet(f2lbSpreadSheetID).MajorDimension("ROWS").Ranges(
-		fmt.Sprintf("%s!%s", supportersSheet, supportersRange)).Do()
-	if err != nil {
-		return err
+func (m *Supporters) GetRange() string {
+	return fmt.Sprintf("%s!%s", supportersSheet, supportersRange)
+}
+
+func (m *Supporters) Refresh(f2lb *F2LB, vr *ValueRange) error {
+	if vr == nil {
+		res, err := f2lb.Spreadsheets.Values.BatchGet(
+			f2lbSpreadSheetID).MajorDimension("ROWS").Ranges(
+			m.GetRange()).Do()
+		if err != nil {
+			return err
+		}
+		vr = res.ValueRanges[0]
 	}
-	records := make([]*Supporter, 0, len(res.ValueRanges[0].Values))
-	for _, v := range res.ValueRanges[0].Values {
+	records := make([]*Supporter, 0, len(vr.Values))
+	for _, v := range vr.Values {
 		sRec := &Supporter{
 			DiscordName: v[0].(string),
 			Ticker:      v[1].(string),

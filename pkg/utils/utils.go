@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,9 +15,29 @@ import (
 
 func CheckErr(e error) {
 	if e != nil {
-		fmt.Printf("Error: %v", e)
+		fmt.Printf("Error: %v\n", e)
 		panic(e)
 	}
+}
+
+func IsContextDone(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+		return false
+	}
+}
+
+func UniquifyStrings(a []string) (u_a []string) {
+	a_m := make(map[string]any)
+	for _, s := range a {
+		if _, ok := a_m[s]; !ok {
+			a_m[s] = struct{}{}
+			u_a = append(u_a, s)
+		}
+	}
+	return u_a
 }
 
 func ToIndentedJSONOrDie(a any) string {
@@ -53,6 +74,7 @@ func StakeAddressToStakeKeyHashOrDie(val string) string {
 }
 
 type Epoch uint64
+type Slot uint64
 
 // from shelley-genesis.json
 // "epochLength": 432000, // slots per epoch, so (3600 * 24 * 5) seconds per epoch, same as 5 days per epoch
@@ -65,4 +87,12 @@ func TimeToEpoch(t time.Time) Epoch {
 	secondsSinceSystemStart := t.Unix() - systemStartUnixEpoch
 	return Epoch(secondsSinceSystemStart / 432000)
 }
-func CurrentEpoch() Epoch { return TimeToEpoch(time.Now()) }
+func TimeToSlot(t time.Time) Slot {
+	secondsSinceSystemStart := t.Unix() - systemStartUnixEpoch
+	return Slot(secondsSinceSystemStart % 432000)
+}
+func CurrentEpoch() Epoch              { return TimeToEpoch(time.Now()) }
+func EpochStartTime(e Epoch) time.Time { return time.Unix(systemStartUnixEpoch+(int64(e)*432000), 0) }
+func EpochEndTime(e Epoch) time.Time {
+	return time.Unix(systemStartUnixEpoch+((int64(e)+1)*432000)-1, 0)
+}

@@ -1,4 +1,4 @@
-VERSION ?= 0.1.0
+VERSION ?= 0.1.1
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = CGO_ENABLED=0
@@ -45,7 +45,10 @@ build-proto:
 webui/node_modules:
 	cd webui ; yarn install
 
-build-webui: webui/node_modules proto/.built
+webui/version.json:
+	echo "$(VERSION)" > $@
+
+build-webui: webui/version.json webui/node_modules proto/.built
 	cd webui ; yarn build
 
 webui/build:

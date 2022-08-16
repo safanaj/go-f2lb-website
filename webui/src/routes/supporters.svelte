@@ -5,13 +5,11 @@
 <script>
   import { page } from '$app/stores';
   import { supportersList, serviceClients } from '$lib/stores'
-  import {Empty} from "google-protobuf/google/protobuf/empty_pb";
   import Supporter from '$lib/Supporter.svelte'
+  // import { doCallInPromise } from '$lib/utils'
 
   if ($supportersList.length == 0) {
-      new Promise((resolve, reject) => {
-          $serviceClients.Supporter.list(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
-      }).then(r => supportersList.set(r.toObject().supportersList))
+      // doCallInPromise($serviceClients, 'Supporter', 'list', supportersList, 'supportersList')
   }
 </script>
 
