@@ -26,7 +26,7 @@ var (
 )
 
 func AddFlags(fs *flag.FlagSet) {
-	flag.IntVarP(&level, "verbosity", "v", 1, "")
+	fs.IntVarP(&level, "verbosity", "v", 1, "")
 }
 
 func GetLogger() logr.Logger {

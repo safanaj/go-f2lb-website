@@ -6,17 +6,13 @@
   import { page } from '$app/stores';
   import { supportersList, serviceClients } from '$lib/stores'
   import Supporter from '$lib/Supporter.svelte'
-  // import { doCallInPromise } from '$lib/utils'
-
-  if ($supportersList.length == 0) {
-      // doCallInPromise($serviceClients, 'Supporter', 'list', supportersList, 'supportersList')
-  }
+  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
 </script>
 
 
 <section>
   <article>
-    <h2>F2LB Supporters</h2>
+    <h2>F2LB Supporters <a class="is-hidden-desktop" href="/"><span class="icon is-small has-text-dark"><FaArrowLeft /></span></a></h2>
     <div class="box">
       {#each $supportersList as s}
         <Supporter supporter={s} />

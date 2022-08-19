@@ -1,4 +1,4 @@
-VERSION ?= 0.1.1
+VERSION ?= 0.1.2-pre
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = CGO_ENABLED=0
@@ -17,7 +17,7 @@ clean:
 	rm -f $(COMPONENT) pkg/pb/*.pb.go
 	rm -f webui/src/lib/pb/*_pb.* webui/src/lib/pb/*_pb_service.*
 	rm -f proto/.built
-	rm -rf webui/dist webui/build
+	rm -rf webui/dist webui/build webui/version.json
 
 clean-all: clean
 	rm -rf webui/node_modules vendor

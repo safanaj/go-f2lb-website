@@ -3,7 +3,15 @@
   import { page } from '$app/stores';
   import f2lbLogo from '$lib/assets/f2lb_small.png';
   import {Empty} from "google-protobuf/google/protobuf/empty_pb";
-  import { serviceClients } from '$lib/stores'
+  import {StakeAddr} from '$lib/pb/control_pb.js'
+  import { serviceClients, cardanoWallet } from '$lib/stores'
+  import CardanoConnect from '$lib/cardano/CardanoConnect.svelte';
+  import { Buffer } from 'buffer';
+
+  const isAdmin = () => {
+      let t = (($cardanoWallet.user||{}).member||{}).ticker
+      return ['BRNS', 'STPZ1'].indexOf(t) > -1
+  }
 
   const doRefresh = () => {
       return new Promise((resolve, reject) => {
@@ -13,11 +21,12 @@
 </script>
 
 <header>
-	<div class="corner">
-		<a href="https://www.f2lb.org/">
+	<div class="corner-logo">
+		<a href={$page.url.pathname === "/" ? "https://www.f2lb.org/" : "/"}>
 			<img src={f2lbLogo} alt="F2LB" />
 		</a>
 	</div>
+	<div class="corner"><!-- maybe a short breadcrumb --></div>
 
 	<nav class="is-hidden-mobile">
 	  <svg viewBox="0 0 2 3" aria-hidden="true">
@@ -33,7 +42,18 @@
 		<li class:active={$page.url.pathname === '/rules'}><a href="/rules">Rules</a></li>
         -->
 		<li class:active={$page.url.pathname === '/supporters'}><a href="/supporters">Supporters</a></li>
-		<li><button class="button" on:click={doRefresh} disabled>Connect</button></li>
+        {#key $cardanoWallet.user}
+		<li>
+          {#if isAdmin()}
+          <button class="button" on:click={doRefresh}>Refresh</button>
+          {:else}
+          <button class="button" disabled>Refresh</button>
+        {/if}
+        </li>
+        {/key}
+		<li><CardanoConnect doAuthentication={true}
+              on:CardanoConnectWalletError={evt => console.log(evt.detail)}
+              /></li>
 	  </ul>
 	  <svg viewBox="0 0 2 3" aria-hidden="true">
 		<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
@@ -55,7 +75,13 @@
 		height: 3em;
 	}
 
-	.corner a {
+	.corner-logo {
+		width: 15%;
+		height: 25%;
+        position: absolute;
+	}
+
+	.corner-logo a {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -63,11 +89,13 @@
 		height: 100%;
 	}
 
-	.corner img {
-		width: 2em;
-		height: 2em;
+	.corner-logo img {
+		width: 100%;
+		height: 100%;
 		object-fit: contain;
 	}
+
+
 
 	nav {
 		display: flex;

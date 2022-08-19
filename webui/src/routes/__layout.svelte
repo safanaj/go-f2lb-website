@@ -3,21 +3,12 @@
 
   import { tick } from 'svelte';
   import EpochBar from "$lib/EpochBar.svelte";
+  import UserBox from "$lib/UserBox.svelte";
   import Header from "$lib/header/Header.svelte";
   import { page } from '$app/stores';
-  import { serviceClients, epochData, mainQueueMembers, addonQueueMembers, supportersList } from '$lib/stores'
-  import { doCallInPromise } from '$lib/utils'
-  import {ControlMsg} from '$lib/pb/control_pb'
-
-
-  // // add all fontawesome icons
-  // import { library, dom } from '@fortawesome/fontawesome-svg-core';
-  // import { fas } from '@fortawesome/free-solid-svg-icons';
-  // // import { far } from '@fortawesome/free-regular-svg-icons';
-  // // import { fab } from '@fortawesome/free-brands-svg-icons';
-  // library.add(fas);
-  // dom.watch();
-
+  import { serviceClients, epochData, mainQueueMembers, addonQueueMembers, supportersList, cardanoWallet } from '$lib/stores';
+  import { doCallInPromise } from '$lib/utils';
+  import {ControlMsg} from '$lib/pb/control_pb';
 
   if ($serviceClients.Control === null) {
       serviceClients.getControlServiceClient($page.url.origin)
@@ -51,7 +42,6 @@
           ]).then(tick)
       }
   })
-
 </script>
 
 <div class="epoch-bar">
@@ -63,6 +53,11 @@
 <Header />
 
 <main>
+
+  {#if $page.url.pathname !== '/' && $page.url.pathname !== '/about'}
+    <UserBox user={$cardanoWallet.user} />
+  {/if}
+
   <slot />
 </main>
 
@@ -111,4 +106,5 @@
       min-height: 24px;
       max-height: 24px;
   }
+
 </style>

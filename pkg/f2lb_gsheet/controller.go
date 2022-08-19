@@ -21,6 +21,26 @@ import (
 
 type ValueRange = sheets.ValueRange
 
+var (
+	defaultRefreshInterval = time.Duration(1 * time.Hour)
+	IsRunningErr           = fmt.Errorf("Controller is running")
+
+	// account cache flags
+	acWorkers          = 30
+	acCacheSyncers     = 5
+	acTxGetters        = 10
+	acTxsToGet         = 50
+	acRefreshInterval  = time.Duration(30 * time.Minute)
+	acTxGetterInterval = time.Duration(1 * time.Minute)
+
+	// pool cache flags
+	pcWorkers         = 10
+	pcCacheSyncers    = 5
+	pcPoolInfosToGet  = 50
+	pcRefreshInterval = time.Duration(30 * time.Minute)
+	pcWorkersInterval = time.Duration(1 * time.Minute)
+)
+
 type Controller interface {
 	Refresh() error
 
@@ -37,7 +57,9 @@ type Controller interface {
 	GetSupporters() *Supporters
 	GetSupportersRecords() []*Supporter
 
-	SetRefresherChannel(chan<- string)
+	SetRefresherChannel(chan<- string) error
+	SetRefresherInterval(time.Duration) error
+	IsRunning() bool
 	Start() error
 	Stop() error
 
@@ -67,10 +89,11 @@ type controller struct {
 	supporters *Supporters
 	delegCycle *DelegationCycle
 
-	tick         *time.Ticker
-	refresherCh  chan<- string
-	mu           sync.RWMutex
-	isRefreshing bool
+	refreshInterval time.Duration
+	tick            *time.Ticker
+	refresherCh     chan<- string
+	mu              sync.RWMutex
+	isRefreshing    bool
 }
 
 var _ Controller = &controller{}
@@ -78,21 +101,26 @@ var _ Controller = &controller{}
 func NewController(ctx context.Context, logger logging.Logger) Controller {
 	cctx, cctxCancel := context.WithCancel(ctx)
 	kc := koiosutils.New(cctx)
-	ac := accountcache.New(kc, 30, 5, 10, time.Duration(30*time.Minute), time.Duration(10*time.Second), 10, logger.WithName("accountcache"))
-	pc := poolcache.New(kc, 10, 5, time.Duration(30*time.Minute), time.Duration(10*time.Second), 10, logger.WithName("poolcache"))
+	ac := accountcache.New(kc, uint32(acWorkers), uint32(acCacheSyncers), uint32(acTxGetters),
+		acRefreshInterval, acTxGetterInterval, uint32(acTxsToGet),
+		logger.WithName("accountcache"))
+	pc := poolcache.New(kc, uint32(pcWorkers), uint32(pcCacheSyncers),
+		pcRefreshInterval, pcWorkersInterval, uint32(pcPoolInfosToGet),
+		logger.WithName("poolcache"))
 	return &controller{
-		Logger:       logger,
-		ctx:          ctx,
-		f2lb:         NewF2LB(cctx),
-		kc:           kc,
-		ctxCancel:    cctxCancel,
-		accountCache: ac,
-		poolCache:    pc,
-		stakePoolSet: f2lb_members.NewSet(ac, pc),
-		mainQueue:    &MainQueue{},
-		addonQueue:   &AddonQueue{},
-		supporters:   &Supporters{},
-		delegCycle:   &DelegationCycle{},
+		Logger:          logger,
+		ctx:             ctx,
+		f2lb:            NewF2LB(cctx),
+		refreshInterval: defaultRefreshInterval,
+		kc:              kc,
+		ctxCancel:       cctxCancel,
+		accountCache:    ac,
+		poolCache:       pc,
+		stakePoolSet:    f2lb_members.NewSet(ac, pc),
+		mainQueue:       &MainQueue{},
+		addonQueue:      &AddonQueue{},
+		supporters:      &Supporters{},
+		delegCycle:      &DelegationCycle{},
 	}
 }
 
@@ -107,7 +135,21 @@ const (
 	valueRangeIdxMax
 )
 
-func (c *controller) SetRefresherChannel(ch chan<- string) { c.refresherCh = ch }
+func (c *controller) SetRefresherChannel(ch chan<- string) error {
+	if c.IsRunning() {
+		return IsRunningErr
+	}
+	c.refresherCh = ch
+	return nil
+}
+
+func (c *controller) SetRefresherInterval(d time.Duration) error {
+	if c.IsRunning() {
+		return IsRunningErr
+	}
+	c.refreshInterval = d
+	return nil
+}
 
 func (c *controller) GetValuesInBatch() ([]*ValueRange, error) {
 	return c.getValuesInBatch()
@@ -334,7 +376,7 @@ func (c *controller) Refresh() error {
 
 		}()
 
-		c.V(2).Info("Controller refresh filled main Queue at: %s\n", time.Since(startRefreshAt).String())
+		c.V(2).Info("Controller refresh filled main Queue\n", "in", time.Since(startRefreshAt).String())
 	}()
 
 	// wg.Add(1)
@@ -425,8 +467,9 @@ func (c *controller) GetStakePoolSet() f2lb_members.StakePoolSet { return c.stak
 func (c *controller) GetAccountCache() accountcache.AccountCache { return c.accountCache }
 func (c *controller) GetPoolCache() poolcache.PoolCache          { return c.poolCache }
 
+func (c *controller) IsRunning() bool { return c.tick != nil }
 func (c *controller) Start() error {
-	c.tick = time.NewTicker(time.Duration(3 * time.Hour))
+	c.tick = time.NewTicker(c.refreshInterval)
 	c.accountCache.Start()
 	c.poolCache.Start()
 	err := c.Refresh()
@@ -448,6 +491,7 @@ func (c *controller) Start() error {
 func (c *controller) Stop() error {
 	c.V(2).Info("Stopping controller")
 	c.tick.Stop()
+	c.tick = nil
 	c.accountCache.Stop()
 	c.poolCache.Stop()
 	c.ctxCancel()

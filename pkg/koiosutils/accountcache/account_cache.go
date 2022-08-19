@@ -30,6 +30,7 @@ type (
 		Ready() bool
 		WaitReady(time.Duration) bool
 		IsRunning() bool
+		Refresh()
 		Start()
 		Stop()
 		WithOptions(
@@ -351,6 +352,16 @@ func (ac *accountCache) WaitReady(d time.Duration) bool {
 	return ac.Ready()
 }
 
+func (ac *accountCache) Refresh() {
+	if !ac.running {
+		return
+	}
+	ac.cache.Range(func(k, _ any) bool {
+		ac.workersCh <- k
+		return true
+	})
+}
+
 func (ac *accountCache) Start() {
 	if ac.running {
 		return
@@ -391,10 +402,7 @@ func (ac *accountCache) Start() {
 			case <-end.Done():
 				return
 			case <-ac.refresherTick.C:
-				ac.cache.Range(func(k, _ any) bool {
-					ac.workersCh <- k
-					return true
-				})
+				ac.Refresh()
 			}
 
 		}

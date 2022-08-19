@@ -57,7 +57,10 @@ func (s *controlServiceServer) StartRefresher(ctx context.Context) {
 				return
 			case t := <-ticker.C:
 				s.sendControlMsgToAll(t, ControlMsg_NONE)
-			case ruuid := <-s.refreshCh:
+			case ruuid, ok := <-s.refreshCh:
+				if !ok {
+					return
+				}
 				if ruuid == "ALL" {
 					s.sendControlMsgToAll(time.Now(), ControlMsg_REFRESH)
 				} else if stream, ok := s.uuid2stream[ruuid]; ok {
@@ -114,4 +117,46 @@ func (s *controlServiceServer) Control(stream ControlMsgService_ControlServer) e
 		return nil
 	}
 	return nil
+}
+
+func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*User, error) {
+	saddr_ := saddr.GetStakeAddress()
+	if saddr_ == "" {
+		return nil, fmt.Errorf("Bad Request: Empty stake address")
+	}
+
+	if sp := s.ctrl.GetStakePoolSet().Get(saddr_); sp != nil && sp.Ticker() != "" {
+		// found just return this
+		return &User{
+			Type:         User_SPO,
+			StakeKey:     sp.StakeKeys()[0],
+			StakeAddress: sp.MainStakeAddress(),
+			Member:       newMemeberFromStakePool(sp),
+		}, nil
+	}
+	supporter := (*f2lb_gsheet.Supporter)(nil)
+	for _, r := range s.ctrl.GetSupportersRecords() {
+		for _, sa := range r.StakeAddrs {
+			if sa == saddr_ {
+				supporter = r
+				break
+			}
+		}
+		if supporter != nil {
+			break
+		}
+	}
+	if supporter != nil {
+		// found just return this
+		return &User{
+			Type:         User_SUPPORTER,
+			StakeKey:     supporter.StakeKeys[0],
+			StakeAddress: supporter.StakeAddrs[0],
+			Supporter:    &Supporter{DiscordId: supporter.DiscordName},
+		}, nil
+	}
+	return &User{
+		Type:         User_VISITOR,
+		StakeAddress: saddr_,
+	}, nil
 }

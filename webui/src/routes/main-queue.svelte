@@ -5,15 +5,11 @@
 <script>
   import { mainQueueMembers, epochData } from '$lib/stores'
   import Member from '$lib/Member.svelte'
-  // import { doCallInPromise } from '$lib/utils'
   import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
 
   $: mainServed = $mainQueueMembers[0];
   $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
 
-  // if ($mainQueueMembers.length == 0) {
-  //     // doCallInPromise($serviceClients, 'MainQueue', 'listQueue', mainQueueMembers, 'membersList')
-  // }
 </script>
 
 

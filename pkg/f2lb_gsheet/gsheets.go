@@ -2,7 +2,6 @@ package f2lb_gsheet
 
 import (
 	"context"
-	flag "github.com/spf13/pflag"
 	"io/ioutil"
 
 	"golang.org/x/oauth2/google"
@@ -14,10 +13,6 @@ import (
 )
 
 var serviceAccountCredsJSONFileName string
-
-func AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&serviceAccountCredsJSONFileName, "service-account-credentials", serviceAccountCredsJSONFileName, "")
-}
 
 type F2LB struct {
 	*sheets.Service

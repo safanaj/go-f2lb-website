@@ -346,6 +346,17 @@ func (pc *poolCache) WaitReady(d time.Duration) bool {
 	return pc.Ready()
 }
 
+func (pc *poolCache) Refresh() {
+	if !pc.running {
+		return
+	}
+	pc.cache.Range(func(k, _ any) bool {
+		pc.workersCh <- k
+		return true
+	})
+
+}
+
 func (pc *poolCache) Start() {
 	if pc.running {
 		return
@@ -379,10 +390,7 @@ func (pc *poolCache) Start() {
 			case <-end.Done():
 				return
 			case <-pc.refresherTick.C:
-				pc.cache.Range(func(k, _ any) bool {
-					pc.workersCh <- k
-					return true
-				})
+				pc.Refresh()
 			}
 
 		}

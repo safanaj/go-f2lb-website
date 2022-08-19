@@ -13,6 +13,8 @@
   },
   "devDependencies": {
     "@creativebulma/bulma-tooltip": "^1.2.0",
+    "@emurgo/cardano-message-signing-browser": "^1.0.1",
+    "@emurgo/cardano-serialization-lib-browser": "^11.0.0",
     "@improbable-eng/grpc-web": "^0.15.0",
     "@sveltejs/adapter-static": "^1.0.0-next.38",
     "@sveltejs/kit": "next",
