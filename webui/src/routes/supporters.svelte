@@ -13,7 +13,7 @@
 <section>
   <article>
     <h2>F2LB Supporters <a class="is-hidden-desktop" href="/"><span class="icon is-small has-text-dark"><FaArrowLeft /></span></a></h2>
-    <div class="box">
+    <div class="box box-out">
       {#each $supportersList as s}
         <Supporter supporter={s} />
       {/each}

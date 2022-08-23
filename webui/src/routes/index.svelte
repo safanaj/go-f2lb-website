@@ -23,7 +23,7 @@
       <p>Visit also <a href="https://f2lb.info/">F2LB.info</a></p>
       {#if user !== undefined}
       <br />
-      <div class="box">
+      <div class="box box-out box-user">
       {#if user.type === User.Type.VISITOR}
         <p>Hello <span class="text truncate">{user.stakeaddress}</span> !</p>
         <p>Thanks to visit this website, and if you did not do yet, please join our community.</p>
@@ -47,7 +47,7 @@
   <div class="columns m-0 has-text-centered">
     <div class="column is-half">
       <p>Main Queue <a class="is-hidden-desktop" href="/main-queue"><span class="icon is-small has-text-dark"><FaArrowRight /></span></a></p>
-      <div class="box">
+      <div class="box box-out">
         {#each $mainQueueMembers as m}
           <Member member={m} shortinfo epochProgress={epochProgress} mainServed={mainServed}/>
         {/each}
@@ -55,7 +55,7 @@
     </div>
     <div class="column is-half">
       <p>Addon Queue <a class="is-hidden-desktop" href="/addon-queue"><span class="icon is-small has-text-dark"><FaArrowRight /></span></a></p>
-      <div class="box">
+      <div class="box box-out">
         {#each $addonQueueMembers as m}
           <Member member={m} shortinfo />
         {/each}

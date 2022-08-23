@@ -69,8 +69,9 @@ func (a *addonQueueServiceServer) ListQueue(ctx context.Context, _ *emptypb.Empt
 	// 	members = append(members, newMemeberFromAddonQueueRec(r))
 	// }
 	for _, t := range a.queue.GetOrdered() {
-		sp := a.sps.Get(t)
-		members = append(members, newMemeberFromStakePool(sp))
+		if sp := a.sps.Get(t); sp != nil {
+			members = append(members, newMemeberFromStakePool(sp))
+		}
 	}
 	return &Members{Members: members}, nil
 

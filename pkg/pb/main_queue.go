@@ -71,8 +71,9 @@ func (a *mainQueueServiceServer) Records(ctx context.Context, _ *emptypb.Empty) 
 func (a *mainQueueServiceServer) ListQueue(ctx context.Context, _ *emptypb.Empty) (*Members, error) {
 	members := []*Member{}
 	for _, t := range a.queue.GetOrdered() {
-		sp := a.sps.Get(t)
-		members = append(members, newMemeberFromStakePool(sp))
+		if sp := a.sps.Get(t); sp != nil {
+			members = append(members, newMemeberFromStakePool(sp))
+		}
 	}
 	return &Members{Members: members}, nil
 }

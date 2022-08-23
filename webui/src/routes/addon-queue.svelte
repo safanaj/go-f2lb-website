@@ -22,7 +22,7 @@
         </span>
       </a>
     </h2>
-    <div class="box">
+    <div class="box box-out">
       {#each $addonQueueMembers as m}
         <Member member={m} />
       {/each}

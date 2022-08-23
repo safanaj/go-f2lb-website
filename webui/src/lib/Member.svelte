@@ -61,7 +61,7 @@
 </script>
 
 
-<div class="box">
+<div class="box box-in">
   <p>Ticker: {member.ticker}
     {#if hasMainServed }
     <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
@@ -128,4 +128,5 @@
 	  text-overflow: ellipsis;
 	  white-space: nowrap;
   }
+
 </style>

@@ -2,6 +2,6 @@
   export let supporter;
 </script>
 
-<div class="box">
+<div class="box box-in">
   <p>DiscordName: {supporter.discordid}</p>
 </div>

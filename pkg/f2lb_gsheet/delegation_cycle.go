@@ -32,7 +32,7 @@ func (m *DelegationCycle) Refresh(vr *ValueRange) {
 	epochVal, _ := strconv.ParseUint(first[0].(string), 10, 32)
 	m.epoch = uint32(epochVal)
 	m.topTicker = first[4].(string)
-	remaining := uint32(0)
+	remaining := uint32(1)
 	for _, v := range vr.Values[1:] {
 		if m.topTicker != v[4].(string) {
 			log.V(3).Info("DelegationCycle.Refresh", "top ticker", m.topTicker, "remaining", remaining, "found", v[4].(string))

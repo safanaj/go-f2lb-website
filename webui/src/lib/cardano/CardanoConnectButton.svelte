@@ -12,3 +12,9 @@
   {text}
   {/if}
 </button>
+
+<style>
+  .button {
+      margin-top: 4px;
+  }
+</style>

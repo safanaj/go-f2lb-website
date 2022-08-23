@@ -15,3 +15,27 @@
 // @import "@creativebulma/bulma-tooltip/src/sass/_animation";
 // @import "@creativebulma/bulma-tooltip/src/sass/_position";
 // @import "@creativebulma/bulma-tooltip/src/sass/_variables";
+
+html.theme-s {
+    background-color: #fad82f;
+}
+
+html.theme-s .box-out {
+    background-color: #0b1d85;
+}
+
+html.theme-s .box-in {
+    background-color: #bbcfff;
+}
+
+html.theme-s .box-user {
+    color: lightcyan;
+}
+
+html.theme-s nav {
+	--background: rgba(255, 0, 0, .1);
+}
+
+html nav {
+	--background: rgba(255, 255, 255, .7);
+}

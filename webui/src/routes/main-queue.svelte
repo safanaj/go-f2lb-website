@@ -16,7 +16,7 @@
 <section>
   <article>
     <h2>Main Queue <a class="is-hidden-desktop" href="/"><span class="icon is-small has-text-dark"><FaArrowLeft /></span></a></h2>
-    <div class="box">
+    <div class="box box-out">
       {#each $mainQueueMembers as m}
         <Member member={m} epochProgress={epochProgress} mainServed={mainServed} />
       {/each}
