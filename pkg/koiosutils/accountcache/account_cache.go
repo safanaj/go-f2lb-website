@@ -164,8 +164,9 @@ func (ac *accountCache) lastDelegOrAccountInfoGetter() {
 				// to allow the cache to be ready
 				atomic.AddUint32(&ac.addeditems, ^uint32(0))
 				// return
+			} else {
+				ac.timeTxGetterCh <- txItem{v, tx}
 			}
-			ac.timeTxGetterCh <- txItem{v, tx}
 		case txTime:
 			delegatedPool, totalAda, err := ac.kc.GetStakeAddressInfo(v.saddr)
 			if err != nil {
@@ -174,12 +175,13 @@ func (ac *accountCache) lastDelegOrAccountInfoGetter() {
 				// to allow the cache to be ready
 				atomic.AddUint32(&ac.addeditems, ^uint32(0))
 				// return
-			}
-			ac.infoCh <- &accountInfo{
-				stakeAddress:          v.saddr,
-				delegatedPoolIdBech32: delegatedPool,
-				adaAmount:             uint64(totalAda),
-				lastDelegationTime:    v.t,
+			} else {
+				ac.infoCh <- &accountInfo{
+					stakeAddress:          v.saddr,
+					delegatedPoolIdBech32: delegatedPool,
+					adaAmount:             uint64(totalAda),
+					lastDelegationTime:    v.t,
+				}
 			}
 		}
 	}
@@ -199,32 +201,10 @@ func (ac *accountCache) txsTimesGetter(end context.Context) {
 		tx2saddr := make(map[koios.TxHash]string)
 		saddr2time := make(map[string]time.Time)
 
-		getAndReset := func() {
-			txs_ := make([]koios.TxHash, 0, len(txs))
-			for k, _ := range txs {
-				txs_ = append(txs_, k)
-			}
-			tx2time, err := ac.kc.GetTxsTimes(txs_)
-			if err == nil {
-				ac.V(3).Info("accountCache.txsTimesGetter: GetTxsTimes(txs)", "got len", len(tx2time), "ntxs", ntxs)
-				if len(saddr2time) < ntxs {
-					// we have stopped some accounts from that cacheing path, so remove them from the added count
-					// to allow the cache to be ready
-					atomic.AddUint32(&ac.addeditems, ^uint32(ntxs-len(saddr2time)-1))
-				}
-
-				for tx, t := range tx2time {
-					if saddr, ok := tx2saddr[tx]; ok {
-						saddr2time[saddr] = t
-					}
-				}
-				// fmt.Printf("accountCache.txsTimesGetter: flow %d accounts\n", len(saddr2time))
-				ac.V(3).Info("accountCache.txsTimesGetter", "flow len", len(saddr2time))
-				for saddr, t := range saddr2time {
-					ac.workersCh <- txTime{saddr, t}
-				}
-			} else {
-				ac.Error(err, "accountCache.txsTimesGetter: GetTxsTimes(txs)")
+		getAndReset := func(f func() error) {
+			err := f()
+			if err != nil {
+				ac.Error(err, "accountCache.getAndReset")
 			}
 			// reset everything
 			round = 0
@@ -234,17 +214,49 @@ func (ac *accountCache) txsTimesGetter(end context.Context) {
 			saddr2time = make(map[string]time.Time)
 		}
 
+		getAndResetTxsTimes := func() {
+			getAndReset(func() error {
+				txs_ := make([]koios.TxHash, 0, len(txs))
+				for k, _ := range txs {
+					txs_ = append(txs_, k)
+				}
+				if len(txs_) == 0 {
+					return nil
+				}
+				tx2time, err := ac.kc.GetTxsTimes(txs_)
+				if err == nil {
+					ac.V(3).Info("accountCache.txsTimesGetter: GetTxsTimes(txs)", "got len", len(tx2time), "ntxs", ntxs)
+					if len(saddr2time) < ntxs {
+						// we have stopped some accounts from that cacheing path, so remove them from the added count
+						// to allow the cache to be ready
+						atomic.AddUint32(&ac.addeditems, ^uint32(ntxs-len(saddr2time)-1))
+					}
+
+					for tx, t := range tx2time {
+						if saddr, ok := tx2saddr[tx]; ok {
+							saddr2time[saddr] = t
+						}
+					}
+					// fmt.Printf("accountCache.txsTimesGetter: flow %d accounts\n", len(saddr2time))
+					ac.V(3).Info("accountCache.txsTimesGetter", "flow len", len(saddr2time))
+					for saddr, t := range saddr2time {
+						ac.workersCh <- txTime{saddr, t}
+					}
+				} else {
+					ac.Error(err, "accountCache.txsTimesGetter: GetTxsTimes(txs)")
+					return err
+				}
+				return nil
+			})
+		}
+
 		for {
 			select {
 			case <-end.Done():
 				return
 			case <-t.C:
-				// fmt.Printf("accountCache.txsTimesGetter: timer fired: len(txs)=%d - ready to go: %t - %t %t %t %t - cache is ready: %t - to flow %d\n",
-				// 	len(txs), (round > 0 && len(txs) == ntxs) || len(txs) > 10,
-				// 	len(txs) == ntxs, ntxs > 0, round > 0, len(txs) > 10,
-				// 	ac.Ready(), len(saddr2time))
 				if (round > 0 && len(txs) == ntxs) || len(txs) > int(ac.timeTxsToGet) {
-					getAndReset()
+					getAndResetTxsTimes()
 				} else {
 					if round == 0 && len(txs) == ntxs && ntxs > 0 {
 						round++
@@ -254,9 +266,7 @@ func (ac *accountCache) txsTimesGetter(end context.Context) {
 				t.Reset(d)
 
 			case txi, stillOpen := <-ac.timeTxGetterCh:
-				// fmt.Printf("timeGetter got: %v - %t -- len(txs)=%d - ntxs=%d\n", txi, stillOpen, len(txs), ntxs)
 				if stillOpen {
-					// txs = append(txs, txi.tx)
 					txs[txi.tx] = struct{}{}
 					tx2saddr[txi.tx] = txi.saddr
 					saddr2time[txi.saddr] = time.Time{}
@@ -264,7 +274,7 @@ func (ac *accountCache) txsTimesGetter(end context.Context) {
 					return
 				}
 				if len(txs) > int(ac.timeTxsToGet) {
-					getAndReset()
+					getAndResetTxsTimes()
 				}
 			}
 		}
@@ -329,8 +339,8 @@ func (ac *accountCache) Len() uint32     { return ac.nitems }
 func (ac *accountCache) Pending() uint32 { return ac.addeditems - ac.nitems }
 func (ac *accountCache) IsRunning() bool { return ac.running }
 func (ac *accountCache) Ready() bool {
-	// fmt.Printf("AccountCache is ready ? %d == %d => %t\n",
-	// 	ac.nitems, ac.addeditems, ac.nitems == ac.addeditems)
+	ac.V(5).Info("AccountCache.Status",
+		"ready", ac.nitems == ac.addeditems, "nitems", ac.nitems, "addeditems", ac.addeditems, "pending", ac.Pending())
 	return ac.nitems == ac.addeditems
 }
 func (ac *accountCache) WaitReady(d time.Duration) bool {

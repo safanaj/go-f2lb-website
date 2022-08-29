@@ -322,9 +322,8 @@ func (pc *poolCache) Len() uint32     { return pc.nitems }
 func (pc *poolCache) Pending() uint32 { return pc.addeditems - pc.nitems }
 func (pc *poolCache) IsRunning() bool { return pc.running }
 func (pc *poolCache) Ready() bool {
-	// fmt.Printf("PoolCache is ready ? %d == %d => %t\n",
-	// 	pc.nitems, pc.addeditems, pc.nitems == pc.addeditems)
-	pc.V(5).Info("PoolCache.Ready", "nitems", pc.nitems, "addeditems", pc.addeditems, "is ready", pc.nitems == pc.addeditems)
+	pc.V(5).Info("PoolCache.Status",
+		"ready", pc.nitems == pc.addeditems, "nitems", pc.nitems, "addeditems", pc.addeditems, "pending", pc.Pending())
 	return pc.nitems == pc.addeditems
 }
 func (pc *poolCache) WaitReady(d time.Duration) bool {

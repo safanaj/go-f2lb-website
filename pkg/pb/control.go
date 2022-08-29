@@ -77,8 +77,9 @@ func (s *controlServiceServer) StartRefresher(ctx context.Context) {
 
 func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlServer, t time.Time, cmsgType ControlMsg_Type) error {
 	dataBytes, _ := json.Marshal(map[string]any{
-		"cache_ready": s.ctrl.GetAccountCache().Ready() && s.ctrl.GetPoolCache().Ready(),
-		"notes":       map[string]string{},
+		"cache_ready":       s.ctrl.GetAccountCache().Ready() && s.ctrl.GetPoolCache().Ready(),
+		"last_refresh_time": s.ctrl.GetLastRefreshTime().Format(time.RFC850),
+		"notes":             map[string]string{},
 	})
 
 	cmsg := &ControlMsg{

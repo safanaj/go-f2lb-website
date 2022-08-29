@@ -59,6 +59,7 @@ type Controller interface {
 
 	SetRefresherChannel(chan<- string) error
 	SetRefresherInterval(time.Duration) error
+	GetLastRefreshTime() time.Time
 	IsRunning() bool
 	Start() error
 	Stop() error
@@ -94,6 +95,7 @@ type controller struct {
 	refresherCh     chan<- string
 	mu              sync.RWMutex
 	isRefreshing    bool
+	lastRefreshTime time.Time
 }
 
 var _ Controller = &controller{}
@@ -246,6 +248,7 @@ func (c *controller) Refresh() error {
 	c.mu.Lock()
 	defer func() {
 		c.isRefreshing = false
+		c.lastRefreshTime = time.Now().UTC()
 		c.mu.Unlock()
 		c.V(2).Info("Controller refresh done", "in", time.Since(startRefreshAt).String())
 	}()
@@ -466,6 +469,8 @@ func (c *controller) GetSupportersRecords() []*Supporter { return c.supporters.G
 func (c *controller) GetStakePoolSet() f2lb_members.StakePoolSet { return c.stakePoolSet }
 func (c *controller) GetAccountCache() accountcache.AccountCache { return c.accountCache }
 func (c *controller) GetPoolCache() poolcache.PoolCache          { return c.poolCache }
+
+func (c *controller) GetLastRefreshTime() time.Time { return c.lastRefreshTime }
 
 func (c *controller) IsRunning() bool { return c.tick != nil }
 func (c *controller) Start() error {

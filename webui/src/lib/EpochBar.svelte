@@ -1,14 +1,36 @@
 <script>
   export let data = {};
   $: progress = (data.slot * 100 / 432000).toFixed(2)
+
+  // const setProgressBar = (node) => {
+  //     console.log("Node pre", node)
+  //     if (progress.toString() !== 'NaN') {
+  //         node.value = parseInt(progress)
+  //     }
+  //     console.log("Node post", node)
+  //     return {
+  //         destroy: () => {}
+  //     }
+  // }
+
 </script>
 
 <div class="has-text-centered">
   <p>
     {#if !data.cache_ready }
-      <span class="loader is-pulled-left"></span>
+      <span class="is-pulled-left is-hidden-touch">Koios caches are refreshing</span>
+      <span class="loader is-inline-block is-pulled-left ml-1"></span>
+    {:else}
+      <span class="is-pulled-left is-hidden-touch">Koios caches are ready</span>
     {/if}
-    epoch {data.epoch} ( {data.slot} / 432000 ) {progress} %
+    <span class="is-inline-block">
+      epoch {data.epoch} ( {data.slot} / 432000 ) {progress} %
+    </span>
+
+    {#if data.last_refresh_time }
+    <span class="is-inline-block is-pulled-right">gsheet synced at: {data.last_refresh_time}</span>
+    {/if}
+
   </p>
-  <!-- <progress class="progress is-link" value={progress} max="100"> epoch {data.epoch} ( {data.slot} / 432000) </progress> -->
+  <!-- <progress use:setProgressBar class="progress is-link is-inline-block" value="0" max="100"></progress> -->
 </div>

@@ -32,6 +32,7 @@
           epoch: obj.epoch,
           slot: obj.slot,
           cache_ready: dat.cache_ready,
+          last_refresh_time: dat.last_refresh_time,
           notes: dat.notes
       })
       if (obj.type == ControlMsg.Type.REFRESH) {
