@@ -440,6 +440,27 @@ func (c *controller) Refresh() error {
 			}
 		}
 
+		// check if something in AddonQ is missing from MainQ and add it to the StakePoolSet
+		for _, r := range c.addonQueue.GetRecords() {
+			sp := c.stakePoolSet.Get(r.Ticker)
+			if sp == nil {
+				// this is missing from mainQ, lets add it
+				vals := f2lb_members.FromMainQueueValues{
+					Ticker:      r.Ticker,
+					DiscordName: r.DiscordName,
+					AD:          r.AD,
+					EGAQ:        r.EG,
+					StakeKeys:   r.StakeKeys,
+					StakeAddrs:  r.StakeAddrs,
+				}
+				c.stakePoolSet.SetWithValuesFromMainQueue(vals)
+				c.V(5).Info("Added missing from MainQ SP", "vals", vals, "rec", r)
+			} else {
+				// this is in mainQ, lets update EG from addonQ
+				sp.SetEpochGrantedOnAddonQueue(r.EG)
+			}
+		}
+
 		c.V(2).Info("Controller refresh stake pool set filled", "in", time.Since(startRefreshAt).String())
 	}
 

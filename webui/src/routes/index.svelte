@@ -29,7 +29,7 @@
       <p>Addon Queue <a class="is-hidden-desktop" href="/addon-queue"><span class="icon is-small has-text-dark"><FaArrowRight /></span></a></p>
       <div class="box box-out">
         {#each $addonQueueMembers as m}
-          <Member member={m} shortinfo />
+          <Member member={m} shortinfo addonqueue />
         {/each}
       </div>
     </div>

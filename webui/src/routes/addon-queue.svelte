@@ -24,7 +24,7 @@
     </h2>
     <div class="box box-out">
       {#each $addonQueueMembers as m}
-        <Member member={m} />
+        <Member member={m} addonqueue />
       {/each}
     </div>
   </article>

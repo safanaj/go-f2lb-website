@@ -3,11 +3,12 @@ package f2lb_members
 // this is a struct to take the values from the main queue sheet
 type FromMainQueueValues struct {
 	// columns
-	DiscordName string `json:"discord_name" yaml:"discord_name"`    // A
-	QPP         uint16 `json:"qpp" yaml:"qpp"`                      // B
-	Ticker      string `json:"ticker" yaml:"ticker"`                // C
-	AD          uint16 `json:"ada_declared" yaml:"ada_declared"`    // D
-	EG          uint16 `json:"epoch_granted" yaaml:"epoch_granted"` // E
+	DiscordName string `json:"discord_name" yaml:"discord_name"`                                 // A
+	QPP         uint16 `json:"qpp" yaml:"qpp"`                                                   // B
+	Ticker      string `json:"ticker" yaml:"ticker"`                                             // C
+	AD          uint16 `json:"ada_declared" yaml:"ada_declared"`                                 // D
+	EG          uint16 `json:"epoch_granted" yaml:"epoch_granted"`                               // E
+	EGAQ        uint16 `json:"epoch_granted_on_addon_queue" yaml:"epoch_granted_on_addon_queue"` // E
 
 	// other columns
 	DelegStatus  string // F

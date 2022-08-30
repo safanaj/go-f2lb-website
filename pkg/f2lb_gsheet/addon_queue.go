@@ -198,7 +198,7 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 	defer aq.mu.Unlock()
 	aq.ordered = orderedTickers
 
-	// below code to be deprecated
+	// below code to be deprecated, NOT REALLY, some information as EG from the addonQ should be kept
 	aq.records = records
 
 	aq.served = records[0]

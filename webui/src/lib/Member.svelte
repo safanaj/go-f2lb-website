@@ -6,13 +6,14 @@
   import { toast } from 'bulma-toast'
   export let member;
   export let shortinfo;
+  export let addonqueue;
   export let epochProgress = 0;
   export let mainServed = {};
 
-  $: wrongPool = Object.keys(mainServed).length > 0 && (member.delegatedpool != mainServed.ticker &&
-                                                        member.delegatedpool != mainServed.poolidbech32)
-
   $: hasMainServed = Object.keys(mainServed).length > 0
+  $: wrongPool = hasMainServed && (member.delegatedpool != mainServed.ticker &&
+                                   member.delegatedpool != mainServed.poolidbech32)
+
   $: warningActive = epochProgress > 30 && epochProgress <= 90 && wrongPool
   $: dangerActive = epochProgress > 90 && wrongPool
 
@@ -22,11 +23,6 @@
       }
       return tgt
   }
-
-  // const iconClick = (evt) => {
-  //     let tgt = findParentElt(evt.target, "span")
-  //     tgt.classList.toggle("has-tooltip-active")
-  // }
 
   const copyPoolIdToClipboard = (evt) => {
       let tgt = findParentElt(evt.target, "p")
@@ -88,7 +84,11 @@
 
   <p>Ada delegated: {member.adadelegated}</p>
   <p>Ada declared: {member.adadeclared}</p>
-  <p>Epoch granted: {member.epochgranted}</p>
+  {#if !addonqueue}
+    <p>Epoch granted: {member.epochgranted}</p>
+  {:else}
+    <p>Epoch granted: {member.epochgrantedonaddonqueue}</p>
+  {/if}
   <p><span class="text truncate">Delegated Pool: {member.delegatedpool}</span></p>
   <p><span class="text truncate">DiscordName: {member.discordid}</span></p>
   {#if !shortinfo}
@@ -102,9 +102,11 @@
         Pool Id (bech32): <span class="icon is-small"><FaCopy /></span> {member.poolidbech32}
     </span>
   </p>
+  {#if !addonqueue}
   <p>current position: {member.mainqcurrpos}</p>
   <p>on top at epoch: {member.startingepoch}</p>
   <p>on top at time: {member.startingtime}</p>
+  {/if}
   <p class="hex">
     <span class="text truncate is-clickable" on:click={copyAccountToClipboard}>
       Stake key hash: <span class="icon is-small"><FaCopy /></span> {member.stakekey}

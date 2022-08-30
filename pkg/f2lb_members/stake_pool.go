@@ -45,6 +45,7 @@ type (
 			initialAdaDeclaration string,
 			startingEpochOnMainQueue uint16,
 			startingEpochOnAddonQueue uint16,
+			epochGrantedOnAddonQueue uint16,
 		) StakePool
 	}
 	StakePool interface {
@@ -55,6 +56,9 @@ type (
 		EpochGranted() uint16
 		// epochTraded  uint16
 		MainQueueCurrentPosision() uint16
+
+		EpochGrantedOnAddonQueue() uint16
+		SetEpochGrantedOnAddonQueue(uint16)
 
 		StakeKeys() []string
 		StakeAddrs() []string
@@ -100,6 +104,8 @@ type (
 		epochGranted uint16
 		epochTraded  uint16
 		mainCurrPos  uint16
+
+		epochGrantedOnAddonQ uint16
 
 		stakeKeys  []string
 		stakeAddrs []string
@@ -231,8 +237,10 @@ func (s *stakePoolSet) SetWithValuesFromMainQueue(vals FromMainQueueValues) Stak
 		initialAdaDeclaration:     vals.InitialAdaDeclaration,
 		startingEpochOnMainQueue:  vals.StartingEpochOnMainQueue,
 		startingEpochOnAddonQueue: vals.StartingEpochOnAddonQueue,
-		ac:                        s.ac,
-		pc:                        s.pc,
+		epochGrantedOnAddonQ:      vals.EGAQ,
+
+		ac: s.ac,
+		pc: s.pc,
 	}
 	s.Lock()
 	defer s.Unlock()
@@ -259,6 +267,7 @@ func (s *stakePoolSet) SetWithValuesFromMainQueue(vals FromMainQueueValues) Stak
 	sp.initialAdaDeclaration = nsp.initialAdaDeclaration
 	sp.startingEpochOnMainQueue = nsp.startingEpochOnMainQueue
 	sp.startingEpochOnAddonQueue = nsp.startingEpochOnAddonQueue
+	sp.epochGrantedOnAddonQ = nsp.epochGrantedOnAddonQ
 	sp.ac = nsp.ac
 	sp.pc = nsp.pc
 	return sp
@@ -291,6 +300,7 @@ func (s *stakePoolSet) SetWithValues(
 	initialAdaDeclaration string,
 	startingEpochOnMainQueue uint16,
 	startingEpochOnAddonQueue uint16,
+	epochGrantedOnAddonQueue uint16,
 ) StakePool {
 	return s.SetWithValuesFromMainQueue(FromMainQueueValues{
 		Ticker:                    ticker,
@@ -309,6 +319,7 @@ func (s *stakePoolSet) SetWithValues(
 		InitialAdaDeclaration:     initialAdaDeclaration,
 		StartingEpochOnMainQueue:  startingEpochOnMainQueue,
 		StartingEpochOnAddonQueue: startingEpochOnAddonQueue,
+		EGAQ:                      epochGrantedOnAddonQueue,
 	})
 }
 
@@ -325,6 +336,9 @@ func (sp *stakePool) EpochGranted() uint16 { return sp.epochGranted }
 
 // epochTraded  uint16
 func (sp *stakePool) MainQueueCurrentPosision() uint16 { return sp.mainCurrPos }
+
+func (sp *stakePool) EpochGrantedOnAddonQueue() uint16      { return sp.epochGrantedOnAddonQ }
+func (sp *stakePool) SetEpochGrantedOnAddonQueue(eg uint16) { sp.epochGrantedOnAddonQ = eg }
 
 func (sp *stakePool) StakeKeys() []string  { return sp.stakeKeys }
 func (sp *stakePool) StakeAddrs() []string { return sp.stakeAddrs }

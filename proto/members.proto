@@ -28,4 +28,5 @@ message Member {
   uint32 mainQCurrPos = 11;
   uint32 startingEpoch = 12;
   string startingTime = 13;
+  uint32 epochGrantedOnAddonQueue = 14;
 }
