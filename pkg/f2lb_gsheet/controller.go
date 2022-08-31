@@ -295,9 +295,10 @@ func (c *controller) Refresh() error {
 		tickers_m := make(map[string]any)
 		for _, r := range c.mainQueue.GetRecords() {
 			tickers = append(tickers, r.Ticker)
+			tickers_m[r.Ticker] = struct{}{}
+			// should we add all the addresses?
 			saddrs = append(saddrs, r.StakeAddrs[0])
 			saddrs_m[r.StakeAddrs[0]] = struct{}{}
-			tickers_m[r.Ticker] = struct{}{}
 		}
 		c.V(2).Info("Controller refresh adding to cache", "stake addresses",
 			len(saddrs), "in", time.Since(startRefreshAt).String())
@@ -466,6 +467,8 @@ func (c *controller) Refresh() error {
 				}
 				c.stakePoolSet.SetWithValuesFromMainQueue(vals)
 				c.V(5).Info("Added missing from MainQ SP", "vals", vals, "rec", r)
+				// lets add also the stake addrs to the cache, should we add all the addresses?
+				c.accountCache.Add(r.StakeAddrs[0])
 			} else {
 				// this is in mainQ, lets update EG from addonQ
 				sp.SetEpochGrantedOnAddonQueue(r.EG)
