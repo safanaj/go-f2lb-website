@@ -41,6 +41,9 @@ type (
 			workersInterval time.Duration,
 			poolInfosToGet uint32,
 		) (PoolCache, error)
+
+		IsTickerMissingFromKoiosPoolList(string) bool
+		FillMissingPoolInfos(map[string]string)
 	}
 
 	PoolInfo interface {
@@ -91,6 +94,12 @@ type poolCache struct {
 	poolInfosToGet   uint32
 
 	readyWaiterCh chan any
+
+	missingFinished        chan any
+	missingCtxCancel       func()
+	missingCh              chan any
+	missingMu              sync.RWMutex
+	missingTickersFromList map[string]any
 }
 
 var _ PoolCache = (*poolCache)(nil)
@@ -104,7 +113,11 @@ func (pc *poolCache) cacheSyncer() {
 			case <-ch:
 			default:
 				if pc.Ready() {
-					close(ch)
+					select {
+					case <-ch:
+					default:
+						close(ch)
+					}
 				}
 			}
 		}
@@ -127,6 +140,7 @@ func (pc *poolCache) cacheSyncer() {
 			if _, loaded := pc.cache.LoadOrStore(v.ticker, v); loaded {
 				pc.cache.Store(v.ticker, v)
 				pc.cache2.Store(v.bech32, v)
+				atomic.AddUint32(&pc.addeditems, ^uint32(0))
 			} else {
 				atomic.AddUint32(&pc.nitems, uint32(1))
 				pc.cache2.Store(v.bech32, v)
@@ -184,10 +198,14 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 					// we have stopped some accounts from that cacheing path, so remove them from the added count
 					// to allow the cache to be ready
 					atomic.AddUint32(&c.addeditems, ^uint32(len(tickers)-len(t2p)-1))
+					for t, _ := range tickers {
+						if _, ok := t2p[t]; !ok {
+							c.missingCh <- t
+						}
+					}
 				}
-				c.V(3).Info("Processing t2p", "len", len(t2p), "tickers len", len(tickers), "added", c.addeditems)
 				for t, p := range t2p {
-					c.V(4).Info("Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
+					c.V(4).Info("GetTickerToPoolIdMapFor: Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
 					c.infoCh <- &poolInfo{
 						ticker: t,
 						bech32: p,
@@ -198,15 +216,48 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 			}, &tickers)
 		}
 
-		// getAndResetPoolInfos := func() {
-		// 	getAndReset(func() error {
-		// 		// do a GetPoolInfos ....
-		// 		for _, v := range poolids {
-		// 			c.infoCh <- v
-		// 		}
-		// 		return nil
-		// 	}, &poolids)
-		// }
+		getAndResetPoolInfos := func() {
+			getAndReset(func() error {
+				pids_l := []string{}
+				t2p := make(map[string]string)
+				for pid, pi := range poolids {
+					pids_l = append(pids_l, pid)
+					t2p[pi.(*poolInfo).ticker] = pid
+				}
+				if len(pids_l) == 0 {
+					return nil
+				}
+				// do a GetPoolInfos ....
+				c.V(3).Info("GetPoolsInfos: Processing t2p", "len", len(t2p), "poolids len", len(pids_l))
+				p2t, err := c.kc.GetPoolsInfos(pids_l...)
+				if err != nil {
+					return err
+				}
+				c.V(3).Info("GetPoolsInfos: Got p2t", "len", len(p2t), "poolids len", len(pids_l))
+				for p, t := range p2t {
+					c.V(4).Info("GetPoolsInfos (p2t): Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
+					c.infoCh <- &poolInfo{
+						ticker: t,
+						bech32: p,
+						hex:    utils.Bech32ToHexOrDie(p),
+					}
+					c.missingCh <- string(append([]rune{'-'}, []rune(t)...))
+					delete(t2p, t)
+				}
+				if len(t2p) > 0 {
+					for t, p := range t2p {
+						c.V(4).Info("GetPoolsInfos (t2p): Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
+						c.infoCh <- &poolInfo{
+							ticker: t,
+							bech32: p,
+							hex:    utils.Bech32ToHexOrDie(p),
+						}
+						c.missingCh <- string(append([]rune{'-'}, []rune(t)...))
+					}
+				}
+				return nil
+			}, &poolids)
+		}
 
 		for {
 			select {
@@ -219,9 +270,9 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 					if len(tickers) == ntickers || len(tickers) > int(c.poolInfosToGet) {
 						getAndResetTickers()
 					}
-					// if len(poolids) == npools || len(poolids) > int(c.poolInfosToGet) {
-					// 	getAndResetPoolInfos()
-					// }
+					if len(poolids) == npools || len(poolids) > int(c.poolInfosToGet) {
+						getAndResetPoolInfos()
+					}
 
 				} else {
 					if round == 0 && (len(tickers) == ntickers || len(poolids) == npools) {
@@ -246,15 +297,67 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 					if len(tickers) > int(c.poolInfosToGet) {
 						getAndResetTickers()
 					}
-					// case *poolInfo:
-					// 	poolids[v.bech32] = v
-					// 	if len(poolids) > int(c.poolInfosToGet) {
-					// 		getAndResetPoolInfos()
-					// 	}
+				case *poolInfo:
+					poolids[v.bech32] = v
+					if len(poolids) > int(c.poolInfosToGet) {
+						getAndResetPoolInfos()
+					}
 				}
 			}
 		}
 	}()
+}
+
+func (pc *poolCache) manageMissingTickers(end context.Context) {
+	defer close(pc.missingFinished)
+	for {
+		select {
+		case <-end.Done():
+			return
+		case vI, stillOpen := <-pc.missingCh:
+			if !stillOpen {
+				return
+			}
+			switch v := vI.(type) {
+			case string:
+				if len(v) == 0 {
+					continue
+				}
+				if []rune(v)[0] == '-' {
+					pc.missingMu.Lock()
+					pc.V(5).Info("MissingTickers: deleting", "ticker", v, "len", len(pc.missingTickersFromList))
+					delete(pc.missingTickersFromList, string([]rune(v)[1:]))
+					pc.V(5).Info("MissingTickers: deleted", "len", len(pc.missingTickersFromList))
+					pc.missingMu.Unlock()
+				} else {
+					pc.missingMu.Lock()
+					pc.V(5).Info("MissingTickers: adding", "ticker", v, "len", len(pc.missingTickersFromList))
+					pc.missingTickersFromList[v] = struct{}{}
+					pc.V(5).Info("MissingTickers: added", "ticker", v, "len", len(pc.missingTickersFromList))
+					pc.missingMu.Unlock()
+				}
+			}
+		}
+
+	}
+}
+
+func (pc *poolCache) FillMissingPoolInfos(p2t map[string]string) {
+	if !pc.running {
+		return
+	}
+	isEmpty := pc.Len() == 0
+	for p, t := range p2t {
+		if !isEmpty {
+			if _, ok := pc.cache.Load(t); !ok {
+				atomic.AddUint32(&pc.addeditems, uint32(1))
+			}
+		}
+		pc.workersCh <- &poolInfo{ticker: t, bech32: p}
+	}
+	if isEmpty {
+		atomic.AddUint32(&pc.addeditems, uint32(len(p2t)))
+	}
 }
 
 func (pc *poolCache) addMany(saddrs []string) {
@@ -318,6 +421,13 @@ func (pc *poolCache) Get(tickerOrbech32 string) (PoolInfo, bool) {
 	return pi.(*poolInfo), true
 }
 
+func (pc *poolCache) IsTickerMissingFromKoiosPoolList(t string) bool {
+	pc.missingMu.RLock()
+	defer pc.missingMu.RUnlock()
+	_, ok := pc.missingTickersFromList[t]
+	return !ok
+}
+
 func (pc *poolCache) Len() uint32     { return pc.nitems }
 func (pc *poolCache) Pending() uint32 { return pc.addeditems - pc.nitems }
 func (pc *poolCache) IsRunning() bool { return pc.running }
@@ -353,7 +463,6 @@ func (pc *poolCache) Refresh() {
 		pc.workersCh <- k
 		return true
 	})
-
 }
 
 func (pc *poolCache) Start() {
@@ -376,6 +485,12 @@ func (pc *poolCache) Start() {
 		go pc.poolListOrPoolInfosGetter(ctx)
 	}
 
+	pc.missingFinished = make(chan any)
+	ctx, ctxCancel = context.WithCancel(pc.kc.GetContext())
+	pc.missingCtxCancel = ctxCancel
+	pc.missingCh = make(chan any)
+	go pc.manageMissingTickers(ctx)
+
 	pc.running = true
 
 	ctx, ctxCancel = context.WithCancel(pc.kc.GetContext())
@@ -391,7 +506,6 @@ func (pc *poolCache) Start() {
 			case <-pc.refresherTick.C:
 				pc.Refresh()
 			}
-
 		}
 	}(ctx)
 }
@@ -414,6 +528,10 @@ func (pc *poolCache) Stop() {
 	pc.workersWg.Wait()
 	close(pc.workersCh)
 	pc.V(2).Info("PoolCache workers stopped")
+
+	pc.missingCtxCancel()
+	<-pc.missingFinished
+	pc.V(2).Info("PoolCache missing manager stopped")
 
 	close(pc.infoCh)
 	pc.cacheSyncerWg.Wait()
@@ -451,6 +569,13 @@ func (pc *poolCache) WithOptions(
 	} else {
 		newPoolCache.cache2 = pc.cache2
 	}
+
+	if pc.missingTickersFromList == nil {
+		newPoolCache.missingTickersFromList = make(map[string]any)
+	} else {
+		newPoolCache.missingTickersFromList = pc.missingTickersFromList
+	}
+
 	newPoolCache.Logger = pc.Logger
 	return newPoolCache, nil
 }

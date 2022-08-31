@@ -3,6 +3,7 @@
   import FaWarning from 'svelte-icons/fa/FaExclamationTriangle.svelte'
   import FaBan from 'svelte-icons/fa/FaBan.svelte'
   import FaCopy from 'svelte-icons/fa/FaCopy.svelte'
+  import FaExternalLinkSquareAlt from 'svelte-icons/fa/FaExternalLinkSquareAlt.svelte'
   import { toast } from 'bulma-toast'
   export let member;
   export let shortinfo;
@@ -54,6 +55,9 @@
       })
   }
 
+  const openPoolPm = () => {
+      window.open(`https://pool.pm/search/${member.delegatedpool}`)
+  }
 </script>
 
 
@@ -89,7 +93,15 @@
   {:else}
     <p>Epoch granted: {member.epochgrantedonaddonqueue}</p>
   {/if}
-  <p><span class="text truncate">Delegated Pool: {member.delegatedpool}</span></p>
+  {#if member.delegatedpool.startsWith('pool1')}
+    <p>
+      <span class="text truncate is-clickable" on:click={openPoolPm}>
+        Delegated Pool: <span class="icon is-small"><FaExternalLinkSquareAlt /></span>{member.delegatedpool}
+      </span>
+    </p>
+  {:else}
+    <p><span class="text truncate">Delegated Pool: {member.delegatedpool}</span></p>
+  {/if}
   <p><span class="text truncate">DiscordName: {member.discordid}</span></p>
   {#if !shortinfo}
     <p class="hex">

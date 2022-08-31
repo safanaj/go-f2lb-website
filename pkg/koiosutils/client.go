@@ -40,7 +40,7 @@ func IsResponseComplete(res koios.Response) bool {
 // in case the input is zero-length it returns all the registered pool ids with a ticker
 //
 // returns: result map, an error, the number of missing / not found pools
-func (kc *KoiosClient) GetTickerToPoolIdMapFor(tickers ...string) (map[string]string, error, int) {
+func (kc *KoiosClient) GetTickerToPoolIdMapFor(tickers ...string) (map[string]string, error, map[string]any) {
 	var err error
 	getAll := len(tickers) == 0
 	r := make(map[string]string)
@@ -80,7 +80,46 @@ func (kc *KoiosClient) GetTickerToPoolIdMapFor(tickers ...string) (map[string]st
 			break
 		}
 	}
-	return r, err, len(m)
+	return r, err, m
+}
+
+func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]string, error) {
+	if len(bech32PoolIds) == 0 {
+		return nil, nil
+	}
+	var err error
+	res := make(map[string]string)
+	pids := make([]koios.PoolID, 0, len(bech32PoolIds))
+	for _, pid := range bech32PoolIds {
+		pids = append(pids, koios.PoolID(pid))
+	}
+
+	page := uint(1)
+	opts_ := kc.k.NewRequestOptions()
+
+	opts_.QuerySet("select", "pool_id_bech32,meta_json")
+
+	for {
+		opts, _ := opts_.Clone()
+		opts.Page(page)
+		page = page + 1
+		pools, err := kc.k.GetPoolInfos(kc.ctx, pids, opts)
+		if err != nil || len(pools.Data) == 0 {
+			break
+		}
+
+		for _, p := range pools.Data {
+			if p.ID == "" || p.MetaJSON.Ticker == nil || (p.MetaJSON.Ticker != nil && *p.MetaJSON.Ticker == "") {
+				continue
+			}
+			res[string(p.ID)] = *p.MetaJSON.Ticker
+		}
+
+		if IsResponseComplete(pools.Response) {
+			break
+		}
+	}
+	return res, err
 }
 
 func (kc *KoiosClient) GetStakeAddressInfo(stakeAddr string) (delegatedPool string, totalAda uint32, err error) {

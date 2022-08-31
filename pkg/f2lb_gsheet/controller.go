@@ -411,6 +411,7 @@ func (c *controller) Refresh() error {
 	{
 		c.V(3).Info("Preparing stake pool set")
 		start := uint16(c.delegCycle.epoch)
+		missingFromKoios := make(map[string]string)
 		for i, r := range c.mainQueue.GetRecords() {
 			vals := f2lb_members.FromMainQueueValues{
 				Ticker:                    r.Ticker,
@@ -438,6 +439,16 @@ func (c *controller) Refresh() error {
 			} else {
 				start += r.EG
 			}
+
+			if r.PoolIdBech32 != "" && c.poolCache.IsTickerMissingFromKoiosPoolList(r.Ticker) {
+				missingFromKoios[r.PoolIdBech32] = r.Ticker
+			}
+		}
+
+		if len(missingFromKoios) > 0 {
+			c.V(5).Info("Missing from koios", "len", len(missingFromKoios))
+			c.poolCache.FillMissingPoolInfos(missingFromKoios)
+			c.V(5).Info("Missing from koios filled", "map", missingFromKoios)
 		}
 
 		// check if something in AddonQ is missing from MainQ and add it to the StakePoolSet
