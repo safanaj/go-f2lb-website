@@ -9,10 +9,12 @@
   import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
 </script>
 
+<section class="section has-text-centered">
+  <h1 class="title">F2LB Supporters <a class="is-hidden-desktop" href="/"><span class="icon is-small has-text-dark"><FaArrowLeft /></span></a></h1>
+</section>
 
 <section>
   <article>
-    <h2>F2LB Supporters <a class="is-hidden-desktop" href="/"><span class="icon is-small has-text-dark"><FaArrowLeft /></span></a></h2>
     <div class="box box-out">
       {#each $supportersList as s}
         <Supporter supporter={s} />

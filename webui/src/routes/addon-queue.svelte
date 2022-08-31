@@ -13,15 +13,17 @@
   // }
 </script>
 
+<section class="section has-text-centered">
+  <h1 class="title">Addon Queue <a class="is-hidden-desktop" href="/">
+      <span class="icon is-small has-text-dark">
+        <FaArrowLeft />
+      </span>
+    </a>
+  </h1>
+</section>
 
 <section>
   <article>
-    <h2>Addon Queue <a class="is-hidden-desktop" href="/">
-        <span class="icon is-small has-text-dark">
-          <FaArrowLeft />
-        </span>
-      </a>
-    </h2>
     <div class="box box-out">
       {#each $addonQueueMembers as m}
         <Member member={m} addonqueue />
