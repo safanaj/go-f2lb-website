@@ -90,7 +90,9 @@
 
       </span>
 
-      <span class="level-right level-item is-size-6">{member.adadelegated} ADA</span>
+      <span class="level-right level-item is-size-6">
+        <span class="is-size-7 is-hidden-touch mr-1">delegates</span><span>{member.adadelegated} ADA</span>
+      </span>
 
       <span class="is-size-7 is-pulled-right">
         <span class="level-item">

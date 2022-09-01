@@ -73,4 +73,7 @@ export const mainQueueMembers = writable([])
 export const addonQueueMembers = writable([])
 export const rules = writable([])
 export const cardanoWallet = writable({})
-export const theme = writable('l')
+
+const storedTheme = window.localStorage.theme || 'l'
+export const theme = writable(storedTheme)
+theme.subscribe((value) => window.localStorage.theme = value)

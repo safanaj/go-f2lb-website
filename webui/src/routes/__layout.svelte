@@ -1,3 +1,18 @@
+<script context="module">
+  import { theme } from '$lib/stores';
+  export const load = () => {
+      if ((window||{}).localStorage !== undefined) {
+          let maybeStoredTheme = window.localStorage.theme || 'l'
+          theme.set(maybeStoredTheme)
+          if (maybeStoredTheme !== 's') {
+              document.documentElement.classList.remove('theme-s')
+          } else {
+              document.documentElement.classList.add('theme-s')
+          }
+      }
+  }
+</script>
+
 <script>
   import "../app.scss";
 
