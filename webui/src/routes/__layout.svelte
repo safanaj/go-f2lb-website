@@ -1,5 +1,6 @@
 <script context="module">
   import { theme } from '$lib/stores';
+
   export const load = () => {
       if ((window||{}).localStorage !== undefined) {
           let maybeStoredTheme = window.localStorage.theme || 'l'
@@ -15,12 +16,12 @@
 
 <script>
   import "../app.scss";
-
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import EpochBar from "$lib/EpochBar.svelte";
   import UserBox from "$lib/UserBox.svelte";
   import Header from "$lib/header/Header.svelte";
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation'
   import { serviceClients, epochData, mainQueueMembers, addonQueueMembers, supportersList, cardanoWallet } from '$lib/stores';
   import { doCallInPromise } from '$lib/utils';
   import { User, ControlMsg } from '$lib/pb/control_pb';
@@ -61,6 +62,18 @@
           ]).then(tick)
       }
   })
+
+  onMount(() => {
+      let initialHash = ((window||{}).location||{}).hash || ''
+      if (initialHash !== '') {
+          tick()
+              .then(() => { return goto(window.location.pathname)})
+              .then(tick)
+              .then(() => { return goto(initialHash)})
+              .then(tick)
+      }
+  })
+
 </script>
 
 <div class="epoch-bar">

@@ -1,4 +1,5 @@
 <script>
+  import {goto} from '$app/navigation'
   import FaInfoCircle from 'svelte-icons/fa/FaInfoCircle.svelte'
   import FaWarning from 'svelte-icons/fa/FaExclamationTriangle.svelte'
   import FaBan from 'svelte-icons/fa/FaBan.svelte'
@@ -8,8 +9,11 @@
   export let member;
   export let shortinfo;
   export let addonqueue;
+  export let toBoxLinkPrefix = '';
+  export let idBoxHashPrefix = '';
   export let epochProgress = 0;
   export let mainServed = {};
+  let boxId = idBoxHashPrefix === '' ? member.ticker : `${idBoxHashPrefix}-${member.ticker}`
 
   $: hasMainServed = Object.keys(mainServed).length > 0
   $: wrongPool = hasMainServed && (member.delegatedpool != mainServed.ticker &&
@@ -58,14 +62,27 @@
   const openPoolPm = () => {
       window.open(`https://pool.pm/search/${member.delegatedpool}`)
   }
+
+  const goToBox = () => {
+      if (toBoxLinkPrefix !== '') {
+          goto(`${toBoxLinkPrefix}#${member.ticker}`)
+      }
+  }
+
 </script>
 
 
-<div class="box box-in">
+<div class="box box-in" id={boxId}>
   {#if shortinfo}
     <p class="has-text-centered">
       <span class="is-pulled-left">
-        <span class="is-size-4">{member.ticker}</span>
+        <span class="is-size-4">
+          {#if toBoxLinkPrefix !== ''}
+            <span class="is-clickable" on:click={goToBox}>{member.ticker}</span>
+          {:else}
+            {member.ticker}
+          {/if}
+        </span>
         {#if hasMainServed}
           <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
                 data-tooltip={`
