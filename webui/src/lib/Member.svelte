@@ -62,6 +62,72 @@
 
 
 <div class="box box-in">
+  {#if shortinfo}
+    <p class="has-text-centered">
+      <span class="is-pulled-left">
+        <span class="is-size-4">{member.ticker}</span>
+        {#if hasMainServed}
+          <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
+                data-tooltip={`
+                bech32: ${member.poolidbech32}
+                hex: ${member.poolidhex}
+                on top at: (epoch ${member.startingepoch}) ${member.startingtime}
+                `}
+                >
+            <FaInfoCircle />
+          </span>
+        {/if}
+
+        {#if warningActive }
+          <span class="icon is-small has-text-warning has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
+            <FaWarning />
+          </span>
+        {:else if dangerActive }
+          <span class="icon is-small has-text-danger has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
+            <FaBan />
+          </span>
+        {/if}
+
+      </span>
+
+      <span class="level-right level-item is-size-6">{member.adadelegated} ADA</span>
+
+      <span class="is-size-7 is-pulled-right">
+        <span class="level-item">
+          AD: {member.adadeclared}
+        </span>
+        <span class="level-item">
+          {#if !addonqueue}
+            EG: {member.epochgranted}
+          {:else}
+            EG: {member.epochgrantedonaddonqueue}
+          {/if}
+        </span>
+      </span>
+    </p>
+
+    <p class="mt-3 is-size-6 has-text-left text truncate">
+      {#if member.delegatedpool.startsWith('pool1')}
+        <span>to pool:</span>
+
+        <span class="is-clickable" on:click={openPoolPm}>
+          <span class="icon is-small"><FaExternalLinkSquareAlt /></span>
+          {member.delegatedpool}
+        </span>
+
+      {:else}
+        <span>to pool: {member.delegatedpool}</span>
+      {/if}
+    </p>
+
+    <p class="is-size-7">
+      <span class="text truncate">DiscordName: {member.discordid}</span>
+    </p>
+
+
+  {:else}
+
+
   <p>Ticker: {member.ticker}
     {#if hasMainServed }
     <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
@@ -74,16 +140,6 @@
       <FaInfoCircle />
     </span>
     {/if}
-    {#if warningActive }
-      <span class="icon is-small has-text-warning has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
-        <FaWarning />
-      </span>
-    {/if}
-    {#if dangerActive }
-      <span class="icon is-small has-text-danger has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
-        <FaBan />
-      </span>
-    {/if}
   </p>
 
   <p>Ada delegated: {member.adadelegated}</p>
@@ -95,30 +151,56 @@
   {/if}
   {#if member.delegatedpool.startsWith('pool1')}
     <p>
-      <span class="text truncate is-clickable" on:click={openPoolPm}>
-        Delegated Pool: <span class="icon is-small"><FaExternalLinkSquareAlt /></span>{member.delegatedpool}
+      <span class="text truncate">
+        <span>Delegated Pool:</span>
+        {#if warningActive }
+          <span class="icon is-small has-text-warning has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
+            <FaWarning />
+          </span>
+        {:else if dangerActive }
+          <span class="icon is-small has-text-danger has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
+            <FaBan />
+          </span>
+        {/if}
+        <span class="is-clickable" on:click={openPoolPm}>
+          <span class="icon is-small"><FaExternalLinkSquareAlt /></span>
+          <span>
+            {member.delegatedpool}
+          </span>
       </span>
     </p>
   {:else}
-    <p><span class="text truncate">Delegated Pool: {member.delegatedpool}</span></p>
-  {/if}
-  <p><span class="text truncate">DiscordName: {member.discordid}</span></p>
-  {#if !shortinfo}
-    <p class="hex">
-    <span class="text truncate is-clickable" on:click={copyPoolIdToClipboard}>
-        Pool Id (hex): <span class="icon is-small"><FaCopy /></span> {member.poolidhex}
+    <p>
+      <span class="text truncate">
+        <span>Delegated Pool:</span>
+        {#if warningActive }
+          <span class="icon is-small has-text-warning has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
+            <FaWarning />
+          </span>
+        {:else if dangerActive }
+          <span class="icon is-small has-text-danger has-tooltip-arrow" data-tooltip="Delegated to wrong pool">
+            <FaBan />
+          </span>
+        {/if}
+        <span>{member.delegatedpool}</span>
       </span>
     </p>
+  {/if}
+  <p><span class="text truncate">DiscordName: {member.discordid}</span></p>
+  <p class="hex">
+    <span class="text truncate is-clickable" on:click={copyPoolIdToClipboard}>
+      Pool Id (hex): <span class="icon is-small"><FaCopy /></span> {member.poolidhex}
+    </span>
+  </p>
   <p class="bech32">
     <span class="text truncate is-clickable" on:click={copyPoolIdToClipboard}>
-        Pool Id (bech32): <span class="icon is-small"><FaCopy /></span> {member.poolidbech32}
+      Pool Id (bech32): <span class="icon is-small"><FaCopy /></span> {member.poolidbech32}
     </span>
   </p>
   {#if !addonqueue}
   <p>current position: {member.mainqcurrpos}</p>
   <p>on top at epoch: {member.startingepoch}</p>
   <p>on top at time: {member.startingtime}</p>
-  {/if}
   <p class="hex">
     <span class="text truncate is-clickable" on:click={copyAccountToClipboard}>
       Stake key hash: <span class="icon is-small"><FaCopy /></span> {member.stakekey}
@@ -130,6 +212,9 @@
     </span>
   </p>
   {/if}
+
+  {/if}
+
 </div>
 
 <style>
