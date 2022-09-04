@@ -23,7 +23,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation'
   import { serviceClients, epochData, mainQueueMembers, addonQueueMembers, supportersList, cardanoWallet } from '$lib/stores';
-  import { doCallInPromise } from '$lib/utils';
+  import { doCallInPromise, waitFor } from '$lib/utils';
   import { User, ControlMsg } from '$lib/pb/control_pb';
 
   $: mainServed = $mainQueueMembers[0];
@@ -66,11 +66,8 @@
   onMount(() => {
       let initialHash = ((window||{}).location||{}).hash || ''
       if (initialHash !== '') {
-          tick()
-              .then(() => { return goto(window.location.pathname)})
-              .then(tick)
-              .then(() => { return goto(initialHash)})
-              .then(tick)
+          waitFor(() => $mainQueueMembers.length > 0, 2)
+              .then(() => goto(initialHash))
       }
   })
 
