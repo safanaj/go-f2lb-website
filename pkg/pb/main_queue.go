@@ -2,7 +2,6 @@ package pb
 
 import (
 	"context"
-	"time"
 
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
@@ -18,47 +17,6 @@ type mainQueueServiceServer struct {
 
 func NewMainQueueServiceServer(q *f2lb_gsheet.MainQueue, sps f2lb_members.StakePoolSet) MainQueueServiceServer {
 	return &mainQueueServiceServer{queue: q, sps: sps}
-}
-
-// func NewMainQueueServiceServer(q *f2lb_gsheet.MainQueue) MainQueueServiceServer {
-// 	return &mainQueueServiceServer{queue: q}
-// }
-
-// func newMemeberFromMainQueueRec(r *f2lb_gsheet.MainQueueRec) *Member {
-// 	return &Member{
-// 		DiscordId:     r.DiscordName,
-// 		Ticker:        r.Ticker,
-// 		StakeKey:      r.StakeKeys[0],
-// 		StakeAddr:     r.StakeAddrs[0],
-// 		AdaDeclared:   uint32(r.AD),
-// 		AdaDelegated:  uint32(r.AdaDelegated),
-// 		EpochGranted:  uint32(r.EG),
-// 		PoolIdHex:     r.PoolIdHex,
-// 		PoolIdBech32:  r.PoolIdBech32,
-// 		DelegatedPool: r.DelegatedPool,
-// 		StartingEpoch: uint32(r.StartingEpoch),
-// 		StartingTime:  r.StartingTime.Format(time.RFC850),
-// 		MainQCurrPos:  fmt.Sprintf("%d", r.QPP),
-// 	}
-// }
-
-func newMemeberFromStakePool(sp f2lb_members.StakePool) *Member {
-	return &Member{
-		DiscordId:                sp.DiscordName(),
-		Ticker:                   sp.Ticker(),
-		StakeKey:                 sp.StakeKeys()[0],
-		StakeAddr:                sp.MainStakeAddress(),
-		AdaDeclared:              uint32(sp.AdaDeclared()),
-		AdaDelegated:             uint32(sp.AdaDelegated()),
-		EpochGranted:             uint32(sp.EpochGranted()),
-		PoolIdHex:                sp.PoolIdHex(),
-		PoolIdBech32:             sp.PoolIdBech32(),
-		DelegatedPool:            sp.DelegatedPool(),
-		StartingEpoch:            uint32(sp.StartingEpochOnMainQueue()),
-		StartingTime:             sp.StartingTimeOnMainQueue().Format(time.RFC850),
-		MainQCurrPos:             uint32(sp.MainQueueCurrentPosision()),
-		EpochGrantedOnAddonQueue: uint32(sp.EpochGrantedOnAddonQueue()),
-	}
 }
 
 func (a *mainQueueServiceServer) Records(ctx context.Context, _ *emptypb.Empty) (*Members, error) {

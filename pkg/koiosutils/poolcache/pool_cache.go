@@ -50,18 +50,27 @@ type (
 		Ticker() string
 		IdBech32() string
 		IdHex() string
+		ActiveStake() uint32
+		LiveStake() uint32
+		LiveDelegators() uint32
 	}
 )
 
 type poolInfo struct {
-	ticker string
-	bech32 string
-	hex    string
+	ticker         string
+	bech32         string
+	hex            string
+	activeStake    uint32
+	liveStake      uint32
+	liveDelegators uint32
 }
 
-func (pi *poolInfo) Ticker() string   { return pi.ticker }
-func (pi *poolInfo) IdBech32() string { return pi.bech32 }
-func (pi *poolInfo) IdHex() string    { return pi.hex }
+func (pi *poolInfo) Ticker() string         { return pi.ticker }
+func (pi *poolInfo) IdBech32() string       { return pi.bech32 }
+func (pi *poolInfo) IdHex() string          { return pi.hex }
+func (pi *poolInfo) ActiveStake() uint32    { return pi.activeStake }
+func (pi *poolInfo) LiveStake() uint32      { return pi.liveStake }
+func (pi *poolInfo) LiveDelegators() uint32 { return pi.liveDelegators }
 
 type poolCache struct {
 	logging.Logger
@@ -206,11 +215,13 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 				}
 				for t, p := range t2p {
 					c.V(4).Info("GetTickerToPoolIdMapFor: Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
-					c.infoCh <- &poolInfo{
+					pi := &poolInfo{
 						ticker: t,
 						bech32: p,
 						hex:    utils.Bech32ToHexOrDie(p),
 					}
+					c.infoCh <- pi
+					c.workersCh <- pi
 				}
 				return nil
 			}, &tickers)
@@ -229,20 +240,23 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 				}
 				// do a GetPoolInfos ....
 				c.V(3).Info("GetPoolsInfos: Processing t2p", "len", len(t2p), "poolids len", len(pids_l))
-				p2t, err := c.kc.GetPoolsInfos(pids_l...)
+				p2i, err := c.kc.GetPoolsInfos(pids_l...)
 				if err != nil {
 					return err
 				}
-				c.V(3).Info("GetPoolsInfos: Got p2t", "len", len(p2t), "poolids len", len(pids_l))
-				for p, t := range p2t {
-					c.V(4).Info("GetPoolsInfos (p2t): Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
+				c.V(3).Info("GetPoolsInfos: Got p2i", "len", len(p2i), "poolids len", len(pids_l))
+				for p, i := range p2i {
+					c.V(4).Info("GetPoolsInfos (p2i): Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
 					c.infoCh <- &poolInfo{
-						ticker: t,
-						bech32: p,
-						hex:    utils.Bech32ToHexOrDie(p),
+						ticker:         i.Ticker,
+						bech32:         p,
+						hex:            utils.Bech32ToHexOrDie(p),
+						activeStake:    i.ActiveStake,
+						liveStake:      i.LiveStake,
+						liveDelegators: i.LiveDelegators,
 					}
-					c.missingCh <- string(append([]rune{'-'}, []rune(t)...))
-					delete(t2p, t)
+					c.missingCh <- string(append([]rune{'-'}, []rune(i.Ticker)...))
+					delete(t2p, i.Ticker)
 				}
 				if len(t2p) > 0 {
 					for t, p := range t2p {

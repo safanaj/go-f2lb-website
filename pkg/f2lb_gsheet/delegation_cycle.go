@@ -11,17 +11,20 @@ import (
 const delegationCycleSheet = "Delegation Cycle"
 
 // the first row is the header
-const delegationCycleRange = "A2:E"
+const delegationCycleRange = "A2:G"
 
 type DelegationCycle struct {
 	epoch              uint32
 	topTicker          string
 	topRemainingEpochs uint32
+	activeTicker       string
 }
 
 func (m *DelegationCycle) GetRange() string {
 	return fmt.Sprintf("%s!%s", delegationCycleSheet, delegationCycleRange)
 }
+
+func (m *DelegationCycle) GetActiveTicker() string { return m.activeTicker }
 
 func (m *DelegationCycle) Refresh(vr *ValueRange) {
 	if vr == nil || len(vr.Values) < 2 {
@@ -32,6 +35,7 @@ func (m *DelegationCycle) Refresh(vr *ValueRange) {
 	epochVal, _ := strconv.ParseUint(first[0].(string), 10, 32)
 	m.epoch = uint32(epochVal)
 	m.topTicker = first[4].(string)
+	m.activeTicker = first[6].(string)
 	remaining := uint32(1)
 	for _, v := range vr.Values[1:] {
 		if m.topTicker != v[4].(string) {

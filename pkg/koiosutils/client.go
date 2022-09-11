@@ -83,12 +83,20 @@ func (kc *KoiosClient) GetTickerToPoolIdMapFor(tickers ...string) (map[string]st
 	return r, err, m
 }
 
-func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]string, error) {
+type PoolInfo struct {
+	Bech32         string
+	Ticker         string
+	ActiveStake    uint32
+	LiveStake      uint32
+	LiveDelegators uint32
+}
+
+func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolInfo, error) {
 	if len(bech32PoolIds) == 0 {
 		return nil, nil
 	}
 	var err error
-	res := make(map[string]string)
+	res := make(map[string]*PoolInfo)
 	pids := make([]koios.PoolID, 0, len(bech32PoolIds))
 	for _, pid := range bech32PoolIds {
 		pids = append(pids, koios.PoolID(pid))
@@ -97,7 +105,7 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]string
 	page := uint(1)
 	opts_ := kc.k.NewRequestOptions()
 
-	opts_.QuerySet("select", "pool_id_bech32,meta_json")
+	opts_.QuerySet("select", "pool_id_bech32,meta_json,active_stake,live_stake,live_delegators")
 
 	for {
 		opts, _ := opts_.Clone()
@@ -112,7 +120,15 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]string
 			if p.ID == "" || p.MetaJSON.Ticker == nil || (p.MetaJSON.Ticker != nil && *p.MetaJSON.Ticker == "") {
 				continue
 			}
-			res[string(p.ID)] = *p.MetaJSON.Ticker
+			pi := &PoolInfo{
+				Bech32:         string(p.ID),
+				Ticker:         *p.MetaJSON.Ticker,
+				ActiveStake:    uint32(p.ActiveStake.Shift(-6).IntPart()),
+				LiveStake:      uint32(p.LiveStake.Shift(-6).IntPart()),
+				LiveDelegators: uint32(p.LiveDelegators),
+			}
+
+			res[string(p.ID)] = pi
 		}
 
 		if IsResponseComplete(pools.Response) {

@@ -42,6 +42,7 @@ func main() {
 	mainQueueServiceServer := pb.NewMainQueueServiceServer(f2lbCtrl.GetMainQueue(), f2lbCtrl.GetStakePoolSet())
 	addonQueueServiceServer := pb.NewAddonQueueServiceServer(f2lbCtrl.GetAddonQueue(), f2lbCtrl.GetStakePoolSet())
 	supportersServiceServer := pb.NewSupporterServiceServer(f2lbCtrl.GetSupporters())
+	memberServiceServer := pb.NewMemberServiceServer(f2lbCtrl.GetDelegationCycle(), f2lbCtrl.GetStakePoolSet())
 
 	controlServiceServer.(pb.ControlServiceRefresher).SetRefresherChannel(make(chan string))
 	f2lbCtrl.SetRefresherChannel(controlServiceServer.(pb.ControlServiceRefresher).GetRefresherChannel())
@@ -63,6 +64,7 @@ func main() {
 	pb.RegisterAddonQueueServiceServer(webSrv.GetGrpcServer(), addonQueueServiceServer)
 	pb.RegisterMainQueueServiceServer(webSrv.GetGrpcServer(), mainQueueServiceServer)
 	pb.RegisterSupporterServiceServer(webSrv.GetGrpcServer(), supportersServiceServer)
+	pb.RegisterMemberServiceServer(webSrv.GetGrpcServer(), memberServiceServer)
 
 	pages, paths := webserver.GetPagesAndPaths()
 	for i, _ := range pages {

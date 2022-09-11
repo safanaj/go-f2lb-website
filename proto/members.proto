@@ -8,6 +8,7 @@ option go_package = "go-f2lb/pb";
 
 service MemberService {
   rpc List(google.protobuf.Empty) returns (Members) {}
+  rpc Active(google.protobuf.Empty) returns (Member) {}
 }
 
 message Members {
@@ -29,4 +30,7 @@ message Member {
   uint32 startingEpoch = 12;
   string startingTime = 13;
   uint32 epochGrantedOnAddonQueue = 14;
+  uint32 activeStake = 15;
+  uint32 liveStake = 16;
+  uint32 liveDelegators = 17;
 }

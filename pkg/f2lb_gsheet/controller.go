@@ -57,6 +57,8 @@ type Controller interface {
 	GetSupporters() *Supporters
 	GetSupportersRecords() []*Supporter
 
+	GetDelegationCycle() *DelegationCycle
+
 	SetRefresherChannel(chan<- string) error
 	SetRefresherInterval(time.Duration) error
 	GetLastRefreshTime() time.Time
@@ -231,6 +233,14 @@ func (c *controller) getTopOfDelegCycle(delegCycleValuesN int) (int, error) {
 	return idx, err
 }
 
+func getOnlyTickers(rows [][]any) []string {
+	tickers := []string{}
+	for _, v := range rows {
+		tickers = append(tickers, v[2].(string))
+	}
+	return tickers
+}
+
 func (c *controller) Refresh() error {
 	var wg sync.WaitGroup
 	// var t2p map[string]string
@@ -269,6 +279,7 @@ func (c *controller) Refresh() error {
 		return err
 	}
 
+	oldTickersValues := res[mainQueueVRI].Values[:mainQueueTopIdx]
 	res[mainQueueVRI].Values = res[mainQueueVRI].Values[mainQueueTopIdx:]
 	res[addonQueueVRI].Values = res[addonQueueVRI].Values[addonQueueTopIdx:]
 
@@ -280,8 +291,25 @@ func (c *controller) Refresh() error {
 
 	c.V(2).Info("Controller refresh got data from spreadsheet", "in", time.Since(startRefreshAt).String())
 
+	// put old tickers in the cache
+	var oldTickers []string
+	{
+		c.V(2).Info("Adding old tickers", "len", len(oldTickersValues))
+		oldTickers := utils.UniquifyStrings(getOnlyTickers(oldTickersValues))
+		c.poolCache.AddMany(oldTickers)
+	}
+
 	var koiosErr error
 	wg.Add(4)
+	// wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.delegCycle.Refresh(res[delegCycleVRI])
+		c.V(2).Info("Controller refresh filled delegation cycle", "in", time.Since(startRefreshAt).String())
+		c.poolCache.Add(c.delegCycle.activeTicker)
+	}()
+
+	// wg.Add(1)
 	go func() {
 		defer wg.Done()
 		c.mainQueue.Refresh(c.f2lb, res[mainQueueVRI])
@@ -397,13 +425,6 @@ func (c *controller) Refresh() error {
 		c.V(2).Info("Controller refresh filled supporters", "in", time.Since(startRefreshAt).String())
 	}()
 
-	// wg.Add(1)
-	go func() {
-		defer wg.Done()
-		c.delegCycle.Refresh(res[delegCycleVRI])
-		c.V(2).Info("Controller refresh filled delegation cycle", "in", time.Since(startRefreshAt).String())
-	}()
-
 	wg.Wait()
 	if koiosErr != nil {
 		return koiosErr
@@ -475,6 +496,30 @@ func (c *controller) Refresh() error {
 			}
 		}
 
+		// add also old tickers
+		for _, t := range oldTickers {
+			sp := c.stakePoolSet.Get(t)
+			if sp == nil {
+				// this is missing from mainQ, lets add it
+				vals := f2lb_members.FromMainQueueValues{
+					Ticker: t,
+				}
+				c.stakePoolSet.SetWithValuesFromMainQueue(vals)
+			}
+		}
+
+		// add active ticker
+		{
+			sp := c.stakePoolSet.Get(c.delegCycle.activeTicker)
+			if sp == nil {
+				// this is missing from mainQ, lets add it
+				vals := f2lb_members.FromMainQueueValues{
+					Ticker: c.delegCycle.activeTicker,
+				}
+				c.stakePoolSet.SetWithValuesFromMainQueue(vals)
+			}
+		}
+
 		c.V(2).Info("Controller refresh stake pool set filled", "in", time.Since(startRefreshAt).String())
 	}
 
@@ -500,6 +545,8 @@ func (c *controller) GetAddonQueueServed() *AddonQueueRec    { return c.addonQue
 
 func (c *controller) GetSupporters() *Supporters         { return c.supporters }
 func (c *controller) GetSupportersRecords() []*Supporter { return c.supporters.GetRecords() }
+
+func (c *controller) GetDelegationCycle() *DelegationCycle { return c.delegCycle }
 
 func (c *controller) GetStakePoolSet() f2lb_members.StakePoolSet { return c.stakePoolSet }
 func (c *controller) GetAccountCache() accountcache.AccountCache { return c.accountCache }
@@ -560,14 +607,14 @@ func (c *controller) getPoolInfos(tickers []string) {
 	for _, t := range tickers {
 		r := c.mainQueue.GetByTicker(t)
 		if pBech32, ok := t2p[r.Ticker]; ok {
-			if pBech32 != r.PoolIdBech32 {
+			if pBech32 != r.PoolIdBech32 && pBech32 != "" {
 				r.PoolIdBech32 = pBech32
 				r.PoolIdHex = utils.Bech32ToHexOrDie(pBech32)
 			}
 		} else {
 			if r.PoolIdHex != "" {
 				r.PoolIdBech32 = utils.HexToBech32OrDie("pool", r.PoolIdHex)
-			} else if r.PoolIdBech32 != "" {
+			} else if r.PoolIdBech32 != "" && pBech32 != "" {
 				r.PoolIdHex = utils.Bech32ToHexOrDie(pBech32)
 			}
 		}

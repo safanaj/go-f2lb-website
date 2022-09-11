@@ -4,7 +4,7 @@
 
 <script>
   import {User} from '$lib/pb/control_pb';
-  import { mainQueueMembers, addonQueueMembers, serviceClients, epochData, cardanoWallet} from '$lib/stores'
+  import { mainQueueMembers, addonQueueMembers, serviceClients, epochData, cardanoWallet, activePool} from '$lib/stores'
   import Member from '$lib/Member.svelte'
   // import { doCallInPromise } from '$lib/utils'
   import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
@@ -18,9 +18,14 @@
 <section class="section">
   <div class="columns m-0 has-text-centered">
     <div class="column">
-      <h1>Welcome to F2LB (unofficial) Website</h1>
-      <p>Visit <a href="https://www.f2lb.org/">F2LB</a> to read about the project and the community</p>
-      <p>Visit also <a href="https://f2lb.info/">F2LB.info</a></p>
+      <h1 class="block">Welcome to F2LB (unofficial) Website</h1>
+      <p class="block">Visit <a href="https://www.f2lb.org/">F2LB</a> to read about the project and the community</p>
+      <p class="block">Visit also <a href="https://f2lb.info/">F2LB.info</a></p>
+      {#if $activePool !== null}
+      <div class="box themed">
+        The F2LB community stake was delegated to the pool {$activePool.ticker} that now has {$activePool.activestake} ADA of active stake
+      </div>
+      {/if}
       {#if user !== undefined}
       <br />
       <div class="box box-out box-user">

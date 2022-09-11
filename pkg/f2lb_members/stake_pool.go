@@ -85,6 +85,10 @@ type (
 
 		PoolIdBech32() string
 		PoolIdHex() string
+
+		ActiveStake() uint32
+		LiveStake() uint32
+		LiveDelegators() uint32
 	}
 
 	stakePoolSet struct {
@@ -398,4 +402,23 @@ func (sp *stakePool) PoolIdHex() string {
 		return pi.IdHex()
 	}
 	return ""
+}
+
+func (sp *stakePool) ActiveStake() uint32 {
+	if pi, ok := sp.pc.Get(sp.Ticker()); ok {
+		return pi.ActiveStake()
+	}
+	return 0
+}
+func (sp *stakePool) LiveStake() uint32 {
+	if pi, ok := sp.pc.Get(sp.Ticker()); ok {
+		return pi.LiveStake()
+	}
+	return 0
+}
+func (sp *stakePool) LiveDelegators() uint32 {
+	if pi, ok := sp.pc.Get(sp.Ticker()); ok {
+		return pi.LiveDelegators()
+	}
+	return 0
 }
