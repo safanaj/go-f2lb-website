@@ -25,6 +25,7 @@ var (
 	defaultRefreshInterval = time.Duration(1 * time.Hour)
 	IsRunningErr           = fmt.Errorf("Controller is running")
 
+	cachesStoreDirPath = ""
 	// account cache flags
 	acWorkers          = 30
 	acCacheSyncers     = 5
@@ -107,10 +108,10 @@ func NewController(ctx context.Context, logger logging.Logger) Controller {
 	kc := koiosutils.New(cctx)
 	ac := accountcache.New(kc, uint32(acWorkers), uint32(acCacheSyncers), uint32(acTxGetters),
 		acRefreshInterval, acTxGetterInterval, uint32(acTxsToGet),
-		logger.WithName("accountcache"))
+		logger.WithName("accountcache"), cachesStoreDirPath)
 	pc := poolcache.New(kc, uint32(pcWorkers), uint32(pcCacheSyncers),
 		pcRefreshInterval, pcWorkersInterval, uint32(pcPoolInfosToGet),
-		logger.WithName("poolcache"))
+		logger.WithName("poolcache"), cachesStoreDirPath)
 	return &controller{
 		Logger:          logger,
 		ctx:             ctx,

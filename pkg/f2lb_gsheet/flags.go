@@ -8,6 +8,8 @@ func AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&serviceAccountCredsJSONFileName, "service-account-credentials", serviceAccountCredsJSONFileName, "")
 
 	fs.DurationVar(&defaultRefreshInterval, "controller-refresh-interval", defaultRefreshInterval, "")
+
+	fs.StringVar(&cachesStoreDirPath, "caches-store-path", cachesStoreDirPath, "Directory where to store koios caches")
 	acFlagSet := flag.NewFlagSet("account cache", flag.ExitOnError)
 	acFlagSet.DurationVar(&acRefreshInterval, "account-refresh-interval", acRefreshInterval, "")
 	acFlagSet.DurationVar(&acTxGetterInterval, "account-tx-getter-interval", acTxGetterInterval, "")

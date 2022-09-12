@@ -1,8 +1,14 @@
 package poolcache
 
 import (
+	"bytes"
 	"context"
+	"encoding"
+	"encoding/gob"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -65,12 +71,29 @@ type poolInfo struct {
 	liveDelegators uint32
 }
 
+var (
+	_ encoding.BinaryMarshaler   = (*poolInfo)(nil)
+	_ encoding.BinaryUnmarshaler = (*poolInfo)(nil)
+)
+
 func (pi *poolInfo) Ticker() string         { return pi.ticker }
 func (pi *poolInfo) IdBech32() string       { return pi.bech32 }
 func (pi *poolInfo) IdHex() string          { return pi.hex }
 func (pi *poolInfo) ActiveStake() uint32    { return pi.activeStake }
 func (pi *poolInfo) LiveStake() uint32      { return pi.liveStake }
 func (pi *poolInfo) LiveDelegators() uint32 { return pi.liveDelegators }
+
+func (pi *poolInfo) MarshalBinary() (data []byte, err error) {
+	var buf bytes.Buffer
+	_, err = fmt.Fprintln(&buf, pi.ticker, pi.bech32, pi.hex, pi.activeStake, pi.liveStake, pi.liveDelegators)
+	return buf.Bytes(), err
+}
+
+func (pi *poolInfo) UnmarshalBinary(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := fmt.Fscanln(buf, &pi.ticker, &pi.bech32, &pi.hex, &pi.activeStake, &pi.liveStake, &pi.liveDelegators)
+	return err
+}
 
 type poolCache struct {
 	logging.Logger
@@ -85,6 +108,8 @@ type poolCache struct {
 	cache      *sync.Map
 	// keys are bech32 ids
 	cache2 *sync.Map
+
+	cachesStoreDir string
 
 	kc *ku.KoiosClient
 
@@ -111,7 +136,11 @@ type poolCache struct {
 	missingTickersFromList map[string]any
 }
 
-var _ PoolCache = (*poolCache)(nil)
+var (
+	_ PoolCache      = (*poolCache)(nil)
+	_ gob.GobEncoder = (*poolCache)(nil)
+	_ gob.GobDecoder = (*poolCache)(nil)
+)
 
 func (pc *poolCache) cacheSyncer() {
 	maybeNotifyWaiter := func(pc *poolCache) {
@@ -158,6 +187,64 @@ func (pc *poolCache) cacheSyncer() {
 			maybeNotifyWaiter(pc)
 		}
 	}
+}
+
+func (c *poolCache) GobEncode() ([]byte, error) {
+	if c.running {
+		return nil, fmt.Errorf("Impossible GOB encode a running pool cache")
+	}
+	if c.cache == nil {
+		return nil, fmt.Errorf("Impossible GOB encode an uninitialized pool cache")
+	}
+	var buf bytes.Buffer
+	var err error
+	c.cache.Range(func(k, v any) bool {
+		if dat, e := v.(encoding.BinaryMarshaler).MarshalBinary(); e != nil {
+			err = e
+			return false
+		} else {
+			if _, e := buf.Write(dat); e != nil {
+				err = e
+				return false
+			}
+			return true
+		}
+	})
+	return buf.Bytes(), err
+}
+
+func (c *poolCache) GobDecode(dat []byte) error {
+	if c.running {
+		return fmt.Errorf("Impossible GOB decode a running pool cache")
+	}
+	if c.cache == nil {
+		return fmt.Errorf("Impossible GOB decode an uninitialized pool cache")
+	}
+	buf := bytes.NewBuffer(dat)
+	nitems := 0
+	defer func() {
+		atomic.AddUint32(&c.addeditems, uint32(nitems))
+		atomic.AddUint32(&c.nitems, uint32(nitems))
+	}()
+	for {
+		if elt, err := buf.ReadBytes(byte('\n')); err == nil || err == io.EOF {
+			pi := &poolInfo{}
+			if err := pi.UnmarshalBinary(elt); err != nil {
+				return err
+			}
+			c.cache.Store(pi.ticker, pi)
+			nitems++
+			if pi.bech32 != "" {
+				c.cache2.Store(pi.bech32, pi)
+			}
+			if err == io.EOF {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
@@ -479,6 +566,87 @@ func (pc *poolCache) Refresh() {
 	})
 }
 
+func (c *poolCache) maybeLoadFromDisk() {
+	if c.running || c.cache == nil || c.cachesStoreDir == "" {
+		return
+	}
+
+	fi, err := os.Stat(c.cachesStoreDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(c.cachesStoreDir, 0700); err != nil {
+				return
+			}
+		} else {
+			return
+		}
+	} else {
+		if !(fi.Mode().IsDir() && ((fi.Mode().Perm() & 0700) == 0700)) {
+			return
+		}
+	}
+
+	fn := filepath.Join(c.cachesStoreDir, "poolcache.gob")
+	fi, err = os.Stat(fn)
+	if err != nil {
+		c.Error(err, "file stat failed")
+		return
+	}
+	if !(fi.Mode().IsRegular() && ((fi.Mode().Perm() & 0600) == 0600)) {
+		return
+	}
+
+	if f, err := os.OpenFile(fn, os.O_RDONLY, 0400); err != nil {
+		c.Error(err, "OpenFile failed")
+		return
+	} else {
+		if err := gob.NewDecoder(f).Decode(c); err != nil && err != io.EOF {
+			c.Error(err, "Gob decode failed")
+		}
+		f.Close()
+	}
+	return
+}
+
+func (c *poolCache) maybeStoreToDisk() {
+	if c.running || c.cache == nil || c.cachesStoreDir == "" {
+		return
+	}
+	if c.Len() == 0 {
+		return
+	}
+
+	fi, err := os.Stat(c.cachesStoreDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(c.cachesStoreDir, 0700); err != nil {
+				c.Error(err, "creating dir failed")
+				return
+			}
+		} else {
+			c.Error(err, "getting dir stat")
+			return
+		}
+	} else {
+		if !(fi.Mode().IsDir() && ((fi.Mode().Perm() & 0700) == 0700)) {
+			c.Error(err, "is not a dir or bad perm")
+			return
+		}
+	}
+
+	fn := filepath.Join(c.cachesStoreDir, "poolcache.gob")
+	if f, err := os.OpenFile(fn, os.O_WRONLY|os.O_CREATE, 0600); err != nil {
+		c.Error(err, "opening/creating file failed")
+		return
+	} else {
+		if err := gob.NewEncoder(f).Encode(c); err != nil {
+			c.Error(err, "Gob encode failed")
+		}
+		f.Close()
+	}
+	return
+}
+
 func (pc *poolCache) Start() {
 	if pc.running {
 		return
@@ -551,6 +719,8 @@ func (pc *poolCache) Stop() {
 	pc.cacheSyncerWg.Wait()
 	pc.V(2).Info("PoolCache cache syncer stopped")
 	pc.V(2).Info("PoolCache stopped")
+
+	pc.maybeStoreToDisk()
 }
 
 func (pc *poolCache) WithOptions(
@@ -591,6 +761,8 @@ func (pc *poolCache) WithOptions(
 	}
 
 	newPoolCache.Logger = pc.Logger
+	newPoolCache.cachesStoreDir = pc.cachesStoreDir
+	newPoolCache.maybeLoadFromDisk()
 	return newPoolCache, nil
 }
 
@@ -602,7 +774,9 @@ func New(
 	workersInterval time.Duration,
 	poolInfosToGet uint32,
 	logger logging.Logger,
+	cachesStoreDir string,
 ) PoolCache {
-	pc, _ := (&poolCache{Logger: logger}).WithOptions(kc, workers, cacheSyncers, refreshInterval, workersInterval, poolInfosToGet)
+	pc, _ := (&poolCache{Logger: logger, cachesStoreDir: cachesStoreDir}).WithOptions(
+		kc, workers, cacheSyncers, refreshInterval, workersInterval, poolInfosToGet)
 	return pc
 }

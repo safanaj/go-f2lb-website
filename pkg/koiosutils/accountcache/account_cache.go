@@ -1,8 +1,14 @@
 package accountcache
 
 import (
+	"bytes"
 	"context"
+	"encoding"
+	"encoding/gob"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -69,10 +75,27 @@ type accountInfo struct {
 	lastDelegationTime    time.Time
 }
 
+var (
+	_ encoding.BinaryMarshaler   = (*accountInfo)(nil)
+	_ encoding.BinaryUnmarshaler = (*accountInfo)(nil)
+)
+
 func (ai *accountInfo) StakeAddress() string          { return ai.stakeAddress }
 func (ai *accountInfo) DelegatedPool() string         { return ai.delegatedPoolIdBech32 }
 func (ai *accountInfo) AdaAmount() uint64             { return ai.adaAmount }
 func (ai *accountInfo) LastDelegationTime() time.Time { return ai.lastDelegationTime }
+
+func (ai *accountInfo) MarshalBinary() (data []byte, err error) {
+	var buf bytes.Buffer
+	fmt.Fprintln(&buf, ai.stakeAddress, ai.delegatedPoolIdBech32, ai.adaAmount)
+	return buf.Bytes(), nil
+}
+
+func (ai *accountInfo) UnmarshalBinary(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	_, err := fmt.Fscanln(buf, &ai.stakeAddress, &ai.delegatedPoolIdBech32, &ai.adaAmount)
+	return err
+}
 
 type accountCache struct {
 	logging.Logger
@@ -85,6 +108,8 @@ type accountCache struct {
 	addeditems uint32
 	nitems     uint32
 	cache      *sync.Map
+
+	cachesStoreDir string
 
 	kc *ku.KoiosClient
 
@@ -109,7 +134,11 @@ type accountCache struct {
 	readyWaiterCh chan any
 }
 
-var _ AccountCache = (*accountCache)(nil)
+var (
+	_ AccountCache   = (*accountCache)(nil)
+	_ gob.GobEncoder = (*accountCache)(nil)
+	_ gob.GobDecoder = (*accountCache)(nil)
+)
 
 func (ac *accountCache) cacheSyncer() {
 	maybeNotifyWaiter := func(ac *accountCache) {
@@ -148,6 +177,61 @@ func (ac *accountCache) cacheSyncer() {
 			maybeNotifyWaiter(ac)
 		}
 	}
+}
+
+func (c *accountCache) GobEncode() ([]byte, error) {
+	if c.running {
+		return nil, fmt.Errorf("Impossible GOB encode a running account cache")
+	}
+	if c.cache == nil {
+		return nil, fmt.Errorf("Impossible GOB encode an uninitialized account cache")
+	}
+	var buf bytes.Buffer
+	var err error
+	c.cache.Range(func(k, v any) bool {
+		if dat, e := v.(encoding.BinaryMarshaler).MarshalBinary(); e != nil {
+			err = e
+			return false
+		} else {
+			if _, e := buf.Write(dat); e != nil {
+				err = e
+				return false
+			}
+			return true
+		}
+	})
+	return buf.Bytes(), err
+}
+
+func (c *accountCache) GobDecode(dat []byte) error {
+	if c.running {
+		return fmt.Errorf("Impossible GOB decode a running account cache")
+	}
+	if c.cache == nil {
+		return fmt.Errorf("Impossible GOB decode an uninitialized account cache")
+	}
+	buf := bytes.NewBuffer(dat)
+	nitems := 0
+	defer func() {
+		atomic.AddUint32(&c.addeditems, uint32(nitems))
+		atomic.AddUint32(&c.nitems, uint32(nitems))
+	}()
+	for {
+		if elt, err := buf.ReadBytes(byte('\n')); err == nil || err == io.EOF {
+			ai := &accountInfo{}
+			if err := ai.UnmarshalBinary(elt); err != nil {
+				return err
+			}
+			c.cache.Store(ai.stakeAddress, ai)
+			nitems++
+			if err == io.EOF {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
 func (ac *accountCache) lastDelegOrAccountInfoGetter() {
@@ -372,6 +456,83 @@ func (ac *accountCache) Refresh() {
 	})
 }
 
+func (c *accountCache) maybeLoadFromDisk() {
+	if c.running || c.cache == nil || c.cachesStoreDir == "" {
+		return
+	}
+	fi, err := os.Stat(c.cachesStoreDir)
+	if err != nil {
+		return
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(c.cachesStoreDir, 0700); err != nil {
+				return
+			}
+		} else {
+			return
+		}
+	} else {
+		if !(fi.Mode().IsDir() && ((fi.Mode().Perm() & 0700) == 0700)) {
+			return
+		}
+	}
+
+	fn := filepath.Join(c.cachesStoreDir, "accountcache.gob")
+	fi, err = os.Stat(fn)
+	if err != nil {
+		c.Error(err, "file stat failed")
+		return
+	}
+	if !(fi.Mode().IsRegular() && ((fi.Mode().Perm() & 0600) == 0600)) {
+		return
+	}
+
+	if f, err := os.OpenFile(fn, os.O_RDONLY, 0400); err != nil {
+		c.Error(err, "OpenFile failed")
+		return
+	} else {
+		if err := gob.NewDecoder(f).Decode(c); err != nil && err != io.EOF {
+			c.Error(err, "Gob decode failed")
+		}
+		f.Close()
+	}
+	return
+}
+
+func (c *accountCache) maybeStoreToDisk() {
+	if c.running || c.cache == nil || c.cachesStoreDir == "" {
+		return
+	}
+	if c.Len() == 0 {
+		return
+	}
+
+	fi, err := os.Stat(c.cachesStoreDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(c.cachesStoreDir, 0700); err != nil {
+				return
+			}
+		} else {
+			return
+		}
+	} else {
+		if !(fi.Mode().IsDir() && ((fi.Mode().Perm() & 0700) == 0700)) {
+			return
+		}
+	}
+
+	fn := filepath.Join(c.cachesStoreDir, "accountcache.gob")
+	if f, err := os.OpenFile(fn, os.O_WRONLY|os.O_CREATE, 0600); err != nil {
+		return
+	} else {
+		if err := gob.NewEncoder(f).Encode(c); err != nil {
+			c.Error(err, "Gob encode failed")
+		}
+		f.Close()
+	}
+	return
+}
+
 func (ac *accountCache) Start() {
 	if ac.running {
 		return
@@ -448,6 +609,8 @@ func (ac *accountCache) Stop() {
 	ac.cacheSyncerWg.Wait()
 	ac.V(2).Info("AccountCache cacheSyncer stopped")
 	ac.V(2).Info("AccountCache stopped")
+
+	ac.maybeStoreToDisk()
 }
 
 func (ac *accountCache) WithOptions(
@@ -477,6 +640,8 @@ func (ac *accountCache) WithOptions(
 		newAccountCache.cache = ac.cache
 	}
 	newAccountCache.Logger = ac.Logger
+	newAccountCache.cachesStoreDir = ac.cachesStoreDir
+	newAccountCache.maybeLoadFromDisk()
 	return newAccountCache, nil
 }
 
@@ -489,8 +654,9 @@ func New(
 	timeTxGetterInterval time.Duration,
 	timeTxsToGet uint32,
 	logger logging.Logger,
+	cachesStoreDir string,
 ) AccountCache {
-	ac, _ := (&accountCache{Logger: logger}).WithOptions(
+	ac, _ := (&accountCache{Logger: logger, cachesStoreDir: cachesStoreDir}).WithOptions(
 		kc, workers, cacheSyncers, timeTxGetters, refreshInterval, timeTxGetterInterval, timeTxsToGet)
 	return ac
 }
