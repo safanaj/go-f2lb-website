@@ -7,6 +7,7 @@ import (
 	flag "github.com/spf13/pflag"
 	// "net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
@@ -18,12 +19,14 @@ import (
 
 var progname, version string
 var listenAddr string = ":8080"
+var adminPoolsStr string = "BRNS,STPZ1"
 
 //go:embed all:webui/build
 var rootFS embed.FS
 
 func main() {
 	showVersion := flag.Bool("version", false, "show version and exit")
+	flag.StringVar(&adminPoolsStr, "admin-pools", adminPoolsStr, "Comma separated pools with admin permission")
 	f2lb_gsheet.AddFlags(flag.CommandLine)
 	logging.AddFlags(flag.CommandLine)
 	flag.StringVar(&listenAddr, "listen", listenAddr, "IP:PORT or :PORT to listen on all interfaces")
@@ -38,7 +41,7 @@ func main() {
 	webCtx := utils.SetupShutdownSignals(mainCtx)
 	f2lbCtrl := f2lb_gsheet.NewController(mainCtx, log.WithName("f2lbController"))
 
-	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl)
+	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl, strings.Split(adminPoolsStr, ","))
 	mainQueueServiceServer := pb.NewMainQueueServiceServer(f2lbCtrl.GetMainQueue(), f2lbCtrl.GetStakePoolSet())
 	addonQueueServiceServer := pb.NewAddonQueueServiceServer(f2lbCtrl.GetAddonQueue(), f2lbCtrl.GetStakePoolSet())
 	supportersServiceServer := pb.NewSupporterServiceServer(f2lbCtrl.GetSupporters())

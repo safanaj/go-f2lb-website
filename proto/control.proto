@@ -38,6 +38,7 @@ message User {
   string stakeAddress = 3;
   Member member = 4;
   Supporter supporter = 5;
+  bool isAdmin = 6;
 }
 
 message StakeAddr {

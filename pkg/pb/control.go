@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -25,13 +26,19 @@ type controlServiceServer struct {
 	ctrl        f2lb_gsheet.Controller
 	refreshCh   chan string
 	uuid2stream map[string]ControlMsgService_ControlServer
+
+	adminPools map[string]any
 }
 
 var _ ControlMsgServiceServer = &controlServiceServer{}
 var _ ControlServiceRefresher = &controlServiceServer{}
 
-func NewControlServiceServer(c f2lb_gsheet.Controller) ControlMsgServiceServer {
-	return &controlServiceServer{ctrl: c}
+func NewControlServiceServer(c f2lb_gsheet.Controller, adminPools []string) ControlMsgServiceServer {
+	cs := &controlServiceServer{ctrl: c, adminPools: make(map[string]any)}
+	for _, p := range adminPools {
+		cs.adminPools[strings.TrimSpace(p)] = struct{}{}
+	}
+	return cs
 }
 
 func (c *controlServiceServer) SetRefresherChannel(ch chan string) {
@@ -127,12 +134,15 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 	}
 
 	if sp := s.ctrl.GetStakePoolSet().Get(saddr_); sp != nil && sp.Ticker() != "" {
+		// check admin permission
+		_, isAdmin := s.adminPools[sp.Ticker()]
 		// found just return this
 		return &User{
 			Type:         User_SPO,
 			StakeKey:     sp.StakeKeys()[0],
 			StakeAddress: sp.MainStakeAddress(),
 			Member:       newMemeberFromStakePool(sp),
+			IsAdmin:      isAdmin,
 		}, nil
 	}
 	supporter := (*f2lb_gsheet.Supporter)(nil)

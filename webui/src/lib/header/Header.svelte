@@ -11,8 +11,7 @@
   import FaAngry from 'svelte-icons/fa/FaAngry.svelte'
 
   const isAdmin = () => {
-      let t = (($cardanoWallet.user||{}).member||{}).ticker
-      return ['BRNS', 'STPZ1'].indexOf(t) > -1
+      return ($cardanoWallet.user||{}).isadmin
   }
 
   const doRefresh = () => {
@@ -60,10 +59,8 @@
         {#key $cardanoWallet.user}
         <li>
           {#if isAdmin()}
-          <button class="button" on:click={doRefresh}>Refresh</button>
-          {:else}
-          <button class="button" disabled>Refresh</button>
-        {/if}
+            <button class="button" on:click={doRefresh}>Refresh</button>
+          {/if}
         </li>
         {/key}
         <li><CardanoConnect doAuthentication={true}
