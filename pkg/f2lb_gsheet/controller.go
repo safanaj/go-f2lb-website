@@ -25,6 +25,8 @@ var (
 	defaultRefreshInterval = time.Duration(1 * time.Hour)
 	IsRunningErr           = fmt.Errorf("Controller is running")
 
+	poolsHintsPath = ""
+
 	cachesStoreDirPath = ""
 	// account cache flags
 	acWorkers          = 30
@@ -292,13 +294,14 @@ func (c *controller) Refresh() error {
 
 	c.V(2).Info("Controller refresh got data from spreadsheet", "in", time.Since(startRefreshAt).String())
 
-	// put old tickers in the cache
-	var oldTickers []string
+	// put old members in the cache, parse them as old main Queue
+	var oldMainQueue *MainQueue
 	{
-		c.V(2).Info("Adding old tickers", "len", len(oldTickersValues))
-		oldTickers := utils.UniquifyStrings(getOnlyTickers(oldTickersValues))
-		c.poolCache.AddMany(oldTickers)
+		oldMainQueue = &MainQueue{}
+		oldMainQueue.Refresh(c.f2lb, &ValueRange{Values: oldTickersValues})
 	}
+
+	hintsMapping := getHintsMapping(poolsHintsPath)
 
 	var koiosErr error
 	wg.Add(4)
@@ -322,12 +325,22 @@ func (c *controller) Refresh() error {
 		)
 		saddrs_m := make(map[string]any)
 		tickers_m := make(map[string]any)
-		for _, r := range c.mainQueue.GetRecords() {
+		for _, r := range append(c.mainQueue.GetRecords(), oldMainQueue.GetRecords()...) {
 			tickers = append(tickers, r.Ticker)
 			tickers_m[r.Ticker] = struct{}{}
 			// should we add all the addresses?
 			saddrs = append(saddrs, r.StakeAddrs[0])
 			saddrs_m[r.StakeAddrs[0]] = struct{}{}
+
+			// try to use hints mapping here as early speculation
+			if r.PoolIdBech32 == "" {
+				if pid, ok := hintsMapping[r.Ticker]; ok {
+					r.PoolIdBech32 = pid
+					if hex, err := utils.Bech32ToHex(r.PoolIdBech32); err != nil {
+						r.PoolIdHex = hex
+					}
+				}
+			}
 		}
 		c.V(2).Info("Controller refresh adding to cache", "stake addresses",
 			len(saddrs), "in", time.Since(startRefreshAt).String())
@@ -463,8 +476,12 @@ func (c *controller) Refresh() error {
 				start += r.EG
 			}
 
-			if r.PoolIdBech32 != "" && c.poolCache.IsTickerMissingFromKoiosPoolList(r.Ticker) {
-				missingFromKoios[r.PoolIdBech32] = r.Ticker
+			if c.poolCache.IsTickerMissingFromKoiosPoolList(r.Ticker) {
+				if r.PoolIdBech32 != "" {
+					missingFromKoios[r.PoolIdBech32] = r.Ticker
+				} else if pid, ok := hintsMapping[r.Ticker]; ok {
+					missingFromKoios[pid] = r.Ticker
+				}
 			}
 		}
 
@@ -494,18 +511,6 @@ func (c *controller) Refresh() error {
 			} else {
 				// this is in mainQ, lets update EG from addonQ
 				sp.SetEpochGrantedOnAddonQueue(r.EG)
-			}
-		}
-
-		// add also old tickers
-		for _, t := range oldTickers {
-			sp := c.stakePoolSet.Get(t)
-			if sp == nil {
-				// this is missing from mainQ, lets add it
-				vals := f2lb_members.FromMainQueueValues{
-					Ticker: t,
-				}
-				c.stakePoolSet.SetWithValuesFromMainQueue(vals)
 			}
 		}
 

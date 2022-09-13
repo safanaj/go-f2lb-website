@@ -14,7 +14,7 @@ func newMemeberFromStakePool(sp f2lb_members.StakePool) *Member {
 	return &Member{
 		DiscordId:                sp.DiscordName(),
 		Ticker:                   sp.Ticker(),
-		StakeKey:                 sp.StakeKeys()[0],
+		StakeKey:                 sp.MainStakeKey(),
 		StakeAddr:                sp.MainStakeAddress(),
 		AdaDeclared:              uint32(sp.AdaDeclared()),
 		AdaDelegated:             uint32(sp.AdaDelegated()),
@@ -46,7 +46,7 @@ func (a *memberServiceServer) Active(context.Context, *emptypb.Empty) (*Member, 
 	if sp := a.sps.Get(a.delegCycle.GetActiveTicker()); sp != nil {
 		return newMemeberFromStakePool(sp), nil
 	}
-	return nil, nil
+	return &Member{}, nil
 }
 
 func (a *memberServiceServer) List(context.Context, *emptypb.Empty) (*Members, error) {

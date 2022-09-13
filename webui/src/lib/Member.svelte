@@ -230,6 +230,10 @@
       Stake address: <span class="icon is-small"><FaCopy /></span> {member.stakeaddr}
     </span>
   </p>
+  <p>active stake: {member.activestake}</p>
+  <p>live stake: {member.livestake}</p>
+  <p>live delegators: {member.livedelegators}</p>
+
   {/if}
 
   {/if}

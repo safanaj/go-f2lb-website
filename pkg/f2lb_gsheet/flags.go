@@ -9,6 +9,8 @@ func AddFlags(fs *flag.FlagSet) {
 
 	fs.DurationVar(&defaultRefreshInterval, "controller-refresh-interval", defaultRefreshInterval, "")
 
+	fs.StringVar(&poolsHintsPath, "pools-hints-path", poolsHintsPath, "CSV file for pools mapping hints")
+
 	fs.StringVar(&cachesStoreDirPath, "caches-store-path", cachesStoreDirPath, "Directory where to store koios caches")
 	acFlagSet := flag.NewFlagSet("account cache", flag.ExitOnError)
 	acFlagSet.DurationVar(&acRefreshInterval, "account-refresh-interval", acRefreshInterval, "")

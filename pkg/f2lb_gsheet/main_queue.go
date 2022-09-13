@@ -168,7 +168,7 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 			mqRec.PoolIdBech32 = mqRec.PoolIdHex
 			mqRec.PoolIdHex = ""
 			if hex, err := utils.Bech32ToHex(mqRec.PoolIdBech32); err != nil {
-				mqRec.PoolIdBech32 = hex
+				mqRec.PoolIdHex = hex
 			}
 		} else {
 			if bech32, err := utils.HexToBech32("pool", mqRec.PoolIdHex); err != nil {

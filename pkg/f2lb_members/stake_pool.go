@@ -79,6 +79,7 @@ type (
 		StartingTimeOnAddonQueue() time.Time
 
 		MainStakeAddress() string
+		MainStakeKey() string
 		DelegatedPool() string
 		AdaAmount() uint64
 		LastDelegationTime() time.Time
@@ -221,7 +222,7 @@ func (s *stakePoolSet) Del(key string) StakePool {
 }
 
 func (s *stakePoolSet) SetWithValuesFromMainQueue(vals FromMainQueueValues) StakePool {
-	if vals.Ticker == "" || len(vals.StakeAddrs) == 0 {
+	if vals.Ticker == "" {
 		return nil
 	}
 	nsp := &stakePool{
@@ -251,7 +252,9 @@ func (s *stakePoolSet) SetWithValuesFromMainQueue(vals FromMainQueueValues) Stak
 	spI, ok := s.getLocked(nsp.Ticker())
 	if !ok {
 		s.tickersMap[nsp.Ticker()] = nsp
-		s.saddrsMap[nsp.MainStakeAddress()] = nsp
+		if nsp.MainStakeAddress() != "" {
+			s.saddrsMap[nsp.MainStakeAddress()] = nsp
+		}
 		return nsp
 	}
 	sp := spI.(*stakePool)
@@ -367,7 +370,20 @@ func (sp *stakePool) StartingTimeOnAddonQueue() time.Time {
 	return utils.EpochStartTime(utils.Epoch(sp.startingEpochOnAddonQueue))
 }
 
-func (sp *stakePool) MainStakeAddress() string { return sp.stakeAddrs[0] }
+func (sp *stakePool) MainStakeAddress() string {
+	if len(sp.stakeAddrs) == 0 {
+		return ""
+	}
+	return sp.stakeAddrs[0]
+}
+
+func (sp *stakePool) MainStakeKey() string {
+	if len(sp.stakeKeys) == 0 {
+		return ""
+	}
+	return sp.stakeKeys[0]
+}
+
 func (sp *stakePool) DelegatedPool() string {
 	if ai, ok := sp.ac.Get(sp.MainStakeAddress()); ok {
 		dp := ai.DelegatedPool()

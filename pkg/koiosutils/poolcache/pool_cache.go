@@ -175,7 +175,17 @@ func (pc *poolCache) cacheSyncer() {
 			maybeNotifyWaiter(pc)
 		case *poolInfo:
 			// add to cache
-			if _, loaded := pc.cache.LoadOrStore(v.ticker, v); loaded {
+			if old, loaded := pc.cache.LoadOrStore(v.ticker, v); loaded {
+				// check for overridable fields, better an old value than a zero value
+				if v.activeStake == 0 {
+					v.activeStake = old.(*poolInfo).activeStake
+				}
+				if v.liveStake == 0 {
+					v.liveStake = old.(*poolInfo).liveStake
+				}
+				if v.liveDelegators == 0 {
+					v.liveDelegators = old.(*poolInfo).liveDelegators
+				}
 				pc.cache.Store(v.ticker, v)
 				pc.cache2.Store(v.bech32, v)
 				atomic.AddUint32(&pc.addeditems, ^uint32(0))
@@ -333,7 +343,7 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 				}
 				c.V(3).Info("GetPoolsInfos: Got p2i", "len", len(p2i), "poolids len", len(pids_l))
 				for p, i := range p2i {
-					c.V(4).Info("GetPoolsInfos (p2i): Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
+					c.V(4).Info("GetPoolsInfos (p2i): Forwarding poolInfo", "ticker", i.Ticker, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
 					c.infoCh <- &poolInfo{
 						ticker:         i.Ticker,
 						bech32:         p,
