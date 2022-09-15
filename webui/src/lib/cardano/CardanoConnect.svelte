@@ -31,6 +31,7 @@
   const walletConnected = (w) => {
       cardanoWallet.set(w);
       window.$w = $cardanoWallet
+      // window.Buffer = Buffer
   }
 
   const onAccountChange = dat => console.log('onAccountChange', dat)

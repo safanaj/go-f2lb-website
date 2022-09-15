@@ -138,13 +138,17 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 		_, isAdmin := s.adminPools[sp.Ticker()]
 		// found just return this
 		return &User{
-			Type:         User_SPO,
-			StakeKey:     sp.StakeKeys()[0],
-			StakeAddress: sp.MainStakeAddress(),
-			Member:       newMemeberFromStakePool(sp),
-			IsAdmin:      isAdmin,
+			Type:          User_SPO,
+			StakeKey:      sp.StakeKeys()[0],
+			StakeAddress:  sp.MainStakeAddress(),
+			Member:        newMemeberFromStakePool(sp),
+			IsAdmin:       isAdmin,
+			DelegatedPool: sp.DelegatedPool(),
 		}, nil
 	}
+
+	delegPool, _, _ := s.ctrl.GetKoiosClient().GetStakeAddressInfo(saddr_)
+
 	supporter := (*f2lb_gsheet.Supporter)(nil)
 	for _, r := range s.ctrl.GetSupportersRecords() {
 		for _, sa := range r.StakeAddrs {
@@ -160,14 +164,16 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 	if supporter != nil {
 		// found just return this
 		return &User{
-			Type:         User_SUPPORTER,
-			StakeKey:     supporter.StakeKeys[0],
-			StakeAddress: supporter.StakeAddrs[0],
-			Supporter:    &Supporter{DiscordId: supporter.DiscordName},
+			Type:          User_SUPPORTER,
+			StakeKey:      supporter.StakeKeys[0],
+			StakeAddress:  supporter.StakeAddrs[0],
+			Supporter:     &Supporter{DiscordId: supporter.DiscordName},
+			DelegatedPool: delegPool,
 		}, nil
 	}
 	return &User{
-		Type:         User_VISITOR,
-		StakeAddress: saddr_,
+		Type:          User_VISITOR,
+		StakeAddress:  saddr_,
+		DelegatedPool: delegPool,
 	}, nil
 }

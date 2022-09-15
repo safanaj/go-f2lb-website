@@ -73,6 +73,8 @@ type Controller interface {
 	GetAccountCache() accountcache.AccountCache
 	GetPoolCache() poolcache.PoolCache
 
+	GetKoiosClient() *koiosutils.KoiosClient
+
 	GetTopOfQueues(int, int) (int, int, error)
 	GetValuesInBatch() ([]*ValueRange, error)
 }
@@ -399,6 +401,7 @@ func (c *controller) Refresh() error {
 					c.V(2).Info("Controller refresh poolCache, starting the hammer",
 						"ready", c.poolCache.Ready(),
 						"in", time.Since(startRefreshAt).String())
+					// this will handle panics
 					go c.getPoolInfos(tickers)
 				}
 
@@ -410,6 +413,7 @@ func (c *controller) Refresh() error {
 					c.V(2).Info("Controller refresh accountCache, starting the hammer",
 						"ready", c.accountCache.Ready(),
 						"in", time.Since(startRefreshAt).String())
+					// this will handle panics
 					go c.getAccountInfos(saddrs)
 				}
 			}
@@ -558,6 +562,8 @@ func (c *controller) GetStakePoolSet() f2lb_members.StakePoolSet { return c.stak
 func (c *controller) GetAccountCache() accountcache.AccountCache { return c.accountCache }
 func (c *controller) GetPoolCache() poolcache.PoolCache          { return c.poolCache }
 
+func (c *controller) GetKoiosClient() *koiosutils.KoiosClient { return c.kc }
+
 func (c *controller) GetLastRefreshTime() time.Time { return c.lastRefreshTime }
 
 func (c *controller) IsRunning() bool { return c.tick != nil }
@@ -603,6 +609,12 @@ func (c *controller) getPoolInfos(tickers []string) {
 		return
 	}
 
+	defer func() {
+		if r := recover(); r != nil {
+			c.Error(r.(error), "getPoolInfos recovered")
+		}
+	}()
+
 	startPoolInfoAt := time.Now()
 
 	t2p, err, _ := c.kc.GetTickerToPoolIdMapFor(tickers...)
@@ -639,6 +651,12 @@ func (c *controller) getAccountInfos(saddrs []string) {
 	if utils.IsContextDone(c.ctx) {
 		return
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			c.Error(r.(error), "getAccountInfos recovered")
+		}
+	}()
 
 	startAccountInfoAt := time.Now()
 

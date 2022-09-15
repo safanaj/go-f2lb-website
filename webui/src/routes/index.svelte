@@ -1,3 +1,17 @@
+<script context="module">
+  import {
+      useCardanoSerializationLib,
+      getDelegationSignedTx
+  } from '$lib/cardano/csl.js'
+
+  let cardano = window.cardano;
+  let wasm = {}
+  let wasm2 = {}
+
+  useCardanoSerializationLib().then(x => { wasm = {...x} })
+
+</script>
+
 <svelte:head>
 <title>Welcome</title>
 </svelte:head>
@@ -12,6 +26,17 @@
   $: mainServed = $mainQueueMembers[0];
   $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
   $: user = $cardanoWallet.user
+  $: wrongPool = (user||{}).delegatedpool != (mainServed||{}).ticker && (user||{}).delegatedpool != (mainServed||{}).poolidbech32
+
+  const isWrongPool = user => user !== undefined && (user.delegatedpool != mainServed.ticker && user.delegatedpool != mainServed.poolidbech32)
+
+  const doDelegation = () => {
+      let {api, wasm, address} = $cardanoWallet
+      getDelegationSignedTx(api, wasm, address, mainServed.poolidbech32)
+          .then(api.submitTx)
+          .then(console.log)
+          .catch(console.log)
+  }
 
 </script>
 
@@ -42,7 +67,12 @@
         <p>Hello <span class="text truncate">{user.member.ticker}</span> !</p>
         <p>Thanks to visit this website, your status is explained below ...</p>
       {/if}
-      <button class="button" disabled>Delegate to the SPO on top of the queue, currently {mainServed.ticker}</button>
+      {#key $cardanoWallet.stakeKey}
+        {#if wrongPool}
+          <button class="button" on:click={doDelegation}>Delegate to the SPO on top of the queue, currently {mainServed.ticker}</button>
+        {/if}
+      {/key}
+
       </div>
       {/if}
     </div>

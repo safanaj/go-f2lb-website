@@ -39,6 +39,7 @@ message User {
   Member member = 4;
   Supporter supporter = 5;
   bool isAdmin = 6;
+  string delegatedPool = 7;
 }
 
 message StakeAddr {

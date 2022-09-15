@@ -14584,3 +14584,123 @@ export const getStakeAddr = (wasm, bAddr) => {
 
   return wasm.RewardAddress.from_address(wasm.Address.from_bytes(reward_addr_bytes)).to_address().to_bech32()
 }
+
+// delegation
+const getStakeDelegationCertificate = (wasm, addr_bech32, pool_bech32) => {
+  const stakeCred = wasm.BaseAddress.from_address(
+    wasm.Address.from_bech32(addr_bech32)).stake_cred()
+  const poolKeyHash = wasm.Ed25519KeyHash.from_bech32(pool_bech32)
+  const stakeDelegation = wasm.StakeDelegation.new(stakeCred, poolKeyHash)
+  const certificate = wasm.Certificate.new_stake_delegation(stakeDelegation)
+  stakeCred.free()
+  poolKeyHash.free()
+  stakeDelegation.free()
+  return certificate
+}
+
+const getTxBuilder = (wasm) => {
+  // $ date ; cardano-cli query protocol-parameters --mainnet \
+  //          | jq '{txFeeFixed, txFeePerByte, stakePoolDeposit, stakeAddressDeposit, maxValueSize, maxTxSize, utxoCostPerWord}'
+  // Wed Sep 14 22:27:13 CEST 2022
+  // {
+  //   "txFeeFixed": 155381,
+  //   "txFeePerByte": 44,
+  //   "stakePoolDeposit": 500000000,
+  //   "stakeAddressDeposit": 2000000,
+  //   "maxValueSize": 5000,
+  //   "maxTxSize": 16384,
+  //   "utxoCostPerWord": 34482
+  // }
+
+  const txBuilderCfgBuilder =
+    wasm.TransactionBuilderConfigBuilder.new()
+        .fee_algo(wasm.LinearFee.new(
+          wasm.BigNum.from_str('44'),
+          wasm.BigNum.from_str('155381')
+        ))
+        .pool_deposit(wasm.BigNum.from_str('500000000'))
+        .key_deposit(wasm.BigNum.from_str('2000000'))
+        .max_value_size(5000)
+        .max_tx_size(16384)
+        .coins_per_utxo_word(wasm.BigNum.from_str('34482'));
+  const txBuilderCfg = txBuilderCfgBuilder.build();
+  txBuilderCfgBuilder.free()
+  const txBuilder = wasm.TransactionBuilder.new(txBuilderCfg);
+  txBuilderCfg.free()
+  return txBuilder
+}
+
+const getCerts = (wasm, addr_bech32, pool_bech32) => {
+  const certs = wasm.Certificates.new()
+  const cert = getStakeDelegationCertificate(wasm, addr_bech32, pool_bech32)
+  certs.add(cert)
+  cert.free()
+  return certs
+}
+
+const getUtxos = async (api, wasm) => {
+  const utxos = wasm.TransactionUnspentOutputs.new()
+  await api.getUtxos().then(
+    _utxos => _utxos.map(
+      _utxo => {
+        let utxo = wasm.TransactionUnspentOutput.from_bytes(
+          Buffer.from(_utxo, "hex"))
+        utxos.add(utxo)
+        utxo.free()
+      }))
+  return utxos
+}
+
+const getChangeAddr = async (api, wasm) => {
+  return wasm.Address.from_bytes(Buffer.from(await api.getChangeAddress(), 'hex'))
+}
+
+const getUtxosAndChangeAddr = async (api, wasm) => {
+  return await Promise.all([
+    getUtxos(api, wasm),
+    getChangeAddr(api, wasm)
+  ]).then(r => { return {utxos: r[0], changeAddr: r[1]}})
+}
+
+const getDelegationTx = async (api, wasm, addr_bech32, pool_bech32) => {
+  const certs = getCerts(wasm, addr_bech32, pool_bech32)
+  const {utxos, changeAddr} = await getUtxosAndChangeAddr(api, wasm)
+  const txBuilder = getTxBuilder(wasm)
+  txBuilder.set_certs(certs)
+  certs.free()
+  txBuilder.add_inputs_from(utxos, wasm.CoinSelectionStrategyCIP2.RandomImprove)
+  utxos.free()
+  txBuilder.add_change_if_needed(changeAddr)
+  changeAddr.free()
+
+  const _tx = txBuilder.build_tx()
+  txBuilder.free()
+
+  const tx = Buffer.from(_tx.to_bytes().buffer).toString('hex')
+  _tx.free()
+
+  return tx
+}
+
+const getSignedTx = (wasm, tx_, witset_) => {
+  // TODO: check witness set vkeys against tx body
+  const tws = wasm.TransactionWitnessSet.from_bytes(Buffer.from(witset_, 'hex'))
+  const _tx = wasm.Transaction.from_bytes(Buffer.from(tx_, 'hex'))
+  const txBody = _tx.body()
+  _tx.free()
+  const _signedTx = wasm.Transaction.new(txBody, tws)
+  txBody.free()
+  tws.free()
+  const signedTx = Buffer.from(_signedTx.to_bytes().buffer).toString('hex')
+  _signedTx.free()
+  return signedTx
+}
+
+export const getDelegationSignedTx = async (api, wasm, addr_bech32, pool_bech32) => {
+  const tx_ = await getDelegationTx(api, wasm, addr_bech32, pool_bech32)
+  const witset_ = await api.signTx(tx_)
+  if (witset_ === undefined) {
+    throw new Error("ooops !!! This should not happen in getDelegationSignedTx")
+  }
+  return getSignedTx(wasm, tx_, witset_)
+}
