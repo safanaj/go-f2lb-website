@@ -13,6 +13,8 @@
   export let idBoxHashPrefix = '';
   export let epochProgress = 0;
   export let mainServed = {};
+  export let isFirst = false;
+  export let topTicker = '';
   let boxId = idBoxHashPrefix === '' ? member.ticker : `${idBoxHashPrefix}-${member.ticker}`
 
   $: hasMainServed = Object.keys(mainServed).length > 0
@@ -72,7 +74,7 @@
 </script>
 
 
-<div class="box box-in" id={boxId}>
+<div class={!isFirst && topTicker !== '' && topTicker == member.ticker ? "box box-in real-top": "box box-in"} id={boxId}>
   {#if shortinfo}
     <p class="has-text-centered">
       <span class="is-pulled-left">

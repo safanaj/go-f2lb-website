@@ -43,3 +43,9 @@ html.theme-s nav {
 html nav {
 	--background: rgba(255, 255, 255, .7);
 }
+
+div.box.box-in.real-top {
+    border-style: outset;
+    border-color: hsla(102, 100%, 55%, 0.6);
+    border-width: thick;
+}

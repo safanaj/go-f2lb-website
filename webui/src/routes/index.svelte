@@ -18,7 +18,10 @@
 
 <script>
   import {User} from '$lib/pb/control_pb';
-  import { mainQueueMembers, addonQueueMembers, serviceClients, epochData, cardanoWallet, activePool} from '$lib/stores'
+  import {
+      mainQueueMembers, addonQueueMembers, serviceClients,
+      epochData, cardanoWallet, activePool, topPool
+  } from '$lib/stores'
   import Member from '$lib/Member.svelte'
   // import { doCallInPromise } from '$lib/utils'
   import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
@@ -27,6 +30,7 @@
   $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
   $: user = $cardanoWallet.user
   $: wrongPool = (user||{}).delegatedpool != (mainServed||{}).ticker && (user||{}).delegatedpool != (mainServed||{}).poolidbech32
+  $: topTicker = ($topPool || {}).ticker || ''
 
   const isWrongPool = user => user !== undefined && (user.delegatedpool != mainServed.ticker && user.delegatedpool != mainServed.poolidbech32)
 
@@ -84,8 +88,9 @@
     <div class="column is-half">
       <p>Main Queue <a class="is-hidden-desktop" href="/main-queue"><span class="icon is-small has-text-dark"><FaArrowRight /></span></a></p>
       <div class="box box-out">
-        {#each $mainQueueMembers as m}
-          <Member member={m} shortinfo epochProgress={epochProgress} mainServed={mainServed} toBoxLinkPrefix="/main-queue" />
+        {#each $mainQueueMembers as m, idx}
+          <Member member={m} shortinfo {epochProgress} {mainServed} toBoxLinkPrefix="/main-queue"
+                  isFirst={idx == 0} {topTicker}  />
         {/each}
       </div>
     </div>
