@@ -49,7 +49,7 @@
     <div class="column">
       <h1 class="block">Welcome to F2LB (unofficial) Website</h1>
       <p class="block">Visit <a href="https://www.f2lb.org/">F2LB</a> to read about the project and the community</p>
-      <p class="block">Visit also <a href="https://f2lb.info/">F2LB.info</a></p>
+      <!-- <p class="block">Visit also <a href="https://f2lb.info/">F2LB.info</a></p> -->
       {#if $activePool !== null && ($activePool||{activestake: 0}).activestake > 0}
       <div class="box themed">
         The F2LB community stake was delegated to the pool {$activePool.ticker} that now has {$activePool.activestake} ADA of active stake,
