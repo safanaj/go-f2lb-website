@@ -22,7 +22,10 @@
   import Header from "$lib/header/Header.svelte";
   import { page } from '$app/stores';
   import { goto } from '$app/navigation'
-  import { serviceClients, epochData, mainQueueMembers, addonQueueMembers, supportersList, cardanoWallet, activePool } from '$lib/stores';
+  import {
+      serviceClients, epochData, mainQueueMembers, addonQueueMembers,
+      supportersList, cardanoWallet, activePool, topPool
+  } from '$lib/stores';
   import { doCallInPromise, waitFor } from '$lib/utils';
   import { User, ControlMsg } from '$lib/pb/control_pb';
 
@@ -63,6 +66,7 @@
               doCallInPromise($serviceClients, 'AddonQueue', 'listQueue', addonQueueMembers, 'membersList'),
               doCallInPromise($serviceClients, 'Supporter', 'list', supportersList, 'supportersList'),
               doCallInPromise($serviceClients, 'Member', 'active', activePool, null),
+              doCallInPromise($serviceClients, 'Member', 'top', topPool, null),
           ]).then(tick)
       }
   })

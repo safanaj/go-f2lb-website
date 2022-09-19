@@ -49,6 +49,13 @@ func (a *memberServiceServer) Active(context.Context, *emptypb.Empty) (*Member, 
 	return &Member{}, nil
 }
 
+func (a *memberServiceServer) Top(context.Context, *emptypb.Empty) (*Member, error) {
+	if sp := a.sps.Get(a.delegCycle.GetTopTicker()); sp != nil {
+		return newMemeberFromStakePool(sp), nil
+	}
+	return &Member{}, nil
+}
+
 func (a *memberServiceServer) List(context.Context, *emptypb.Empty) (*Members, error) {
 	members := []*Member{}
 	for _, sp := range a.sps.StakePools() {

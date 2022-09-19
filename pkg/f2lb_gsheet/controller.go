@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -238,6 +239,28 @@ func (c *controller) getTopOfDelegCycle(delegCycleValuesN int) (int, error) {
 	return idx, err
 }
 
+func (c *controller) getTopOfDelegCycleFromValues(vr *ValueRange) (int, error) {
+	if vr == nil || len(vr.Values) < 2 {
+		return -1, fmt.Errorf("getTopOfDelegCycleFromValues invalid ValueRange")
+	}
+	currentEpochAsUint64 := uint64(utils.CurrentEpoch())
+	for idx, v := range vr.Values {
+		eVal, err := strconv.ParseUint(v[0].(string), 10, 32)
+		if err != nil || eVal < currentEpochAsUint64 {
+			continue
+		}
+		if eVal > currentEpochAsUint64 {
+			return -1, fmt.Errorf("getTopOfDelegCycleFromValues unable to find current epoch")
+		}
+
+		// we should assert it
+		if eVal == currentEpochAsUint64 {
+			return idx, nil
+		}
+	}
+	return -1, fmt.Errorf("getTopOfDelegCycleFromValues invalid ValueRange or unable to find current epoch")
+}
+
 func getOnlyTickers(rows [][]any) []string {
 	tickers := []string{}
 	for _, v := range rows {
@@ -288,7 +311,9 @@ func (c *controller) Refresh() error {
 	res[mainQueueVRI].Values = res[mainQueueVRI].Values[mainQueueTopIdx:]
 	res[addonQueueVRI].Values = res[addonQueueVRI].Values[addonQueueTopIdx:]
 
-	if idx, err := c.getTopOfDelegCycle(len(res[delegCycleVRI].Values)); err == nil {
+	if idx, err := c.getTopOfDelegCycleFromValues(res[delegCycleVRI]); err == nil {
+		res[delegCycleVRI].Values = res[delegCycleVRI].Values[idx:]
+	} else if idx, err := c.getTopOfDelegCycle(len(res[delegCycleVRI].Values)); err == nil {
 		res[delegCycleVRI].Values = res[delegCycleVRI].Values[idx:]
 	} else {
 		return err
@@ -309,6 +334,8 @@ func (c *controller) Refresh() error {
 	wg.Add(4)
 	// wg.Add(1)
 	go func() {
+		// doing this in the main goroutine we can check the delegCycle topTicker diring the mainQueue parsing,
+		// this would be just to ensure the website is really updated also if the spreadsheet is not (gsheet not updated mean the green row)
 		defer wg.Done()
 		c.delegCycle.Refresh(res[delegCycleVRI])
 		c.V(2).Info("Controller refresh filled delegation cycle", "in", time.Since(startRefreshAt).String())

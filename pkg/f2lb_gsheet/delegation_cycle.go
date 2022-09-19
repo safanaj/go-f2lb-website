@@ -25,6 +25,7 @@ func (m *DelegationCycle) GetRange() string {
 }
 
 func (m *DelegationCycle) GetActiveTicker() string { return m.activeTicker }
+func (m *DelegationCycle) GetTopTicker() string    { return m.topTicker }
 
 func (m *DelegationCycle) Refresh(vr *ValueRange) {
 	if vr == nil || len(vr.Values) < 2 {
