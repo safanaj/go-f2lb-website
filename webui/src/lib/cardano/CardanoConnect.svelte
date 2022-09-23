@@ -6,6 +6,7 @@
       getStakeKey,
       getStakeAddr
   } from '$lib/cardano/csl.js'
+  // import * as wasm from '@emurgo/cardano-serialization-lib-browser/';
 
   let cardano = window.cardano;
   let wasm = {}
@@ -16,7 +17,7 @@
 </script>
 
 <script>
-  import { createEventDispatcher, tick } from 'svelte'
+  import { createEventDispatcher, tick, getContext } from 'svelte'
   import { Buffer } from 'buffer';
   import CardanoConnectButton from '$lib/cardano/CardanoConnectButton.svelte';
   import { cardanoWallet, serviceClients } from '$lib/stores'
@@ -51,8 +52,12 @@
 
   let wModalEl;
   let loadingEl;
+  const pageLoaderObj = getContext('pageLoader')
 
-  const toggleLoading = () => loadingEl.classList.toggle("is-hidden")
+  const toggleLoading = () => {
+      loadingEl.classList.toggle("is-hidden");
+      pageLoaderObj.el.classList.toggle("is-active");
+  }
   const openModal = () => wModalEl.classList.add("is-active")
   const closeModal = () => wModalEl.classList.remove("is-active")
 

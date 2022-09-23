@@ -1,9 +1,19 @@
 import init from '@emurgo/cardano-serialization-lib-browser/cardano_serialization_lib_bg.wasm?init';
 import { Buffer } from 'buffer';
 
+// cardano-serialization-lib-browser @ 11.0.5
+
 export const useCardanoSerializationLib = async () => {
   const wasm = await init({
     "./cardano_serialization_lib_bg.js": {
+      min_fee,
+      calculate_ex_units_ceil_cost,
+      min_script_fee,
+      encrypt_with_password,
+      decrypt_with_password,
+      make_daedalus_bootstrap_witness,
+      make_icarus_bootstrap_witness,
+      make_vkey_witness,
       hash_auxiliary_data,
       hash_transaction,
       hash_plutus_data,
@@ -17,14 +27,12 @@ export const useCardanoSerializationLib = async () => {
       decode_arbitrary_bytes_from_metadatum,
       encode_json_str_to_metadatum,
       decode_metadatum_to_json_str,
-      min_fee,
-      calculate_ex_units_ceil_cost,
-      min_script_fee,
-      encrypt_with_password,
-      decrypt_with_password,
+      encode_json_str_to_plutus_datum,
+      decode_plutus_datum_to_json_str,
 
       __wbindgen_object_drop_ref,
       __wbindgen_string_new,
+      __wbindgen_json_parse,
       __wbindgen_string_get,
       __wbg_getRandomValues_98117e9a7e993920,
       __wbg_randomFillSync_64cc7d048f228ca8,
@@ -63,10 +71,9 @@ export const useCardanoSerializationLib = async () => {
       __wbindgen_throw,
       __wbindgen_rethrow,
       __wbindgen_memory,
-    }
+                                                                                      }
   }).then(wasmInstance => wasmInstance.exports)
 
-  // internal funcs
   const heap = new Array(32).fill(undefined);
 
   heap.push(undefined, null, true, false);
@@ -281,7 +288,302 @@ export const useCardanoSerializationLib = async () => {
     return ptr;
   }
 
-  // exported funcs
+  /****************************************************************/
+  /** wbindgen functions */
+
+  function __wbindgen_object_drop_ref(arg0) {
+    takeObject(arg0);
+  };
+
+  function __wbindgen_string_new(arg0, arg1) {
+    var ret = getStringFromWasm0(arg0, arg1);
+    return addHeapObject(ret);
+  };
+
+  function __wbindgen_json_parse(arg0, arg1) {
+    var ret = JSON.parse(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
+  };
+
+  function __wbindgen_string_get(arg0, arg1) {
+    const obj = getObject(arg1);
+    var ret = typeof(obj) === 'string' ? obj : undefined;
+    var ptr0 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len0 = WASM_VECTOR_LEN;
+    getInt32Memory0()[arg0 / 4 + 1] = len0;
+    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+  };
+
+  function __wbg_getRandomValues_98117e9a7e993920() { return handleError(function (arg0, arg1) {
+    getObject(arg0).getRandomValues(getObject(arg1));
+  }, arguments) };
+
+  function __wbg_randomFillSync_64cc7d048f228ca8() { return handleError(function (arg0, arg1, arg2) {
+    getObject(arg0).randomFillSync(getArrayU8FromWasm0(arg1, arg2));
+  }, arguments) };
+
+  function __wbg_process_2f24d6544ea7b200(arg0) {
+    var ret = getObject(arg0).process;
+    return addHeapObject(ret);
+  };
+
+  function __wbindgen_is_object(arg0) {
+    const val = getObject(arg0);
+    var ret = typeof(val) === 'object' && val !== null;
+    return ret;
+  };
+
+  function __wbg_versions_6164651e75405d4a(arg0) {
+    var ret = getObject(arg0).versions;
+    return addHeapObject(ret);
+  };
+
+  function __wbg_node_4b517d861cbcb3bc(arg0) {
+    var ret = getObject(arg0).node;
+    return addHeapObject(ret);
+  };
+
+  function __wbindgen_is_string(arg0) {
+    var ret = typeof(getObject(arg0)) === 'string';
+    return ret;
+  };
+
+  function __wbg_crypto_98fc271021c7d2ad(arg0) {
+    var ret = getObject(arg0).crypto;
+    return addHeapObject(ret);
+  };
+
+  function __wbg_msCrypto_a2cdb043d2bfe57f(arg0) {
+    var ret = getObject(arg0).msCrypto;
+    return addHeapObject(ret);
+  };
+
+  function __wbg_modulerequire_3440a4bcf44437db() { return handleError(function (arg0, arg1) {
+    var ret = module.require(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
+  }, arguments) };
+
+  function __wbg_newnoargs_9fdd8f3961dd1bee(arg0, arg1) {
+    var ret = new Function(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
+  };
+
+  function __wbg_call_ba36642bd901572b() { return handleError(function (arg0, arg1) {
+    var ret = getObject(arg0).call(getObject(arg1));
+    return addHeapObject(ret);
+  }, arguments) };
+
+  function __wbg_self_bb69a836a72ec6e9() { return handleError(function () {
+    var ret = self.self;
+    return addHeapObject(ret);
+  }, arguments) };
+
+  function __wbg_window_3304fc4b414c9693() { return handleError(function () {
+    var ret = window.window;
+    return addHeapObject(ret);
+  }, arguments) };
+
+  function __wbg_globalThis_e0d21cabc6630763() { return handleError(function () {
+    var ret = globalThis.globalThis;
+    return addHeapObject(ret);
+  }, arguments) };
+
+  function __wbg_global_8463719227271676() { return handleError(function () {
+    var ret = global.global;
+    return addHeapObject(ret);
+  }, arguments) };
+
+  function __wbindgen_is_undefined(arg0) {
+    var ret = getObject(arg0) === undefined;
+    return ret;
+  };
+
+  function __wbg_buffer_9e184d6f785de5ed(arg0) {
+    var ret = getObject(arg0).buffer;
+    return addHeapObject(ret);
+  };
+
+  function __wbg_new_e8101319e4cf95fc(arg0) {
+    var ret = new Uint8Array(getObject(arg0));
+    return addHeapObject(ret);
+  };
+
+  function __wbg_set_e8ae7b27314e8b98(arg0, arg1, arg2) {
+    getObject(arg0).set(getObject(arg1), arg2 >>> 0);
+  };
+
+  function __wbg_length_2d56cb37075fcfb1(arg0) {
+    var ret = getObject(arg0).length;
+    return ret;
+  };
+
+  function __wbg_newwithlength_a8d1dbcbe703a5c6(arg0) {
+    var ret = new Uint8Array(arg0 >>> 0);
+    return addHeapObject(ret);
+  };
+
+  function __wbg_subarray_901ede8318da52a6(arg0, arg1, arg2) {
+    var ret = getObject(arg0).subarray(arg1 >>> 0, arg2 >>> 0);
+    return addHeapObject(ret);
+  };
+
+  function __wbindgen_object_clone_ref(arg0) {
+    var ret = getObject(arg0);
+    return addHeapObject(ret);
+  };
+
+  function __wbg_new_3a746f2619705add(arg0, arg1) {
+    var ret = new Function(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
+  };
+
+  function __wbg_call_f54d3a6dadb199ca(arg0, arg1) {
+    var ret = getObject(arg0).call(getObject(arg1));
+    return addHeapObject(ret);
+  };
+
+  function __wbindgen_jsval_eq(arg0, arg1) {
+    var ret = getObject(arg0) === getObject(arg1);
+    return ret;
+  };
+
+  function __wbg_self_ac379e780a0d8b94(arg0) {
+    var ret = getObject(arg0).self;
+    return addHeapObject(ret);
+  };
+
+  function __wbg_crypto_1e4302b85d4f64a2(arg0) {
+    var ret = getObject(arg0).crypto;
+    return addHeapObject(ret);
+  };
+
+  function __wbg_getRandomValues_1b4ba144162a5c9e(arg0) {
+    var ret = getObject(arg0).getRandomValues;
+    return addHeapObject(ret);
+  };
+
+  function __wbg_require_6461b1e9a0d7c34a(arg0, arg1) {
+    var ret = require(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
+  };
+
+  function __wbg_randomFillSync_1b52c8482374c55b(arg0, arg1, arg2) {
+    getObject(arg0).randomFillSync(getArrayU8FromWasm0(arg1, arg2));
+  };
+
+  function __wbg_getRandomValues_1ef11e888e5228e9(arg0, arg1, arg2) {
+    getObject(arg0).getRandomValues(getArrayU8FromWasm0(arg1, arg2));
+  };
+
+  function __wbindgen_debug_string(arg0, arg1) {
+    var ret = debugString(getObject(arg1));
+    var ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len0 = WASM_VECTOR_LEN;
+    getInt32Memory0()[arg0 / 4 + 1] = len0;
+    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+  };
+
+  function __wbindgen_throw(arg0, arg1) {
+    throw new Error(getStringFromWasm0(arg0, arg1));
+  };
+
+  function __wbindgen_rethrow(arg0) {
+    throw takeObject(arg0);
+  };
+
+  function __wbindgen_memory() {
+    var ret = wasm.memory;
+    return addHeapObject(ret);
+  };
+
+
+  /************************************************/
+  /**
+   * @param {Transaction} tx
+   * @param {LinearFee} linear_fee
+   * @returns {BigNum}
+   */
+  function min_fee(tx, linear_fee) {
+    _assertClass(tx, Transaction);
+    _assertClass(linear_fee, LinearFee);
+    var ret = wasm.min_fee(tx.ptr, linear_fee.ptr);
+    return BigNum.__wrap(ret);
+  }
+
+  /**
+   * @param {ExUnits} ex_units
+   * @param {ExUnitPrices} ex_unit_prices
+   * @returns {BigNum}
+   */
+  function calculate_ex_units_ceil_cost(ex_units, ex_unit_prices) {
+    _assertClass(ex_units, ExUnits);
+    _assertClass(ex_unit_prices, ExUnitPrices);
+    var ret = wasm.calculate_ex_units_ceil_cost(ex_units.ptr, ex_unit_prices.ptr);
+    return BigNum.__wrap(ret);
+  }
+
+  /**
+   * @param {Transaction} tx
+   * @param {ExUnitPrices} ex_unit_prices
+   * @returns {BigNum}
+   */
+  function min_script_fee(tx, ex_unit_prices) {
+    _assertClass(tx, Transaction);
+    _assertClass(ex_unit_prices, ExUnitPrices);
+    var ret = wasm.min_script_fee(tx.ptr, ex_unit_prices.ptr);
+    return BigNum.__wrap(ret);
+  }
+
+  /**
+   * @param {string} password
+   * @param {string} salt
+   * @param {string} nonce
+   * @param {string} data
+   * @returns {string}
+   */
+  function encrypt_with_password(password, salt, nonce, data) {
+    try {
+      const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+      var ptr0 = passStringToWasm0(password, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ptr1 = passStringToWasm0(salt, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len1 = WASM_VECTOR_LEN;
+      var ptr2 = passStringToWasm0(nonce, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len2 = WASM_VECTOR_LEN;
+      var ptr3 = passStringToWasm0(data, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len3 = WASM_VECTOR_LEN;
+      wasm.encrypt_with_password(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3);
+      var r0 = getInt32Memory0()[retptr / 4 + 0];
+      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      return getStringFromWasm0(r0, r1);
+    } finally {
+      wasm.__wbindgen_add_to_stack_pointer(16);
+      wasm.__wbindgen_free(r0, r1);
+    }
+  }
+
+  /**
+   * @param {string} password
+   * @param {string} data
+   * @returns {string}
+   */
+  function decrypt_with_password(password, data) {
+    try {
+      const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+      var ptr0 = passStringToWasm0(password, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ptr1 = passStringToWasm0(data, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len1 = WASM_VECTOR_LEN;
+      wasm.decrypt_with_password(retptr, ptr0, len0, ptr1, len1);
+      var r0 = getInt32Memory0()[retptr / 4 + 0];
+      var r1 = getInt32Memory0()[retptr / 4 + 1];
+      return getStringFromWasm0(r0, r1);
+    } finally {
+      wasm.__wbindgen_add_to_stack_pointer(16);
+      wasm.__wbindgen_free(r0, r1);
+    }
+  }
+
   /**
    * @param {TransactionHash} tx_body_hash
    * @param {ByronAddress} addr
@@ -513,82 +815,27 @@ export const useCardanoSerializationLib = async () => {
   }
 
   /**
-   * @param {Transaction} tx
-   * @param {LinearFee} linear_fee
-   * @returns {BigNum}
+   * @param {string} json
+   * @param {number} schema
+   * @returns {PlutusData}
    */
-  function min_fee(tx, linear_fee) {
-    _assertClass(tx, Transaction);
-    _assertClass(linear_fee, LinearFee);
-    var ret = wasm.min_fee(tx.ptr, linear_fee.ptr);
-    return BigNum.__wrap(ret);
+  function encode_json_str_to_plutus_datum(json, schema) {
+    var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len0 = WASM_VECTOR_LEN;
+    var ret = wasm.encode_json_str_to_plutus_datum(ptr0, len0, schema);
+    return PlutusData.__wrap(ret);
   }
 
   /**
-   * @param {ExUnits} ex_units
-   * @param {ExUnitPrices} ex_unit_prices
-   * @returns {BigNum}
-   */
-  function calculate_ex_units_ceil_cost(ex_units, ex_unit_prices) {
-    _assertClass(ex_units, ExUnits);
-    _assertClass(ex_unit_prices, ExUnitPrices);
-    var ret = wasm.calculate_ex_units_ceil_cost(ex_units.ptr, ex_unit_prices.ptr);
-    return BigNum.__wrap(ret);
-  }
-
-  /**
-   * @param {Transaction} tx
-   * @param {ExUnitPrices} ex_unit_prices
-   * @returns {BigNum}
-   */
-  function min_script_fee(tx, ex_unit_prices) {
-    _assertClass(tx, Transaction);
-    _assertClass(ex_unit_prices, ExUnitPrices);
-    var ret = wasm.min_script_fee(tx.ptr, ex_unit_prices.ptr);
-    return BigNum.__wrap(ret);
-  }
-
-  /**
-   * @param {string} password
-   * @param {string} salt
-   * @param {string} nonce
-   * @param {string} data
+   * @param {PlutusData} datum
+   * @param {number} schema
    * @returns {string}
    */
-  function encrypt_with_password(password, salt, nonce, data) {
+  function decode_plutus_datum_to_json_str(datum, schema) {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      var ptr0 = passStringToWasm0(password, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      var len0 = WASM_VECTOR_LEN;
-      var ptr1 = passStringToWasm0(salt, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      var len1 = WASM_VECTOR_LEN;
-      var ptr2 = passStringToWasm0(nonce, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      var len2 = WASM_VECTOR_LEN;
-      var ptr3 = passStringToWasm0(data, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      var len3 = WASM_VECTOR_LEN;
-      wasm.encrypt_with_password(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      return getStringFromWasm0(r0, r1);
-    } finally {
-      wasm.__wbindgen_add_to_stack_pointer(16);
-      wasm.__wbindgen_free(r0, r1);
-    }
-  }
-
-  /**
-   * @param {string} password
-   * @param {string} data
-   * @returns {string}
-   */
-  function decrypt_with_password(password, data) {
-    try {
-      const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      var ptr0 = passStringToWasm0(password, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      var len0 = WASM_VECTOR_LEN;
-      var ptr1 = passStringToWasm0(data, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      var len1 = WASM_VECTOR_LEN;
-      wasm.decrypt_with_password(retptr, ptr0, len0, ptr1, len1);
+      _assertClass(datum, PlutusData);
+      wasm.decode_plutus_datum_to_json_str(retptr, datum.ptr, schema);
       var r0 = getInt32Memory0()[retptr / 4 + 0];
       var r1 = getInt32Memory0()[retptr / 4 + 1];
       return getStringFromWasm0(r0, r1);
@@ -606,6 +853,8 @@ export const useCardanoSerializationLib = async () => {
     }
   }
 
+  /****************************************************************/
+  /** types / kinds
   /**
    */
   const CertificateKind = Object.freeze({ StakeRegistration:0,"0":"StakeRegistration",StakeDeregistration:1,"1":"StakeDeregistration",StakeDelegation:2,"2":"StakeDelegation",PoolRegistration:3,"3":"PoolRegistration",PoolRetirement:4,"4":"PoolRetirement",GenesisKeyDelegation:5,"5":"GenesisKeyDelegation",MoveInstantaneousRewardsCert:6,"6":"MoveInstantaneousRewardsCert", });
@@ -632,16 +881,6 @@ export const useCardanoSerializationLib = async () => {
    */
   const NetworkIdKind = Object.freeze({ Testnet:0,"0":"Testnet",Mainnet:1,"1":"Mainnet", });
   /**
-   * Used to choosed the schema for a script JSON string
-   */
-  const ScriptSchema = Object.freeze({ Wallet:0,"0":"Wallet",Node:1,"1":"Node", });
-  /**
-   */
-  const TransactionMetadatumKind = Object.freeze({ MetadataMap:0,"0":"MetadataMap",MetadataList:1,"1":"MetadataList",Int:2,"2":"Int",Bytes:3,"3":"Bytes",Text:4,"4":"Text", });
-  /**
-   */
-  const MetadataJsonSchema = Object.freeze({ NoConversions:0,"0":"NoConversions",BasicConversions:1,"1":"BasicConversions",DetailedSchema:2,"2":"DetailedSchema", });
-  /**
    */
   const CoinSelectionStrategyCIP2 = Object.freeze({
     /**
@@ -662,6 +901,19 @@ export const useCardanoSerializationLib = async () => {
     RandomImproveMultiAsset:3,"3":"RandomImproveMultiAsset", });
   /**
    */
+  const StakeCredKind = Object.freeze({ Key:0,"0":"Key",Script:1,"1":"Script", });
+  /**
+   * Used to choosed the schema for a script JSON string
+   */
+  const ScriptSchema = Object.freeze({ Wallet:0,"0":"Wallet",Node:1,"1":"Node", });
+  /**
+   */
+  const TransactionMetadatumKind = Object.freeze({ MetadataMap:0,"0":"MetadataMap",MetadataList:1,"1":"MetadataList",Int:2,"2":"Int",Bytes:3,"3":"Bytes",Text:4,"4":"Text", });
+  /**
+   */
+  const MetadataJsonSchema = Object.freeze({ NoConversions:0,"0":"NoConversions",BasicConversions:1,"1":"BasicConversions",DetailedSchema:2,"2":"DetailedSchema", });
+  /**
+   */
   const LanguageKind = Object.freeze({ PlutusV1:0,"0":"PlutusV1",PlutusV2:1,"1":"PlutusV2", });
   /**
    */
@@ -670,8 +922,59 @@ export const useCardanoSerializationLib = async () => {
    */
   const RedeemerTagKind = Object.freeze({ Spend:0,"0":"Spend",Mint:1,"1":"Mint",Cert:2,"2":"Cert",Reward:3,"3":"Reward", });
   /**
+   * JSON <-> PlutusData conversion schemas.
+   * Follows ScriptDataJsonSchema in cardano-cli defined at:
+   * https://github.com/input-output-hk/cardano-node/blob/master/cardano-api/src/Cardano/Api/ScriptData.hs#L254
+   *
+   * All methods here have the following restrictions due to limitations on dependencies:
+   * * JSON numbers above u64::MAX (positive) or below i64::MIN (negative) will throw errors
+   * * Hex strings for bytes don't accept odd-length (half-byte) strings.
+   *      cardano-cli seems to support these however but it seems to be different than just 0-padding
+   *      on either side when tested so proceed with caution
    */
-  const StakeCredKind = Object.freeze({ Key:0,"0":"Key",Script:1,"1":"Script", });
+  const PlutusDatumSchema = Object.freeze({
+    /**
+     * ScriptDataJsonNoSchema in cardano-node.
+     *
+     * This is the format used by --script-data-value in cardano-cli
+     * This tries to accept most JSON but does not support the full spectrum of Plutus datums.
+     * From JSON:
+     * * null/true/false/floats NOT supported
+     * * strings starting with 0x are treated as hex bytes. All other strings are encoded as their utf8 bytes.
+     * To JSON:
+     * * ConstrPlutusData not supported in ANY FORM (neither keys nor values)
+     * * Lists not supported in keys
+     * * Maps not supported in keys
+     */
+    BasicConversions:0,"0":"BasicConversions",
+    /**
+     * ScriptDataJsonDetailedSchema in cardano-node.
+     *
+     * This is the format used by --script-data-file in cardano-cli
+     * This covers almost all (only minor exceptions) Plutus datums, but the JSON must conform to a strict schema.
+     * The schema specifies that ALL keys and ALL values must be contained in a JSON map with 2 cases:
+     * 1. For ConstrPlutusData there must be two fields "constructor" contianing a number and "fields" containing its fields
+     *    e.g. { "constructor": 2, "fields": [{"int": 2}, {"list": [{"bytes": "CAFEF00D"}]}]}
+     * 2. For all other cases there must be only one field named "int", "bytes", "list" or "map"
+     *    Integer's value is a JSON number e.g. {"int": 100}
+     *    Bytes' value is a hex string representing the bytes WITHOUT any prefix e.g. {"bytes": "CAFEF00D"}
+     *    Lists' value is a JSON list of its elements encoded via the same schema e.g. {"list": [{"bytes": "CAFEF00D"}]}
+     *    Maps' value is a JSON list of objects, one for each key-value pair in the map, with keys "k" and "v"
+     *          respectively with their values being the plutus datum encoded via this same schema
+     *          e.g. {"map": [
+     *              {"k": {"int": 2}, "v": {"int": 5}},
+     *              {"k": {"map": [{"k": {"list": [{"int": 1}]}, "v": {"bytes": "FF03"}}]}, "v": {"list": []}}
+     *          ]}
+     * From JSON:
+     * * null/true/false/floats NOT supported
+     * * the JSON must conform to a very specific schema
+     * To JSON:
+     * * all Plutus datums should be fully supported outside of the integer range limitations outlined above.
+     */
+    DetailedSchema:1,"1":"DetailedSchema", });
+
+
+  /****************************************************************/
   /**
    */
   class Address {
@@ -702,6 +1005,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.address_from_bytes(ptr0, len0);
+      return Address.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.address_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.address_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Address}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.address_from_json(ptr0, len0);
+      return Address.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.address_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Address}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.address_from_hex(ptr0, len0);
       return Address.__wrap(ret);
     }
     /**
@@ -805,6 +1165,63 @@ export const useCardanoSerializationLib = async () => {
       return AssetName.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.assetname_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {AssetName}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.assetname_from_hex(ptr0, len0);
+      return AssetName.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.assetname_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.assetname_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {AssetName}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.assetname_from_json(ptr0, len0);
+      return AssetName.__wrap(ret);
+    }
+    /**
      * @param {Uint8Array} name
      * @returns {AssetName}
      */
@@ -877,6 +1294,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.assetnames_from_bytes(ptr0, len0);
+      return AssetNames.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.assetnames_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {AssetNames}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.assetnames_from_hex(ptr0, len0);
+      return AssetNames.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.assetnames_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.assetnames_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {AssetNames}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.assetnames_from_json(ptr0, len0);
       return AssetNames.__wrap(ret);
     }
     /**
@@ -955,6 +1429,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.assets_from_bytes(ptr0, len0);
+      return Assets.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.assets_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Assets}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.assets_from_hex(ptr0, len0);
+      return Assets.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.assets_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.assets_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Assets}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.assets_from_json(ptr0, len0);
       return Assets.__wrap(ret);
     }
     /**
@@ -1048,6 +1579,63 @@ export const useCardanoSerializationLib = async () => {
       return AuxiliaryData.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.auxiliarydata_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {AuxiliaryData}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.auxiliarydata_from_hex(ptr0, len0);
+      return AuxiliaryData.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.auxiliarydata_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.auxiliarydata_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {AuxiliaryData}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.auxiliarydata_from_json(ptr0, len0);
+      return AuxiliaryData.__wrap(ret);
+    }
+    /**
      * @returns {AuxiliaryData}
      */
     static new() {
@@ -1120,6 +1708,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_auxiliarydatahash_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {AuxiliaryDataHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.auxiliarydatahash_from_bytes(ptr0, len0);
+      return AuxiliaryDataHash.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -1164,13 +1762,28 @@ export const useCardanoSerializationLib = async () => {
       return AuxiliaryDataHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.auxiliarydatahash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {AuxiliaryDataHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.auxiliarydatahash_from_bytes(ptr0, len0);
+      var ret = wasm.auxiliarydatahash_from_hex(ptr0, len0);
       return AuxiliaryDataHash.__wrap(ret);
     }
   }
@@ -1359,6 +1972,31 @@ export const useCardanoSerializationLib = async () => {
       return BigInt.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.bigint_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {BigInt}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.bigint_from_hex(ptr0, len0);
+      return BigInt.__wrap(ret);
+    }
+    /**
      * @returns {boolean}
      */
     is_zero() {
@@ -1371,6 +2009,13 @@ export const useCardanoSerializationLib = async () => {
     as_u64() {
       var ret = wasm.bigint_as_u64(this.ptr);
       return ret === 0 ? undefined : BigNum.__wrap(ret);
+    }
+    /**
+     * @returns {Int | undefined}
+     */
+    as_int() {
+      var ret = wasm.bigint_as_int(this.ptr);
+      return ret === 0 ? undefined : Int.__wrap(ret);
     }
     /**
      * @param {string} text
@@ -1488,6 +2133,31 @@ export const useCardanoSerializationLib = async () => {
       return BigNum.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.bignum_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {BigNum}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.bignum_from_hex(ptr0, len0);
+      return BigNum.__wrap(ret);
+    }
+    /**
      * @param {string} string
      * @returns {BigNum}
      */
@@ -1596,6 +2266,17 @@ export const useCardanoSerializationLib = async () => {
       _assertClass(rhs_value, BigNum);
       var ret = wasm.bignum_less_than(this.ptr, rhs_value.ptr);
       return ret !== 0;
+    }
+    /**
+     * @param {BigNum} a
+     * @param {BigNum} b
+     * @returns {BigNum}
+     */
+    static max(a, b) {
+      _assertClass(a, BigNum);
+      _assertClass(b, BigNum);
+      var ret = wasm.bignum_max(a.ptr, b.ptr);
+      return BigNum.__wrap(ret);
     }
   }
   /**
@@ -1782,6 +2463,31 @@ export const useCardanoSerializationLib = async () => {
         wasm.__wbindgen_add_to_stack_pointer(16);
       }
     }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.bip32privatekey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Bip32PrivateKey}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.bip32privatekey_from_hex(ptr0, len0);
+      return Bip32PrivateKey.__wrap(ret);
+    }
   }
   /**
    */
@@ -1910,6 +2616,31 @@ export const useCardanoSerializationLib = async () => {
         wasm.__wbindgen_add_to_stack_pointer(16);
       }
     }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.bip32publickey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Bip32PublicKey}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.bip32publickey_from_hex(ptr0, len0);
+      return Bip32PublicKey.__wrap(ret);
+    }
   }
   /**
    */
@@ -1957,6 +2688,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.block_from_bytes(ptr0, len0);
+      return Block.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.block_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Block}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.block_from_hex(ptr0, len0);
+      return Block.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.block_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.block_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Block}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.block_from_json(ptr0, len0);
       return Block.__wrap(ret);
     }
     /**
@@ -2045,6 +2833,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_blockhash_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {BlockHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.blockhash_from_bytes(ptr0, len0);
+      return BlockHash.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -2089,13 +2887,28 @@ export const useCardanoSerializationLib = async () => {
       return BlockHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.blockhash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {BlockHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.blockhash_from_bytes(ptr0, len0);
+      var ret = wasm.blockhash_from_hex(ptr0, len0);
       return BlockHash.__wrap(ret);
     }
   }
@@ -2145,6 +2958,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.bootstrapwitness_from_bytes(ptr0, len0);
+      return BootstrapWitness.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.bootstrapwitness_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {BootstrapWitness}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.bootstrapwitness_from_hex(ptr0, len0);
+      return BootstrapWitness.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.bootstrapwitness_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.bootstrapwitness_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {BootstrapWitness}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.bootstrapwitness_from_json(ptr0, len0);
       return BootstrapWitness.__wrap(ret);
     }
     /**
@@ -2454,6 +3324,63 @@ export const useCardanoSerializationLib = async () => {
       return Certificate.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.certificate_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Certificate}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.certificate_from_hex(ptr0, len0);
+      return Certificate.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.certificate_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.certificate_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Certificate}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.certificate_from_json(ptr0, len0);
+      return Certificate.__wrap(ret);
+    }
+    /**
      * @param {StakeRegistration} stake_registration
      * @returns {Certificate}
      */
@@ -2622,6 +3549,63 @@ export const useCardanoSerializationLib = async () => {
       return Certificates.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.certificates_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Certificates}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.certificates_from_hex(ptr0, len0);
+      return Certificates.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.certificates_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.certificates_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Certificates}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.certificates_from_json(ptr0, len0);
+      return Certificates.__wrap(ret);
+    }
+    /**
      * @returns {Certificates}
      */
     static new() {
@@ -2700,6 +3684,31 @@ export const useCardanoSerializationLib = async () => {
       return ConstrPlutusData.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.constrplutusdata_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ConstrPlutusData}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.constrplutusdata_from_hex(ptr0, len0);
+      return ConstrPlutusData.__wrap(ret);
+    }
+    /**
      * @returns {BigNum}
      */
     alternative() {
@@ -2771,6 +3780,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.costmodel_from_bytes(ptr0, len0);
+      return CostModel.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.costmodel_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {CostModel}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.costmodel_from_hex(ptr0, len0);
       return CostModel.__wrap(ret);
     }
     /**
@@ -2856,6 +3890,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.costmdls_from_bytes(ptr0, len0);
+      return Costmdls.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.costmdls_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Costmdls}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.costmdls_from_hex(ptr0, len0);
       return Costmdls.__wrap(ret);
     }
     /**
@@ -2949,6 +4008,31 @@ export const useCardanoSerializationLib = async () => {
       return DNSRecordAorAAAA.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.dnsrecordaoraaaa_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {DNSRecordAorAAAA}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.dnsrecordaoraaaa_from_hex(ptr0, len0);
+      return DNSRecordAorAAAA.__wrap(ret);
+    }
+    /**
      * @param {string} dns_name
      * @returns {DNSRecordAorAAAA}
      */
@@ -3020,6 +4104,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.dnsrecordsrv_from_bytes(ptr0, len0);
+      return DNSRecordSRV.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.dnsrecordsrv_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {DNSRecordSRV}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.dnsrecordsrv_from_hex(ptr0, len0);
       return DNSRecordSRV.__wrap(ret);
     }
     /**
@@ -3121,6 +4230,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_datahash_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {DataHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.datahash_from_bytes(ptr0, len0);
+      return DataHash.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -3165,13 +4284,28 @@ export const useCardanoSerializationLib = async () => {
       return DataHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.datahash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {DataHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.datahash_from_bytes(ptr0, len0);
+      var ret = wasm.datahash_from_hex(ptr0, len0);
       return DataHash.__wrap(ret);
     }
   }
@@ -3196,6 +4330,16 @@ export const useCardanoSerializationLib = async () => {
     free() {
       const ptr = this.__destroy_into_raw();
       wasm.__wbg_ed25519keyhash_free(ptr);
+    }
+    /**
+     * @param {Uint8Array} bytes
+     * @returns {Ed25519KeyHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.ed25519keyhash_from_bytes(ptr0, len0);
+      return Ed25519KeyHash.__wrap(ret);
     }
     /**
      * @returns {Uint8Array}
@@ -3242,13 +4386,28 @@ export const useCardanoSerializationLib = async () => {
       return Ed25519KeyHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.ed25519keyhash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {Ed25519KeyHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.ed25519keyhash_from_bytes(ptr0, len0);
+      var ret = wasm.ed25519keyhash_from_hex(ptr0, len0);
       return Ed25519KeyHash.__wrap(ret);
     }
   }
@@ -3298,6 +4457,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.ed25519keyhashes_from_bytes(ptr0, len0);
+      return Ed25519KeyHashes.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.ed25519keyhashes_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Ed25519KeyHashes}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.ed25519keyhashes_from_hex(ptr0, len0);
+      return Ed25519KeyHashes.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.ed25519keyhashes_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.ed25519keyhashes_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Ed25519KeyHashes}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.ed25519keyhashes_from_json(ptr0, len0);
       return Ed25519KeyHashes.__wrap(ret);
     }
     /**
@@ -3541,6 +4757,31 @@ export const useCardanoSerializationLib = async () => {
       return ExUnitPrices.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.exunitprices_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ExUnitPrices}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.exunitprices_from_hex(ptr0, len0);
+      return ExUnitPrices.__wrap(ret);
+    }
+    /**
      * @returns {UnitInterval}
      */
     mem_price() {
@@ -3612,6 +4853,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.exunits_from_bytes(ptr0, len0);
+      return ExUnits.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.exunits_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ExUnits}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.exunits_from_hex(ptr0, len0);
       return ExUnits.__wrap(ret);
     }
     /**
@@ -3689,6 +4955,63 @@ export const useCardanoSerializationLib = async () => {
       return GeneralTransactionMetadata.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.generaltransactionmetadata_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {GeneralTransactionMetadata}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.generaltransactionmetadata_from_hex(ptr0, len0);
+      return GeneralTransactionMetadata.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.generaltransactionmetadata_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.generaltransactionmetadata_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {GeneralTransactionMetadata}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.generaltransactionmetadata_from_json(ptr0, len0);
+      return GeneralTransactionMetadata.__wrap(ret);
+    }
+    /**
      * @returns {GeneralTransactionMetadata}
      */
     static new() {
@@ -3753,6 +5076,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_genesisdelegatehash_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {GenesisDelegateHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.genesisdelegatehash_from_bytes(ptr0, len0);
+      return GenesisDelegateHash.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -3797,13 +5130,28 @@ export const useCardanoSerializationLib = async () => {
       return GenesisDelegateHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.genesisdelegatehash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {GenesisDelegateHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.genesisdelegatehash_from_bytes(ptr0, len0);
+      var ret = wasm.genesisdelegatehash_from_hex(ptr0, len0);
       return GenesisDelegateHash.__wrap(ret);
     }
   }
@@ -3828,6 +5176,16 @@ export const useCardanoSerializationLib = async () => {
     free() {
       const ptr = this.__destroy_into_raw();
       wasm.__wbg_genesishash_free(ptr);
+    }
+    /**
+     * @param {Uint8Array} bytes
+     * @returns {GenesisHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.genesishash_from_bytes(ptr0, len0);
+      return GenesisHash.__wrap(ret);
     }
     /**
      * @returns {Uint8Array}
@@ -3874,13 +5232,28 @@ export const useCardanoSerializationLib = async () => {
       return GenesisHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.genesishash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {GenesisHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.genesishash_from_bytes(ptr0, len0);
+      var ret = wasm.genesishash_from_hex(ptr0, len0);
       return GenesisHash.__wrap(ret);
     }
   }
@@ -3930,6 +5303,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.genesishashes_from_bytes(ptr0, len0);
+      return GenesisHashes.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.genesishashes_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {GenesisHashes}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.genesishashes_from_hex(ptr0, len0);
+      return GenesisHashes.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.genesishashes_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.genesishashes_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {GenesisHashes}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.genesishashes_from_json(ptr0, len0);
       return GenesisHashes.__wrap(ret);
     }
     /**
@@ -4008,6 +5438,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.genesiskeydelegation_from_bytes(ptr0, len0);
+      return GenesisKeyDelegation.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.genesiskeydelegation_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {GenesisKeyDelegation}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.genesiskeydelegation_from_hex(ptr0, len0);
+      return GenesisKeyDelegation.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.genesiskeydelegation_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.genesiskeydelegation_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {GenesisKeyDelegation}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.genesiskeydelegation_from_json(ptr0, len0);
       return GenesisKeyDelegation.__wrap(ret);
     }
     /**
@@ -4094,6 +5581,63 @@ export const useCardanoSerializationLib = async () => {
       return Header.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.header_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Header}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.header_from_hex(ptr0, len0);
+      return Header.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.header_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.header_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Header}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.header_from_json(ptr0, len0);
+      return Header.__wrap(ret);
+    }
+    /**
      * @returns {HeaderBody}
      */
     header_body() {
@@ -4165,6 +5709,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.headerbody_from_bytes(ptr0, len0);
+      return HeaderBody.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.headerbody_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {HeaderBody}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.headerbody_from_hex(ptr0, len0);
+      return HeaderBody.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.headerbody_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.headerbody_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {HeaderBody}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.headerbody_from_json(ptr0, len0);
       return HeaderBody.__wrap(ret);
     }
     /**
@@ -4395,6 +5996,31 @@ export const useCardanoSerializationLib = async () => {
       return Int.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.int_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Int}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.int_from_hex(ptr0, len0);
+      return Int.__wrap(ret);
+    }
+    /**
      * @param {BigNum} x
      * @returns {Int}
      */
@@ -4512,6 +6138,16 @@ export const useCardanoSerializationLib = async () => {
         wasm.__wbindgen_free(r0, r1);
       }
     }
+    /**
+     * @param {string} string
+     * @returns {Int}
+     */
+    static from_str(string) {
+      var ptr0 = passStringToWasm0(string, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.int_from_str(ptr0, len0);
+      return Int.__wrap(ret);
+    }
   }
   /**
    */
@@ -4559,6 +6195,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.ipv4_from_bytes(ptr0, len0);
+      return Ipv4.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.ipv4_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Ipv4}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.ipv4_from_hex(ptr0, len0);
+      return Ipv4.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.ipv4_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.ipv4_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Ipv4}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.ipv4_from_json(ptr0, len0);
       return Ipv4.__wrap(ret);
     }
     /**
@@ -4634,6 +6327,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.ipv6_from_bytes(ptr0, len0);
+      return Ipv6.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.ipv6_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Ipv6}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.ipv6_from_hex(ptr0, len0);
+      return Ipv6.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.ipv6_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.ipv6_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Ipv6}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.ipv6_from_json(ptr0, len0);
       return Ipv6.__wrap(ret);
     }
     /**
@@ -4735,6 +6485,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_kesvkey_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {KESVKey}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.kesvkey_from_bytes(ptr0, len0);
+      return KESVKey.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -4779,13 +6539,28 @@ export const useCardanoSerializationLib = async () => {
       return KESVKey.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.kesvkey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {KESVKey}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.kesvkey_from_bytes(ptr0, len0);
+      var ret = wasm.kesvkey_from_hex(ptr0, len0);
       return KESVKey.__wrap(ret);
     }
   }
@@ -4835,6 +6610,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.language_from_bytes(ptr0, len0);
+      return Language.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.language_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Language}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.language_from_hex(ptr0, len0);
       return Language.__wrap(ret);
     }
     /**
@@ -5075,6 +6875,63 @@ export const useCardanoSerializationLib = async () => {
       return MIRToStakeCredentials.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.mirtostakecredentials_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {MIRToStakeCredentials}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.mirtostakecredentials_from_hex(ptr0, len0);
+      return MIRToStakeCredentials.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.mirtostakecredentials_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.mirtostakecredentials_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {MIRToStakeCredentials}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.mirtostakecredentials_from_json(ptr0, len0);
+      return MIRToStakeCredentials.__wrap(ret);
+    }
+    /**
      * @returns {MIRToStakeCredentials}
      */
     static new() {
@@ -5165,6 +7022,31 @@ export const useCardanoSerializationLib = async () => {
       return MetadataList.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.metadatalist_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {MetadataList}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.metadatalist_from_hex(ptr0, len0);
+      return MetadataList.__wrap(ret);
+    }
+    /**
      * @returns {MetadataList}
      */
     static new() {
@@ -5240,6 +7122,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.metadatamap_from_bytes(ptr0, len0);
+      return MetadataMap.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.metadatamap_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {MetadataMap}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.metadatamap_from_hex(ptr0, len0);
       return MetadataMap.__wrap(ret);
     }
     /**
@@ -5379,6 +7286,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.mint_from_bytes(ptr0, len0);
+      return Mint.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.mint_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Mint}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.mint_from_hex(ptr0, len0);
+      return Mint.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.mint_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.mint_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Mint}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.mint_from_json(ptr0, len0);
       return Mint.__wrap(ret);
     }
     /**
@@ -5578,6 +7542,63 @@ export const useCardanoSerializationLib = async () => {
       return MoveInstantaneousReward.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.moveinstantaneousreward_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {MoveInstantaneousReward}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.moveinstantaneousreward_from_hex(ptr0, len0);
+      return MoveInstantaneousReward.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.moveinstantaneousreward_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.moveinstantaneousreward_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {MoveInstantaneousReward}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.moveinstantaneousreward_from_json(ptr0, len0);
+      return MoveInstantaneousReward.__wrap(ret);
+    }
+    /**
      * @param {number} pot
      * @param {BigNum} amount
      * @returns {MoveInstantaneousReward}
@@ -5675,6 +7696,63 @@ export const useCardanoSerializationLib = async () => {
       return MoveInstantaneousRewardsCert.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.moveinstantaneousrewardscert_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {MoveInstantaneousRewardsCert}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.moveinstantaneousrewardscert_from_hex(ptr0, len0);
+      return MoveInstantaneousRewardsCert.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.moveinstantaneousrewardscert_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.moveinstantaneousrewardscert_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {MoveInstantaneousRewardsCert}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.moveinstantaneousrewardscert_from_json(ptr0, len0);
+      return MoveInstantaneousRewardsCert.__wrap(ret);
+    }
+    /**
      * @returns {MoveInstantaneousReward}
      */
     move_instantaneous_reward() {
@@ -5737,6 +7815,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.multiasset_from_bytes(ptr0, len0);
+      return MultiAsset.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.multiasset_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {MultiAsset}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.multiasset_from_hex(ptr0, len0);
+      return MultiAsset.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.multiasset_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.multiasset_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {MultiAsset}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.multiasset_from_json(ptr0, len0);
       return MultiAsset.__wrap(ret);
     }
     /**
@@ -5875,6 +8010,63 @@ export const useCardanoSerializationLib = async () => {
       return MultiHostName.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.multihostname_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {MultiHostName}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.multihostname_from_hex(ptr0, len0);
+      return MultiHostName.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.multihostname_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.multihostname_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {MultiHostName}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.multihostname_from_json(ptr0, len0);
+      return MultiHostName.__wrap(ret);
+    }
+    /**
      * @returns {DNSRecordSRV}
      */
     dns_name() {
@@ -5937,6 +8129,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.nativescript_from_bytes(ptr0, len0);
+      return NativeScript.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.nativescript_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {NativeScript}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.nativescript_from_hex(ptr0, len0);
+      return NativeScript.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.nativescript_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.nativescript_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {NativeScript}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.nativescript_from_json(ptr0, len0);
       return NativeScript.__wrap(ret);
     }
     /**
@@ -6161,6 +8410,63 @@ export const useCardanoSerializationLib = async () => {
       return NetworkId.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.networkid_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {NetworkId}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.networkid_from_hex(ptr0, len0);
+      return NetworkId.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.networkid_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.networkid_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {NetworkId}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.networkid_from_json(ptr0, len0);
+      return NetworkId.__wrap(ret);
+    }
+    /**
      * @returns {NetworkId}
      */
     static testnet() {
@@ -6291,6 +8597,31 @@ export const useCardanoSerializationLib = async () => {
       return Nonce.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.nonce_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Nonce}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.nonce_from_hex(ptr0, len0);
+      return Nonce.__wrap(ret);
+    }
+    /**
      * @returns {Nonce}
      */
     static new_identity() {
@@ -6373,6 +8704,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.operationalcert_from_bytes(ptr0, len0);
+      return OperationalCert.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.operationalcert_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {OperationalCert}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.operationalcert_from_hex(ptr0, len0);
+      return OperationalCert.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.operationalcert_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.operationalcert_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {OperationalCert}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.operationalcert_from_json(ptr0, len0);
       return OperationalCert.__wrap(ret);
     }
     /**
@@ -6463,6 +8851,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.plutusdata_from_bytes(ptr0, len0);
+      return PlutusData.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.plutusdata_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PlutusData}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.plutusdata_from_hex(ptr0, len0);
       return PlutusData.__wrap(ret);
     }
     /**
@@ -6625,6 +9038,31 @@ export const useCardanoSerializationLib = async () => {
       return PlutusList.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.plutuslist_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PlutusList}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.plutuslist_from_hex(ptr0, len0);
+      return PlutusList.__wrap(ret);
+    }
+    /**
      * @returns {PlutusList}
      */
     static new() {
@@ -6700,6 +9138,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.plutusmap_from_bytes(ptr0, len0);
+      return PlutusMap.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.plutusmap_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PlutusMap}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.plutusmap_from_hex(ptr0, len0);
       return PlutusMap.__wrap(ret);
     }
     /**
@@ -6790,6 +9253,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.plutusscript_from_bytes(ptr0, len0);
+      return PlutusScript.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.plutusscript_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PlutusScript}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.plutusscript_from_hex(ptr0, len0);
       return PlutusScript.__wrap(ret);
     }
     /**
@@ -6947,6 +9435,31 @@ export const useCardanoSerializationLib = async () => {
       return PlutusScripts.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.plutusscripts_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PlutusScripts}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.plutusscripts_from_hex(ptr0, len0);
+      return PlutusScripts.__wrap(ret);
+    }
+    /**
      * @returns {PlutusScripts}
      */
     static new() {
@@ -6997,6 +9510,38 @@ export const useCardanoSerializationLib = async () => {
     free() {
       const ptr = this.__destroy_into_raw();
       wasm.__wbg_plutuswitness_free(ptr);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.plutuswitness_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.plutuswitness_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {PlutusWitness}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.plutuswitness_from_json(ptr0, len0);
+      return PlutusWitness.__wrap(ret);
     }
     /**
      * @param {PlutusScript} script
@@ -7054,6 +9599,38 @@ export const useCardanoSerializationLib = async () => {
     free() {
       const ptr = this.__destroy_into_raw();
       wasm.__wbg_plutuswitnesses_free(ptr);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.plutuswitnesses_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.plutuswitnesses_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {PlutusWitnesses}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.plutuswitnesses_from_json(ptr0, len0);
+      return PlutusWitnesses.__wrap(ret);
     }
     /**
      * @returns {PlutusWitnesses}
@@ -7290,6 +9867,63 @@ export const useCardanoSerializationLib = async () => {
       return PoolMetadata.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolmetadata_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PoolMetadata}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolmetadata_from_hex(ptr0, len0);
+      return PoolMetadata.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolmetadata_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.poolmetadata_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {PoolMetadata}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolmetadata_from_json(ptr0, len0);
+      return PoolMetadata.__wrap(ret);
+    }
+    /**
      * @returns {URL}
      */
     url() {
@@ -7338,6 +9972,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_poolmetadatahash_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {PoolMetadataHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolmetadatahash_from_bytes(ptr0, len0);
+      return PoolMetadataHash.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -7382,13 +10026,28 @@ export const useCardanoSerializationLib = async () => {
       return PoolMetadataHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolmetadatahash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {PoolMetadataHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.poolmetadatahash_from_bytes(ptr0, len0);
+      var ret = wasm.poolmetadatahash_from_hex(ptr0, len0);
       return PoolMetadataHash.__wrap(ret);
     }
   }
@@ -7438,6 +10097,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.poolparams_from_bytes(ptr0, len0);
+      return PoolParams.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolparams_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PoolParams}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolparams_from_hex(ptr0, len0);
+      return PoolParams.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolparams_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.poolparams_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {PoolParams}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolparams_from_json(ptr0, len0);
       return PoolParams.__wrap(ret);
     }
     /**
@@ -7583,6 +10299,63 @@ export const useCardanoSerializationLib = async () => {
       return PoolRegistration.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolregistration_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PoolRegistration}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolregistration_from_hex(ptr0, len0);
+      return PoolRegistration.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolregistration_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.poolregistration_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {PoolRegistration}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolregistration_from_json(ptr0, len0);
+      return PoolRegistration.__wrap(ret);
+    }
+    /**
      * @returns {PoolParams}
      */
     pool_params() {
@@ -7645,6 +10418,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.poolretirement_from_bytes(ptr0, len0);
+      return PoolRetirement.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolretirement_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PoolRetirement}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolretirement_from_hex(ptr0, len0);
+      return PoolRetirement.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.poolretirement_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.poolretirement_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {PoolRetirement}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.poolretirement_from_json(ptr0, len0);
       return PoolRetirement.__wrap(ret);
     }
     /**
@@ -7794,6 +10624,31 @@ export const useCardanoSerializationLib = async () => {
       var ret = wasm.privatekey_sign(this.ptr, ptr0, len0);
       return Ed25519Signature.__wrap(ret);
     }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.privatekey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PrivateKey}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.privatekey_from_hex(ptr0, len0);
+      return PrivateKey.__wrap(ret);
+    }
   }
   /**
    */
@@ -7841,6 +10696,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.proposedprotocolparameterupdates_from_bytes(ptr0, len0);
+      return ProposedProtocolParameterUpdates.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.proposedprotocolparameterupdates_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ProposedProtocolParameterUpdates}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.proposedprotocolparameterupdates_from_hex(ptr0, len0);
+      return ProposedProtocolParameterUpdates.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.proposedprotocolparameterupdates_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.proposedprotocolparameterupdates_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ProposedProtocolParameterUpdates}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.proposedprotocolparameterupdates_from_json(ptr0, len0);
       return ProposedProtocolParameterUpdates.__wrap(ret);
     }
     /**
@@ -7931,6 +10843,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.protocolparamupdate_from_bytes(ptr0, len0);
+      return ProtocolParamUpdate.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.protocolparamupdate_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ProtocolParamUpdate}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.protocolparamupdate_from_hex(ptr0, len0);
+      return ProtocolParamUpdate.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.protocolparamupdate_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.protocolparamupdate_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ProtocolParamUpdate}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.protocolparamupdate_from_json(ptr0, len0);
       return ProtocolParamUpdate.__wrap(ret);
     }
     /**
@@ -8364,6 +11333,63 @@ export const useCardanoSerializationLib = async () => {
       return ProtocolVersion.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.protocolversion_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ProtocolVersion}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.protocolversion_from_hex(ptr0, len0);
+      return ProtocolVersion.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.protocolversion_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.protocolversion_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ProtocolVersion}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.protocolversion_from_json(ptr0, len0);
+      return ProtocolVersion.__wrap(ret);
+    }
+    /**
      * @returns {number}
      */
     major() {
@@ -8485,6 +11511,31 @@ export const useCardanoSerializationLib = async () => {
       var ret = wasm.publickey_hash(this.ptr);
       return Ed25519KeyHash.__wrap(ret);
     }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.publickey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {PublicKey}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.publickey_from_hex(ptr0, len0);
+      return PublicKey.__wrap(ret);
+    }
   }
   /**
    */
@@ -8586,6 +11637,31 @@ export const useCardanoSerializationLib = async () => {
       return Redeemer.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.redeemer_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Redeemer}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.redeemer_from_hex(ptr0, len0);
+      return Redeemer.__wrap(ret);
+    }
+    /**
      * @returns {RedeemerTag}
      */
     tag() {
@@ -8678,6 +11754,31 @@ export const useCardanoSerializationLib = async () => {
       return RedeemerTag.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.redeemertag_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {RedeemerTag}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.redeemertag_from_hex(ptr0, len0);
+      return RedeemerTag.__wrap(ret);
+    }
+    /**
      * @returns {RedeemerTag}
      */
     static new_spend() {
@@ -8759,6 +11860,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.redeemers_from_bytes(ptr0, len0);
+      return Redeemers.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.redeemers_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Redeemers}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.redeemers_from_hex(ptr0, len0);
       return Redeemers.__wrap(ret);
     }
     /**
@@ -8844,6 +11970,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.relay_from_bytes(ptr0, len0);
+      return Relay.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.relay_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Relay}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.relay_from_hex(ptr0, len0);
+      return Relay.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.relay_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.relay_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Relay}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.relay_from_json(ptr0, len0);
       return Relay.__wrap(ret);
     }
     /**
@@ -8948,6 +12131,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.relays_from_bytes(ptr0, len0);
+      return Relays.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.relays_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Relays}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.relays_from_hex(ptr0, len0);
+      return Relays.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.relays_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.relays_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Relays}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.relays_from_json(ptr0, len0);
       return Relays.__wrap(ret);
     }
     /**
@@ -9085,6 +12325,63 @@ export const useCardanoSerializationLib = async () => {
       return RewardAddresses.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.rewardaddresses_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {RewardAddresses}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.rewardaddresses_from_hex(ptr0, len0);
+      return RewardAddresses.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.rewardaddresses_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.rewardaddresses_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {RewardAddresses}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.rewardaddresses_from_json(ptr0, len0);
+      return RewardAddresses.__wrap(ret);
+    }
+    /**
      * @returns {RewardAddresses}
      */
     static new() {
@@ -9163,6 +12460,63 @@ export const useCardanoSerializationLib = async () => {
       return ScriptAll.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptall_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ScriptAll}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptall_from_hex(ptr0, len0);
+      return ScriptAll.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptall_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.scriptall_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ScriptAll}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptall_from_json(ptr0, len0);
+      return ScriptAll.__wrap(ret);
+    }
+    /**
      * @returns {NativeScripts}
      */
     native_scripts() {
@@ -9228,6 +12582,63 @@ export const useCardanoSerializationLib = async () => {
       return ScriptAny.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptany_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ScriptAny}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptany_from_hex(ptr0, len0);
+      return ScriptAny.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptany_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.scriptany_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ScriptAny}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptany_from_json(ptr0, len0);
+      return ScriptAny.__wrap(ret);
+    }
+    /**
      * @returns {NativeScripts}
      */
     native_scripts() {
@@ -9265,6 +12676,16 @@ export const useCardanoSerializationLib = async () => {
     free() {
       const ptr = this.__destroy_into_raw();
       wasm.__wbg_scriptdatahash_free(ptr);
+    }
+    /**
+     * @param {Uint8Array} bytes
+     * @returns {ScriptDataHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptdatahash_from_bytes(ptr0, len0);
+      return ScriptDataHash.__wrap(ret);
     }
     /**
      * @returns {Uint8Array}
@@ -9311,13 +12732,28 @@ export const useCardanoSerializationLib = async () => {
       return ScriptDataHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptdatahash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {ScriptDataHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.scriptdatahash_from_bytes(ptr0, len0);
+      var ret = wasm.scriptdatahash_from_hex(ptr0, len0);
       return ScriptDataHash.__wrap(ret);
     }
   }
@@ -9342,6 +12778,16 @@ export const useCardanoSerializationLib = async () => {
     free() {
       const ptr = this.__destroy_into_raw();
       wasm.__wbg_scripthash_free(ptr);
+    }
+    /**
+     * @param {Uint8Array} bytes
+     * @returns {ScriptHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scripthash_from_bytes(ptr0, len0);
+      return ScriptHash.__wrap(ret);
     }
     /**
      * @returns {Uint8Array}
@@ -9388,13 +12834,28 @@ export const useCardanoSerializationLib = async () => {
       return ScriptHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scripthash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {ScriptHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.scripthash_from_bytes(ptr0, len0);
+      var ret = wasm.scripthash_from_hex(ptr0, len0);
       return ScriptHash.__wrap(ret);
     }
   }
@@ -9444,6 +12905,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.scripthashes_from_bytes(ptr0, len0);
+      return ScriptHashes.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scripthashes_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ScriptHashes}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scripthashes_from_hex(ptr0, len0);
+      return ScriptHashes.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scripthashes_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.scripthashes_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ScriptHashes}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scripthashes_from_json(ptr0, len0);
       return ScriptHashes.__wrap(ret);
     }
     /**
@@ -9525,6 +13043,63 @@ export const useCardanoSerializationLib = async () => {
       return ScriptNOfK.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptnofk_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ScriptNOfK}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptnofk_from_hex(ptr0, len0);
+      return ScriptNOfK.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptnofk_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.scriptnofk_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ScriptNOfK}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptnofk_from_json(ptr0, len0);
+      return ScriptNOfK.__wrap(ret);
+    }
+    /**
      * @returns {number}
      */
     n() {
@@ -9598,6 +13173,63 @@ export const useCardanoSerializationLib = async () => {
       return ScriptPubkey.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptpubkey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ScriptPubkey}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptpubkey_from_hex(ptr0, len0);
+      return ScriptPubkey.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptpubkey_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.scriptpubkey_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ScriptPubkey}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptpubkey_from_json(ptr0, len0);
+      return ScriptPubkey.__wrap(ret);
+    }
+    /**
      * @returns {Ed25519KeyHash}
      */
     addr_keyhash() {
@@ -9660,6 +13292,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.scriptref_from_bytes(ptr0, len0);
+      return ScriptRef.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptref_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {ScriptRef}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptref_from_hex(ptr0, len0);
+      return ScriptRef.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.scriptref_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.scriptref_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {ScriptRef}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.scriptref_from_json(ptr0, len0);
       return ScriptRef.__wrap(ret);
     }
     /**
@@ -9758,6 +13447,63 @@ export const useCardanoSerializationLib = async () => {
       return SingleHostAddr.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.singlehostaddr_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {SingleHostAddr}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.singlehostaddr_from_hex(ptr0, len0);
+      return SingleHostAddr.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.singlehostaddr_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.singlehostaddr_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {SingleHostAddr}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.singlehostaddr_from_json(ptr0, len0);
+      return SingleHostAddr.__wrap(ret);
+    }
+    /**
      * @returns {number | undefined}
      */
     port() {
@@ -9847,6 +13593,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.singlehostname_from_bytes(ptr0, len0);
+      return SingleHostName.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.singlehostname_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {SingleHostName}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.singlehostname_from_hex(ptr0, len0);
+      return SingleHostName.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.singlehostname_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.singlehostname_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {SingleHostName}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.singlehostname_from_json(ptr0, len0);
       return SingleHostName.__wrap(ret);
     }
     /**
@@ -9961,6 +13764,63 @@ export const useCardanoSerializationLib = async () => {
       var ret = wasm.stakecredential_from_bytes(ptr0, len0);
       return StakeCredential.__wrap(ret);
     }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakecredential_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {StakeCredential}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakecredential_from_hex(ptr0, len0);
+      return StakeCredential.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakecredential_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.stakecredential_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {StakeCredential}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakecredential_from_json(ptr0, len0);
+      return StakeCredential.__wrap(ret);
+    }
   }
   /**
    */
@@ -10008,6 +13868,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.stakecredentials_from_bytes(ptr0, len0);
+      return StakeCredentials.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakecredentials_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {StakeCredentials}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakecredentials_from_hex(ptr0, len0);
+      return StakeCredentials.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakecredentials_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.stakecredentials_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {StakeCredentials}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakecredentials_from_json(ptr0, len0);
       return StakeCredentials.__wrap(ret);
     }
     /**
@@ -10089,6 +14006,63 @@ export const useCardanoSerializationLib = async () => {
       return StakeDelegation.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakedelegation_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {StakeDelegation}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakedelegation_from_hex(ptr0, len0);
+      return StakeDelegation.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakedelegation_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.stakedelegation_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {StakeDelegation}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakedelegation_from_json(ptr0, len0);
+      return StakeDelegation.__wrap(ret);
+    }
+    /**
      * @returns {StakeCredential}
      */
     stake_credential() {
@@ -10163,6 +14137,63 @@ export const useCardanoSerializationLib = async () => {
       return StakeDeregistration.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakederegistration_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {StakeDeregistration}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakederegistration_from_hex(ptr0, len0);
+      return StakeDeregistration.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakederegistration_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.stakederegistration_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {StakeDeregistration}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakederegistration_from_json(ptr0, len0);
+      return StakeDeregistration.__wrap(ret);
+    }
+    /**
      * @returns {StakeCredential}
      */
     stake_credential() {
@@ -10225,6 +14256,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.stakeregistration_from_bytes(ptr0, len0);
+      return StakeRegistration.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakeregistration_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {StakeRegistration}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakeregistration_from_hex(ptr0, len0);
+      return StakeRegistration.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.stakeregistration_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.stakeregistration_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {StakeRegistration}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.stakeregistration_from_json(ptr0, len0);
       return StakeRegistration.__wrap(ret);
     }
     /**
@@ -10354,6 +14442,63 @@ export const useCardanoSerializationLib = async () => {
       return TimelockExpiry.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.timelockexpiry_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TimelockExpiry}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.timelockexpiry_from_hex(ptr0, len0);
+      return TimelockExpiry.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.timelockexpiry_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.timelockexpiry_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TimelockExpiry}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.timelockexpiry_from_json(ptr0, len0);
+      return TimelockExpiry.__wrap(ret);
+    }
+    /**
      * @returns {number}
      */
     slot() {
@@ -10434,6 +14579,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.timelockstart_from_bytes(ptr0, len0);
+      return TimelockStart.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.timelockstart_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TimelockStart}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.timelockstart_from_hex(ptr0, len0);
+      return TimelockStart.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.timelockstart_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.timelockstart_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TimelockStart}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.timelockstart_from_json(ptr0, len0);
       return TimelockStart.__wrap(ret);
     }
     /**
@@ -10521,6 +14723,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transaction_from_bytes(ptr0, len0);
+      return Transaction.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transaction_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Transaction}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transaction_from_hex(ptr0, len0);
+      return Transaction.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transaction_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transaction_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Transaction}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transaction_from_json(ptr0, len0);
       return Transaction.__wrap(ret);
     }
     /**
@@ -10625,6 +14884,63 @@ export const useCardanoSerializationLib = async () => {
       return TransactionBodies.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionbodies_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionBodies}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionbodies_from_hex(ptr0, len0);
+      return TransactionBodies.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionbodies_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactionbodies_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionBodies}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionbodies_from_json(ptr0, len0);
+      return TransactionBodies.__wrap(ret);
+    }
+    /**
      * @returns {TransactionBodies}
      */
     static new() {
@@ -10700,6 +15016,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactionbody_from_bytes(ptr0, len0);
+      return TransactionBody.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionbody_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionBody}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionbody_from_hex(ptr0, len0);
+      return TransactionBody.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionbody_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactionbody_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionBody}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionbody_from_json(ptr0, len0);
       return TransactionBody.__wrap(ret);
     }
     /**
@@ -11831,6 +16204,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_transactionhash_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {TransactionHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionhash_from_bytes(ptr0, len0);
+      return TransactionHash.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -11875,13 +16258,28 @@ export const useCardanoSerializationLib = async () => {
       return TransactionHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionhash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {TransactionHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.transactionhash_from_bytes(ptr0, len0);
+      var ret = wasm.transactionhash_from_hex(ptr0, len0);
       return TransactionHash.__wrap(ret);
     }
   }
@@ -11931,6 +16329,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactioninput_from_bytes(ptr0, len0);
+      return TransactionInput.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactioninput_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionInput}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactioninput_from_hex(ptr0, len0);
+      return TransactionInput.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactioninput_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactioninput_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionInput}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactioninput_from_json(ptr0, len0);
       return TransactionInput.__wrap(ret);
     }
     /**
@@ -12004,6 +16459,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactioninputs_from_bytes(ptr0, len0);
+      return TransactionInputs.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactioninputs_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionInputs}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactioninputs_from_hex(ptr0, len0);
+      return TransactionInputs.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactioninputs_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactioninputs_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionInputs}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactioninputs_from_json(ptr0, len0);
       return TransactionInputs.__wrap(ret);
     }
     /**
@@ -12089,6 +16601,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactionmetadatum_from_bytes(ptr0, len0);
+      return TransactionMetadatum.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionmetadatum_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionMetadatum}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionmetadatum_from_hex(ptr0, len0);
       return TransactionMetadatum.__wrap(ret);
     }
     /**
@@ -12247,6 +16784,31 @@ export const useCardanoSerializationLib = async () => {
       return TransactionMetadatumLabels.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionmetadatumlabels_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionMetadatumLabels}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionmetadatumlabels_from_hex(ptr0, len0);
+      return TransactionMetadatumLabels.__wrap(ret);
+    }
+    /**
      * @returns {TransactionMetadatumLabels}
      */
     static new() {
@@ -12322,6 +16884,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactionoutput_from_bytes(ptr0, len0);
+      return TransactionOutput.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionoutput_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionOutput}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionoutput_from_hex(ptr0, len0);
+      return TransactionOutput.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionoutput_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactionoutput_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionOutput}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionoutput_from_json(ptr0, len0);
       return TransactionOutput.__wrap(ret);
     }
     /**
@@ -12623,6 +17242,63 @@ export const useCardanoSerializationLib = async () => {
       return TransactionOutputs.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionoutputs_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionOutputs}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionoutputs_from_hex(ptr0, len0);
+      return TransactionOutputs.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionoutputs_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactionoutputs_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionOutputs}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionoutputs_from_json(ptr0, len0);
+      return TransactionOutputs.__wrap(ret);
+    }
+    /**
      * @returns {TransactionOutputs}
      */
     static new() {
@@ -12698,6 +17374,31 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactionunspentoutput_from_bytes(ptr0, len0);
+      return TransactionUnspentOutput.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionunspentoutput_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionUnspentOutput}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionunspentoutput_from_hex(ptr0, len0);
       return TransactionUnspentOutput.__wrap(ret);
     }
     /**
@@ -12824,6 +17525,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactionwitnessset_from_bytes(ptr0, len0);
+      return TransactionWitnessSet.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionwitnessset_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionWitnessSet}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionwitnessset_from_hex(ptr0, len0);
+      return TransactionWitnessSet.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionwitnessset_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactionwitnessset_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionWitnessSet}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionwitnessset_from_json(ptr0, len0);
       return TransactionWitnessSet.__wrap(ret);
     }
     /**
@@ -12964,6 +17722,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.transactionwitnesssets_from_bytes(ptr0, len0);
+      return TransactionWitnessSets.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionwitnesssets_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {TransactionWitnessSets}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionwitnesssets_from_hex(ptr0, len0);
+      return TransactionWitnessSets.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.transactionwitnesssets_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.transactionwitnesssets_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {TransactionWitnessSets}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.transactionwitnesssets_from_json(ptr0, len0);
       return TransactionWitnessSets.__wrap(ret);
     }
     /**
@@ -13287,6 +18102,31 @@ export const useCardanoSerializationLib = async () => {
       return URL.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.url_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {URL}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.url_from_hex(ptr0, len0);
+      return URL.__wrap(ret);
+    }
+    /**
      * @param {string} url
      * @returns {URL}
      */
@@ -13358,6 +18198,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.unitinterval_from_bytes(ptr0, len0);
+      return UnitInterval.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.unitinterval_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {UnitInterval}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.unitinterval_from_hex(ptr0, len0);
+      return UnitInterval.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.unitinterval_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.unitinterval_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {UnitInterval}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.unitinterval_from_json(ptr0, len0);
       return UnitInterval.__wrap(ret);
     }
     /**
@@ -13435,6 +18332,63 @@ export const useCardanoSerializationLib = async () => {
       return Update.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.update_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Update}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.update_from_hex(ptr0, len0);
+      return Update.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.update_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.update_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Update}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.update_from_json(ptr0, len0);
+      return Update.__wrap(ret);
+    }
+    /**
      * @returns {ProposedProtocolParameterUpdates}
      */
     proposed_protocol_parameter_updates() {
@@ -13508,6 +18462,63 @@ export const useCardanoSerializationLib = async () => {
       return VRFCert.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.vrfcert_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {VRFCert}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.vrfcert_from_hex(ptr0, len0);
+      return VRFCert.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.vrfcert_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.vrfcert_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {VRFCert}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.vrfcert_from_json(ptr0, len0);
+      return VRFCert.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     output() {
@@ -13576,6 +18587,16 @@ export const useCardanoSerializationLib = async () => {
       wasm.__wbg_vrfkeyhash_free(ptr);
     }
     /**
+     * @param {Uint8Array} bytes
+     * @returns {VRFKeyHash}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.vrfkeyhash_from_bytes(ptr0, len0);
+      return VRFKeyHash.__wrap(ret);
+    }
+    /**
      * @returns {Uint8Array}
      */
     to_bytes() {
@@ -13620,13 +18641,28 @@ export const useCardanoSerializationLib = async () => {
       return VRFKeyHash.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.vrfkeyhash_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {VRFKeyHash}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.vrfkeyhash_from_bytes(ptr0, len0);
+      var ret = wasm.vrfkeyhash_from_hex(ptr0, len0);
       return VRFKeyHash.__wrap(ret);
     }
   }
@@ -13651,6 +18687,16 @@ export const useCardanoSerializationLib = async () => {
     free() {
       const ptr = this.__destroy_into_raw();
       wasm.__wbg_vrfvkey_free(ptr);
+    }
+    /**
+     * @param {Uint8Array} bytes
+     * @returns {VRFVKey}
+     */
+    static from_bytes(bytes) {
+      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.vrfvkey_from_bytes(ptr0, len0);
+      return VRFVKey.__wrap(ret);
     }
     /**
      * @returns {Uint8Array}
@@ -13697,13 +18743,28 @@ export const useCardanoSerializationLib = async () => {
       return VRFVKey.__wrap(ret);
     }
     /**
-     * @param {Uint8Array} bytes
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.vrfvkey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex
      * @returns {VRFVKey}
      */
-    static from_bytes(bytes) {
-      var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
+    static from_hex(hex) {
+      var ptr0 = passStringToWasm0(hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
       var len0 = WASM_VECTOR_LEN;
-      var ret = wasm.vrfvkey_from_bytes(ptr0, len0);
+      var ret = wasm.vrfvkey_from_hex(ptr0, len0);
       return VRFVKey.__wrap(ret);
     }
   }
@@ -13753,6 +18814,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.value_from_bytes(ptr0, len0);
+      return Value.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.value_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Value}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.value_from_hex(ptr0, len0);
+      return Value.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.value_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.value_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Value}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.value_from_json(ptr0, len0);
       return Value.__wrap(ret);
     }
     /**
@@ -13913,6 +19031,31 @@ export const useCardanoSerializationLib = async () => {
       return Vkey.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.vkey_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Vkey}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.vkey_from_hex(ptr0, len0);
+      return Vkey.__wrap(ret);
+    }
+    /**
      * @param {PublicKey} pk
      * @returns {Vkey}
      */
@@ -14027,6 +19170,63 @@ export const useCardanoSerializationLib = async () => {
       var ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_malloc);
       var len0 = WASM_VECTOR_LEN;
       var ret = wasm.vkeywitness_from_bytes(ptr0, len0);
+      return Vkeywitness.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.vkeywitness_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Vkeywitness}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.vkeywitness_from_hex(ptr0, len0);
+      return Vkeywitness.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.vkeywitness_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.vkeywitness_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Vkeywitness}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.vkeywitness_from_json(ptr0, len0);
       return Vkeywitness.__wrap(ret);
     }
     /**
@@ -14156,6 +19356,63 @@ export const useCardanoSerializationLib = async () => {
       return Withdrawals.__wrap(ret);
     }
     /**
+     * @returns {string}
+     */
+    to_hex() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.withdrawals_to_hex(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @param {string} hex_str
+     * @returns {Withdrawals}
+     */
+    static from_hex(hex_str) {
+      var ptr0 = passStringToWasm0(hex_str, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.withdrawals_from_hex(ptr0, len0);
+      return Withdrawals.__wrap(ret);
+    }
+    /**
+     * @returns {string}
+     */
+    to_json() {
+      try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.withdrawals_to_json(retptr, this.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+      } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+      }
+    }
+    /**
+     * @returns {any}
+     */
+    to_js_value() {
+      var ret = wasm.withdrawals_to_js_value(this.ptr);
+      return takeObject(ret);
+    }
+    /**
+     * @param {string} json
+     * @returns {Withdrawals}
+     */
+    static from_json(json) {
+      var ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+      var len0 = WASM_VECTOR_LEN;
+      var ret = wasm.withdrawals_from_json(ptr0, len0);
+      return Withdrawals.__wrap(ret);
+    }
+    /**
      * @returns {Withdrawals}
      */
     static new() {
@@ -14198,210 +19455,11 @@ export const useCardanoSerializationLib = async () => {
     }
   }
 
-  function __wbindgen_object_drop_ref(arg0) {
-    takeObject(arg0);
-  };
-
-  function __wbindgen_string_new(arg0, arg1) {
-    var ret = getStringFromWasm0(arg0, arg1);
-    return addHeapObject(ret);
-  };
-
-  function __wbindgen_string_get(arg0, arg1) {
-    const obj = getObject(arg1);
-    var ret = typeof(obj) === 'string' ? obj : undefined;
-    var ptr0 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    var len0 = WASM_VECTOR_LEN;
-    getInt32Memory0()[arg0 / 4 + 1] = len0;
-    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-  };
-
-  function __wbg_getRandomValues_98117e9a7e993920() { return handleError(function (arg0, arg1) {
-    getObject(arg0).getRandomValues(getObject(arg1));
-  }, arguments) };
-
-  function __wbg_randomFillSync_64cc7d048f228ca8() { return handleError(function (arg0, arg1, arg2) {
-    getObject(arg0).randomFillSync(getArrayU8FromWasm0(arg1, arg2));
-  }, arguments) };
-
-  function __wbg_process_2f24d6544ea7b200(arg0) {
-    var ret = getObject(arg0).process;
-    return addHeapObject(ret);
-  };
-
-  function __wbindgen_is_object(arg0) {
-    const val = getObject(arg0);
-    var ret = typeof(val) === 'object' && val !== null;
-    return ret;
-  };
-
-  function __wbg_versions_6164651e75405d4a(arg0) {
-    var ret = getObject(arg0).versions;
-    return addHeapObject(ret);
-  };
-
-  function __wbg_node_4b517d861cbcb3bc(arg0) {
-    var ret = getObject(arg0).node;
-    return addHeapObject(ret);
-  };
-
-  function __wbindgen_is_string(arg0) {
-    var ret = typeof(getObject(arg0)) === 'string';
-    return ret;
-  };
-
-  function __wbg_crypto_98fc271021c7d2ad(arg0) {
-    var ret = getObject(arg0).crypto;
-    return addHeapObject(ret);
-  };
-
-  function __wbg_msCrypto_a2cdb043d2bfe57f(arg0) {
-    var ret = getObject(arg0).msCrypto;
-    return addHeapObject(ret);
-  };
-
-  function __wbg_modulerequire_3440a4bcf44437db() { return handleError(function (arg0, arg1) {
-    var ret = module.require(getStringFromWasm0(arg0, arg1));
-    return addHeapObject(ret);
-  }, arguments) };
-
-  function __wbg_newnoargs_9fdd8f3961dd1bee(arg0, arg1) {
-    var ret = new Function(getStringFromWasm0(arg0, arg1));
-    return addHeapObject(ret);
-  };
-
-  function __wbg_call_ba36642bd901572b() { return handleError(function (arg0, arg1) {
-    var ret = getObject(arg0).call(getObject(arg1));
-    return addHeapObject(ret);
-  }, arguments) };
-
-  function __wbg_self_bb69a836a72ec6e9() { return handleError(function () {
-    var ret = self.self;
-    return addHeapObject(ret);
-  }, arguments) };
-
-  function __wbg_window_3304fc4b414c9693() { return handleError(function () {
-    var ret = window.window;
-    return addHeapObject(ret);
-  }, arguments) };
-
-  function __wbg_globalThis_e0d21cabc6630763() { return handleError(function () {
-    var ret = globalThis.globalThis;
-    return addHeapObject(ret);
-  }, arguments) };
-
-  function __wbg_global_8463719227271676() { return handleError(function () {
-    var ret = global.global;
-    return addHeapObject(ret);
-  }, arguments) };
-
-  function __wbindgen_is_undefined(arg0) {
-    var ret = getObject(arg0) === undefined;
-    return ret;
-  };
-
-  function __wbg_buffer_9e184d6f785de5ed(arg0) {
-    var ret = getObject(arg0).buffer;
-    return addHeapObject(ret);
-  };
-
-  function __wbg_new_e8101319e4cf95fc(arg0) {
-    var ret = new Uint8Array(getObject(arg0));
-    return addHeapObject(ret);
-  };
-
-  function __wbg_set_e8ae7b27314e8b98(arg0, arg1, arg2) {
-    getObject(arg0).set(getObject(arg1), arg2 >>> 0);
-  };
-
-  function __wbg_length_2d56cb37075fcfb1(arg0) {
-    var ret = getObject(arg0).length;
-    return ret;
-  };
-
-  function __wbg_newwithlength_a8d1dbcbe703a5c6(arg0) {
-    var ret = new Uint8Array(arg0 >>> 0);
-    return addHeapObject(ret);
-  };
-
-  function __wbg_subarray_901ede8318da52a6(arg0, arg1, arg2) {
-    var ret = getObject(arg0).subarray(arg1 >>> 0, arg2 >>> 0);
-    return addHeapObject(ret);
-  };
-
-  function __wbindgen_object_clone_ref(arg0) {
-    var ret = getObject(arg0);
-    return addHeapObject(ret);
-  };
-
-  function __wbg_new_3a746f2619705add(arg0, arg1) {
-    var ret = new Function(getStringFromWasm0(arg0, arg1));
-    return addHeapObject(ret);
-  };
-
-  function __wbg_call_f54d3a6dadb199ca(arg0, arg1) {
-    var ret = getObject(arg0).call(getObject(arg1));
-    return addHeapObject(ret);
-  };
-
-  function __wbindgen_jsval_eq(arg0, arg1) {
-    var ret = getObject(arg0) === getObject(arg1);
-    return ret;
-  };
-
-  function __wbg_self_ac379e780a0d8b94(arg0) {
-    var ret = getObject(arg0).self;
-    return addHeapObject(ret);
-  };
-
-  function __wbg_crypto_1e4302b85d4f64a2(arg0) {
-    var ret = getObject(arg0).crypto;
-    return addHeapObject(ret);
-  };
-
-  function __wbg_getRandomValues_1b4ba144162a5c9e(arg0) {
-    var ret = getObject(arg0).getRandomValues;
-    return addHeapObject(ret);
-  };
-
-  function __wbg_require_6461b1e9a0d7c34a(arg0, arg1) {
-    var ret = require(getStringFromWasm0(arg0, arg1));
-    return addHeapObject(ret);
-  };
-
-  function __wbg_randomFillSync_1b52c8482374c55b(arg0, arg1, arg2) {
-    getObject(arg0).randomFillSync(getArrayU8FromWasm0(arg1, arg2));
-  };
-
-  function __wbg_getRandomValues_1ef11e888e5228e9(arg0, arg1, arg2) {
-    getObject(arg0).getRandomValues(getArrayU8FromWasm0(arg1, arg2));
-  };
-
-  function __wbindgen_debug_string(arg0, arg1) {
-    var ret = debugString(getObject(arg1));
-    var ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    var len0 = WASM_VECTOR_LEN;
-    getInt32Memory0()[arg0 / 4 + 1] = len0;
-    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-  };
-
-  function __wbindgen_throw(arg0, arg1) {
-    throw new Error(getStringFromWasm0(arg0, arg1));
-  };
-
-  function __wbindgen_rethrow(arg0) {
-    throw takeObject(arg0);
-  };
-
-  function __wbindgen_memory() {
-    var ret = wasm.memory;
-    return addHeapObject(ret);
-  };
-
 
   return {
     wasm,
 
+    // classes
     Address,
     AssetName,
     AssetNames,
@@ -14544,6 +19602,7 @@ export const useCardanoSerializationLib = async () => {
     Vkeywitnesses,
     Withdrawals,
 
+    // constants / types / kinds
     CertificateKind,
     MIRPot,
     MIRKind,
@@ -14551,14 +19610,15 @@ export const useCardanoSerializationLib = async () => {
     NativeScriptKind,
     ScriptHashNamespace,
     NetworkIdKind,
+    CoinSelectionStrategyCIP2,
+    StakeCredKind,
     ScriptSchema,
     TransactionMetadatumKind,
     MetadataJsonSchema,
-    CoinSelectionStrategyCIP2,
     LanguageKind,
     PlutusDataKind,
     RedeemerTagKind,
-    StakeCredKind,
+    PlutusDatumSchema,
 
   }
 }

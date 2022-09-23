@@ -1,22 +1,21 @@
 <script context="module">
   import { theme } from '$lib/stores';
 
-  export const load = () => {
-      if ((window||{}).localStorage !== undefined) {
-          let maybeStoredTheme = window.localStorage.theme || 'l'
-          theme.set(maybeStoredTheme)
-          if (maybeStoredTheme !== 's') {
-              document.documentElement.classList.remove('theme-s')
-          } else {
-              document.documentElement.classList.add('theme-s')
-          }
+  if ((window||{}).localStorage !== undefined) {
+      let maybeStoredTheme = window.localStorage.theme || 'l'
+      theme.set(maybeStoredTheme)
+      if (maybeStoredTheme !== 's') {
+          document.documentElement.classList.remove('theme-s')
+      } else {
+          document.documentElement.classList.add('theme-s')
       }
   }
+
 </script>
 
 <script>
   import "../app.scss";
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, setContext } from 'svelte';
   import EpochBar from "$lib/EpochBar.svelte";
   import UserBox from "$lib/UserBox.svelte";
   import Header from "$lib/header/Header.svelte";
@@ -28,6 +27,12 @@
   } from '$lib/stores';
   import { doCallInPromise, waitFor } from '$lib/utils';
   import { User, ControlMsg } from '$lib/pb/control_pb';
+
+  // import * as wasm from '@emurgo/cardano-serialization-lib-browser/';
+
+  let pageLoaderEl;
+  const pageLoaderObj = {};
+  setContext('pageLoader', pageLoaderObj)
 
   $: mainServed = $mainQueueMembers[0];
   $: user = $cardanoWallet.user
@@ -60,6 +65,7 @@
           last_refresh_time: dat.last_refresh_time,
           notes: dat.notes
       })
+      // console.log("ControlMsg received, notes: ", dat.notes)
       if (obj.type == ControlMsg.Type.REFRESH) {
           Promise.all([
               doCallInPromise($serviceClients, 'MainQueue', 'listQueue', mainQueueMembers, 'membersList'),
@@ -77,10 +83,12 @@
           waitFor(() => $mainQueueMembers.length > 0, 2)
               .then(() => goto(initialHash))
       }
+      pageLoaderObj.el = pageLoaderEl
   })
 
 </script>
 
+<div class="pageloader" bind:this={pageLoaderEl}><span class="title">Loading</span></div>
 <div class="epoch-bar">
 {#if $page.url.pathname != "/about"}
 <EpochBar data={$epochData} />

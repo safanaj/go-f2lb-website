@@ -10,7 +10,7 @@ const appVersion = readFileSync(fileURLToPath(new URL('version.json', import.met
 /** @type {import('vite').UserConfig} */
 const config = {
   plugins: [sveltekit(), wasm(), topLevelAwait()],
-  build: { minify: true },
+  build: { minify: false },
 
   define: {
     '__APP_VERSION__': JSON.stringify(appVersion),

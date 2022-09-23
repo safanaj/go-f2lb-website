@@ -3,6 +3,7 @@
       useCardanoSerializationLib,
       getDelegationSignedTx
   } from '$lib/cardano/csl.js'
+  // import * as wasm from '@emurgo/cardano-serialization-lib-browser/';
 
   let cardano = window.cardano;
   let wasm = {}
@@ -25,6 +26,7 @@
   import Member from '$lib/Member.svelte'
   // import { doCallInPromise } from '$lib/utils'
   import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
+  import { getContext } from 'svelte';
 
   $: mainServed = $mainQueueMembers[0];
   $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
@@ -34,12 +36,17 @@
 
   const isWrongPool = user => user !== undefined && (user.delegatedpool != mainServed.ticker && user.delegatedpool != mainServed.poolidbech32)
 
+  const pageLoaderObj = getContext('pageLoader')
+
   const doDelegation = () => {
       let {api, wasm, address} = $cardanoWallet
+      // console.log('pageLoaderEl', pageLoaderObj.el)
+      pageLoaderObj.el.classList.toggle('is-active')
       getDelegationSignedTx(api, wasm, address, mainServed.poolidbech32)
           .then(api.submitTx)
           .then(console.log)
-          .catch(console.log)
+          .then(() => { pageLoaderObj.el.classList.toggle('is-active') })
+          .catch(err => { pageLoaderObj.el.classList.toggle('is-active'); console.log(err); })
   }
 
 </script>
