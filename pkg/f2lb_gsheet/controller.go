@@ -355,21 +355,30 @@ func (c *controller) Refresh() error {
 		saddrs_m := make(map[string]any)
 		tickers_m := make(map[string]any)
 		for _, r := range append(c.mainQueue.GetRecords(), oldMainQueue.GetRecords()...) {
-			tickers = append(tickers, r.Ticker)
 			tickers_m[r.Ticker] = struct{}{}
 			// should we add all the addresses?
-			saddrs = append(saddrs, r.StakeAddrs[0])
 			saddrs_m[r.StakeAddrs[0]] = struct{}{}
 
-			// try to use hints mapping here as early speculation
-			if r.PoolIdBech32 == "" {
-				if pid, ok := hintsMapping[r.Ticker]; ok {
+			// c.V(2).Info("check for hints mapping", "ticker", r.Ticker)
+			if pid, ok := hintsMapping[r.Ticker]; ok {
+				// c.V(2).Info("hints mapping", "ticker", r.Ticker, "pool", pid)
+				if pid == "retired" {
+					delete(saddrs_m, r.StakeAddrs[0])
+					// c.accountCache.Del(r.StakeAddrs[0])
+					delete(tickers_m, r.Ticker)
+					// c.poolCache.Del(r.Ticker)
+					continue
+				}
+				// try to use hints mapping here as early speculation
+				if r.PoolIdBech32 == "" {
 					r.PoolIdBech32 = pid
 					if hex, err := utils.Bech32ToHex(r.PoolIdBech32); err != nil {
 						r.PoolIdHex = hex
 					}
 				}
 			}
+			saddrs = append(saddrs, r.StakeAddrs[0])
+			tickers = append(tickers, r.Ticker)
 		}
 		c.V(2).Info("Controller refresh adding to cache", "stake addresses",
 			len(saddrs), "in", time.Since(startRefreshAt).String())
@@ -511,7 +520,10 @@ func (c *controller) Refresh() error {
 				if r.PoolIdBech32 != "" {
 					missingFromKoios[r.PoolIdBech32] = r.Ticker
 				} else if pid, ok := hintsMapping[r.Ticker]; ok {
-					missingFromKoios[pid] = r.Ticker
+					c.V(2).Info("Missing from koios with hint", "ticker", r.Ticker, "pool", pid)
+					if pid != "retired" {
+						missingFromKoios[pid] = r.Ticker
+					}
 				}
 			}
 		}
