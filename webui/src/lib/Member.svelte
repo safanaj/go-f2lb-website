@@ -13,7 +13,7 @@
   export let idBoxHashPrefix = '';
   export let epochProgress = 0;
   export let mainServed = {};
-  export let isFirst = false;
+  export const isFirst = false;
   export let topTicker = '';
   let boxId = idBoxHashPrefix === '' ? member.ticker : `${idBoxHashPrefix}-${member.ticker}`
 
