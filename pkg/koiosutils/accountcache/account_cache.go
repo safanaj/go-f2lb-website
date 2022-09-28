@@ -33,6 +33,7 @@ type (
 		Get(string) (AccountInfo, bool)
 		Len() uint32
 		Pending() uint32
+		AddedItems() uint32
 		Ready() bool
 		WaitReady(time.Duration) bool
 		IsRunning() bool
@@ -213,8 +214,8 @@ func (c *accountCache) GobDecode(dat []byte) error {
 	buf := bytes.NewBuffer(dat)
 	nitems := 0
 	defer func() {
-		atomic.AddUint32(&c.addeditems, uint32(nitems))
-		atomic.AddUint32(&c.nitems, uint32(nitems))
+		atomic.StoreUint32(&c.addeditems, uint32(nitems))
+		atomic.StoreUint32(&c.nitems, uint32(nitems))
 	}()
 	for {
 		if elt, err := buf.ReadBytes(byte('\n')); err == nil || err == io.EOF {
@@ -419,9 +420,10 @@ func (ac *accountCache) Get(saddr string) (AccountInfo, bool) {
 	return ai.(*accountInfo), true
 }
 
-func (ac *accountCache) Len() uint32     { return ac.nitems }
-func (ac *accountCache) Pending() uint32 { return ac.addeditems - ac.nitems }
-func (ac *accountCache) IsRunning() bool { return ac.running }
+func (ac *accountCache) Len() uint32        { return ac.nitems }
+func (ac *accountCache) Pending() uint32    { return ac.addeditems - ac.nitems }
+func (ac *accountCache) AddedItems() uint32 { return ac.addeditems }
+func (ac *accountCache) IsRunning() bool    { return ac.running }
 func (ac *accountCache) Ready() bool {
 	ac.V(5).Info("AccountCache.Status",
 		"ready", ac.nitems == ac.addeditems, "nitems", ac.nitems, "addeditems", ac.addeditems, "pending", ac.Pending())
@@ -495,6 +497,7 @@ func (c *accountCache) maybeLoadFromDisk() {
 		}
 		f.Close()
 	}
+	c.V(2).Info("maybeLoadFromDisk", "addeditems", c.addeditems, "nitems", c.nitems)
 	return
 }
 

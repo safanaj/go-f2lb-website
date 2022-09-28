@@ -65,7 +65,7 @@
           last_refresh_time: dat.last_refresh_time,
           notes: dat.notes
       })
-      // console.log("ControlMsg received, notes: ", dat.notes)
+      console.log("ControlMsg received, notes: ", dat.notes)
       if (obj.type == ControlMsg.Type.REFRESH) {
           Promise.all([
               doCallInPromise($serviceClients, 'MainQueue', 'listQueue', mainQueueMembers, 'membersList'),

@@ -86,7 +86,15 @@ func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlSe
 	dataBytes, _ := json.Marshal(map[string]any{
 		"cache_ready":       s.ctrl.GetAccountCache().Ready() && s.ctrl.GetPoolCache().Ready(),
 		"last_refresh_time": s.ctrl.GetLastRefreshTime().Format(time.RFC850),
-		"notes":             map[string]string{},
+		"notes": map[string]string{
+			"poolcache_pending":    fmt.Sprintf("%d", s.ctrl.GetPoolCache().Pending()),
+			"poolcache_len":        fmt.Sprintf("%d", s.ctrl.GetPoolCache().Len()),
+			"poolcache_added":      fmt.Sprintf("%d", s.ctrl.GetPoolCache().AddedItems()),
+			"accountcache_pending": fmt.Sprintf("%d", s.ctrl.GetAccountCache().Pending()),
+			"accountcache_len":     fmt.Sprintf("%d", s.ctrl.GetAccountCache().Len()),
+			"accountcache_added":   fmt.Sprintf("%d", s.ctrl.GetAccountCache().AddedItems()),
+			"missing_pools":        strings.Join(s.ctrl.GetPoolCache().GetMissingPoolInfos(), ", "),
+		},
 	})
 
 	cmsg := &ControlMsg{

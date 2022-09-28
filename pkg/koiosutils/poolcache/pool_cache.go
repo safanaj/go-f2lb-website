@@ -34,6 +34,7 @@ type (
 		Get(string) (PoolInfo, bool)
 		Len() uint32
 		Pending() uint32
+		AddedItems() uint32
 		Ready() bool
 		WaitReady(time.Duration) bool
 		IsRunning() bool
@@ -50,6 +51,7 @@ type (
 
 		IsTickerMissingFromKoiosPoolList(string) bool
 		FillMissingPoolInfos(map[string]string)
+		GetMissingPoolInfos() []string
 	}
 
 	PoolInfo interface {
@@ -169,7 +171,8 @@ func (pc *poolCache) cacheSyncer() {
 			// delete from cache
 			if old, ok := pc.cache.LoadAndDelete(v); ok {
 				atomic.AddUint32(&pc.nitems, ^uint32(0))
-				pc.V(2).Info("cache syncer deleted", "item", v, "now len", pc.Len())
+				pc.V(2).Info("cache syncer deleted", "item", v, "now len", pc.Len(),
+					"addeditems", pc.addeditems, "nitems", pc.nitems)
 				pc.cache2.Delete(old.(*poolInfo).bech32)
 			}
 			maybeNotifyWaiter(pc)
@@ -188,11 +191,11 @@ func (pc *poolCache) cacheSyncer() {
 				}
 				pc.cache.Store(v.ticker, v)
 				pc.cache2.Store(v.bech32, v)
-				atomic.AddUint32(&pc.addeditems, ^uint32(0))
 			} else {
 				atomic.AddUint32(&pc.nitems, uint32(1))
 				pc.cache2.Store(v.bech32, v)
-				pc.V(2).Info("cache syncer added", "item", v.ticker, "now len", pc.Len())
+				pc.V(2).Info("cache syncer added", "item", v.ticker, "now len", pc.Len(),
+					"addeditems", pc.addeditems, "nitems", pc.nitems)
 			}
 			maybeNotifyWaiter(pc)
 		}
@@ -233,8 +236,8 @@ func (c *poolCache) GobDecode(dat []byte) error {
 	buf := bytes.NewBuffer(dat)
 	nitems := 0
 	defer func() {
-		atomic.AddUint32(&c.addeditems, uint32(nitems))
-		atomic.AddUint32(&c.nitems, uint32(nitems))
+		atomic.StoreUint32(&c.addeditems, uint32(nitems))
+		atomic.StoreUint32(&c.nitems, uint32(nitems))
 	}()
 	for {
 		if elt, err := buf.ReadBytes(byte('\n')); err == nil || err == io.EOF {
@@ -301,9 +304,6 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 					return err
 				}
 				if len(t2p) < len(tickers) {
-					// we have stopped some accounts from that cacheing path, so remove them from the added count
-					// to allow the cache to be ready
-					atomic.AddUint32(&c.addeditems, ^uint32(len(tickers)-len(t2p)-1))
 					for t, _ := range tickers {
 						if _, ok := t2p[t]; !ok {
 							c.missingCh <- t
@@ -437,20 +437,40 @@ func (pc *poolCache) manageMissingTickers(end context.Context) {
 				if []rune(v)[0] == '-' {
 					pc.missingMu.Lock()
 					pc.V(5).Info("MissingTickers: deleting", "ticker", v, "len", len(pc.missingTickersFromList))
-					delete(pc.missingTickersFromList, string([]rune(v)[1:]))
-					pc.V(5).Info("MissingTickers: deleted", "len", len(pc.missingTickersFromList))
+					if _, ok := pc.missingTickersFromList[string([]rune(v)[1:])]; ok {
+						delete(pc.missingTickersFromList, string([]rune(v)[1:]))
+						atomic.AddUint32(&pc.addeditems, uint32(1))
+						pc.V(4).Info("MissingTickers: increased addeditems for missing one",
+							"ticker", string([]rune(v)[1:]),
+							"addeditems", pc.addeditems, "nitems", pc.nitems)
+						pc.V(5).Info("MissingTickers: deleted", "len", len(pc.missingTickersFromList))
+					}
 					pc.missingMu.Unlock()
 				} else {
 					pc.missingMu.Lock()
 					pc.V(5).Info("MissingTickers: adding", "ticker", v, "len", len(pc.missingTickersFromList))
-					pc.missingTickersFromList[v] = struct{}{}
-					pc.V(5).Info("MissingTickers: added", "ticker", v, "len", len(pc.missingTickersFromList))
+					if _, ok := pc.missingTickersFromList[v]; !ok {
+						pc.missingTickersFromList[v] = struct{}{}
+						atomic.AddUint32(&pc.addeditems, ^uint32(0))
+						pc.V(4).Info("MissingTickers: decreased addeditems for missing one",
+							"ticker", v, "addeditems", pc.addeditems, "nitems", pc.nitems)
+						pc.V(5).Info("MissingTickers: added", "ticker", v, "len", len(pc.missingTickersFromList))
+					}
 					pc.missingMu.Unlock()
 				}
 			}
 		}
-
 	}
+}
+
+func (pc *poolCache) GetMissingPoolInfos() []string {
+	missing := []string{}
+	pc.missingMu.RLock()
+	defer pc.missingMu.RUnlock()
+	for t, _ := range pc.missingTickersFromList {
+		missing = append(missing, t)
+	}
+	return missing
 }
 
 func (pc *poolCache) FillMissingPoolInfos(p2t map[string]string) {
@@ -462,12 +482,15 @@ func (pc *poolCache) FillMissingPoolInfos(p2t map[string]string) {
 		if !isEmpty {
 			if _, ok := pc.cache.Load(t); !ok {
 				atomic.AddUint32(&pc.addeditems, uint32(1))
+				pc.V(4).Info("FillMissingPoolInfos: increased addeditems for missing one",
+					"increased by", 1, "ticker", t, "addeditems", pc.addeditems, "nitems", pc.nitems)
 			}
 		}
 		pc.workersCh <- &poolInfo{ticker: t, bech32: p}
 	}
 	if isEmpty {
 		atomic.AddUint32(&pc.addeditems, uint32(len(p2t)))
+		pc.V(4).Info("FillMissingPoolInfos: increased addeditems", "increased by", len(p2t))
 	}
 }
 
@@ -539,9 +562,10 @@ func (pc *poolCache) IsTickerMissingFromKoiosPoolList(t string) bool {
 	return !ok
 }
 
-func (pc *poolCache) Len() uint32     { return pc.nitems }
-func (pc *poolCache) Pending() uint32 { return pc.addeditems - pc.nitems }
-func (pc *poolCache) IsRunning() bool { return pc.running }
+func (pc *poolCache) Len() uint32        { return pc.nitems }
+func (pc *poolCache) Pending() uint32    { return pc.addeditems - pc.nitems }
+func (pc *poolCache) AddedItems() uint32 { return pc.addeditems }
+func (pc *poolCache) IsRunning() bool    { return pc.running }
 func (pc *poolCache) Ready() bool {
 	pc.V(5).Info("PoolCache.Status",
 		"ready", pc.nitems == pc.addeditems, "nitems", pc.nitems, "addeditems", pc.addeditems, "pending", pc.Pending())
@@ -570,8 +594,8 @@ func (pc *poolCache) Refresh() {
 	if !pc.running {
 		return
 	}
-	pc.cache.Range(func(k, _ any) bool {
-		pc.workersCh <- k
+	pc.cache.Range(func(_, v any) bool {
+		pc.workersCh <- v.(*poolInfo)
 		return true
 	})
 }
@@ -615,6 +639,7 @@ func (c *poolCache) maybeLoadFromDisk() {
 		}
 		f.Close()
 	}
+	c.V(2).Info("maybeLoadFromDisk", "addeditems", c.addeditems, "nitems", c.nitems)
 	return
 }
 
