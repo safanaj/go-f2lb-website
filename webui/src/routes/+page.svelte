@@ -32,7 +32,7 @@
   $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
   $: user = $cardanoWallet.user
   $: wrongPool = (user||{}).delegatedpool != (mainServed||{}).ticker && (user||{}).delegatedpool != (mainServed||{}).poolidbech32
-  $: topTicker = ($topPool || {}).ticker || ''
+  $: topTicker = ($topPool || {}).ticker || 'Unknown'
 
   const isWrongPool = user => user !== undefined && (user.delegatedpool != mainServed.ticker && user.delegatedpool != mainServed.poolidbech32)
 
@@ -60,7 +60,7 @@
       {#if $activePool !== null && ($activePool||{activestake: 0}).activestake > 0}
       <div class="box themed">
         The F2LB community stake was delegated to the pool {$activePool.ticker} that now has {$activePool.activestake} ADA of active stake,
-        now we are delegating to {mainServed.ticker}
+        now we are delegating to {topTicker}
       </div>
       {/if}
       {#if user !== undefined}
