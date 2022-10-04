@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
+	"github.com/safanaj/go-f2lb/pkg/ccli"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 	"github.com/safanaj/go-f2lb/pkg/pb"
@@ -29,6 +31,8 @@ func main() {
 	flag.StringVar(&adminPoolsStr, "admin-pools", adminPoolsStr, "Comma separated pools with admin permission")
 	f2lb_gsheet.AddFlags(flag.CommandLine)
 	logging.AddFlags(flag.CommandLine)
+	ccli.AddFlags(flag.CommandLine)
+	blockfrostutils.AddFlags(flag.CommandLine)
 	flag.StringVar(&listenAddr, "listen", listenAddr, "IP:PORT or :PORT to listen on all interfaces")
 	flag.Parse()
 	if *showVersion {

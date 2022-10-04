@@ -15,7 +15,9 @@ import (
 	"unsafe"
 
 	koios "github.com/cardano-community/koios-go-client"
-	ku "github.com/safanaj/go-f2lb/pkg/koiosutils"
+	bfu "github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
+	ku "github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
+	"github.com/safanaj/go-f2lb/pkg/ccli"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 )
 
@@ -42,6 +44,7 @@ type (
 		Stop()
 		WithOptions(
 			kc *ku.KoiosClient,
+			bfc *bfu.BlockFrostClient,
 			workers uint32,
 			cacheSyncers uint32,
 			timeTxGetters uint32,
@@ -112,7 +115,8 @@ type accountCache struct {
 
 	cachesStoreDir string
 
-	kc *ku.KoiosClient
+	kc  *ku.KoiosClient
+	bfc *bfu.BlockFrostClient
 
 	running bool
 
@@ -235,7 +239,7 @@ func (c *accountCache) GobDecode(dat []byte) error {
 	return nil
 }
 
-func (ac *accountCache) lastDelegOrAccountInfoGetter() {
+func (ac *accountCache) lastDelegOrAccountInfoGetter(end context.Context) {
 	defer ac.workersWg.Done()
 	for item := range ac.workersCh {
 		// fmt.Printf("worker got: %v\n", item)
@@ -247,7 +251,12 @@ func (ac *accountCache) lastDelegOrAccountInfoGetter() {
 				ac.Error(err, "workers.GetLastDelegationTx()", "item", v)
 				// we have stopped some accounts from that cacheing path, so remove them from the added count
 				// to allow the cache to be ready
-				atomic.AddUint32(&ac.addeditems, ^uint32(0))
+				// atomic.AddUint32(&ac.addeditems, ^uint32(0))
+				ac.V(3).Info("sending to workersCh", "saddr", v, "t", time.Time{})
+				go func() {
+					ac.workersCh <- txTime{saddr: v, t: time.Time{}}
+					ac.V(3).Info("sent to workersCh", "saddr", v, "t", time.Time{})
+				}()
 				// return
 			} else {
 				ac.timeTxGetterCh <- txItem{v, tx}
@@ -255,18 +264,28 @@ func (ac *accountCache) lastDelegOrAccountInfoGetter() {
 		case txTime:
 			delegatedPool, totalAda, err := ac.kc.GetStakeAddressInfo(v.saddr)
 			if err != nil {
-				ac.Error(err, "workers.GetStakeAddressInfo()", "stake address", v.saddr)
+				ac.Error(err, "workers.GetStakeAddressInfo() - koios", "stake address", v.saddr)
 				// we have stopped some accounts from that cacheing path, so remove them from the added count
 				// to allow the cache to be ready
-				atomic.AddUint32(&ac.addeditems, ^uint32(0))
-				// return
-			} else {
-				ac.infoCh <- &accountInfo{
-					stakeAddress:          v.saddr,
-					delegatedPoolIdBech32: delegatedPool,
-					adaAmount:             uint64(totalAda),
-					lastDelegationTime:    v.t,
+				// atomic.AddUint32(&ac.addeditems, ^uint32(0))
+				delegatedPool, totalAda, err = ac.bfc.GetStakeAddressInfo(v.saddr)
+				if err != nil {
+					ac.Error(err, "workers.GetStakeAddressInfo() - blockfrost", "stake address", v.saddr)
+
+					cctx, _ := context.WithTimeout(end, 10*time.Second)
+					delegatedPool, err = ccli.GetDelegatedPoolForStakeAddress(cctx, v.saddr)
+					if err != nil {
+						ac.Error(err, "workers.GetDelegatedPoolForStakeAddress() - using ccli", "stake address", v.saddr)
+						atomic.AddUint32(&ac.addeditems, ^uint32(0))
+						continue
+					}
 				}
+			}
+			ac.infoCh <- &accountInfo{
+				stakeAddress:          v.saddr,
+				delegatedPoolIdBech32: delegatedPool,
+				adaAmount:             uint64(totalAda),
+				lastDelegationTime:    v.t,
 			}
 		}
 	}
@@ -560,7 +579,7 @@ func (ac *accountCache) Start() {
 
 	ac.workersWg.Add(int(ac.workers))
 	for i := 0; i < int(ac.workers); i++ {
-		go ac.lastDelegOrAccountInfoGetter()
+		go ac.lastDelegOrAccountInfoGetter(ctx)
 	}
 
 	ac.running = true
@@ -618,6 +637,7 @@ func (ac *accountCache) Stop() {
 
 func (ac *accountCache) WithOptions(
 	kc *ku.KoiosClient,
+	bfc *bfu.BlockFrostClient,
 	workers uint32,
 	cacheSyncers uint32,
 	timeTxGetters uint32,
@@ -630,6 +650,7 @@ func (ac *accountCache) WithOptions(
 	}
 	newAccountCache := &accountCache{
 		kc:                   kc,
+		bfc:                  bfc,
 		workers:              workers,
 		cacheSyncers:         cacheSyncers,
 		timeTxGetters:        timeTxGetters,
@@ -650,6 +671,7 @@ func (ac *accountCache) WithOptions(
 
 func New(
 	kc *ku.KoiosClient,
+	bfc *bfu.BlockFrostClient,
 	workers uint32,
 	cacheSyncers uint32,
 	timeTxGetters uint32,
@@ -660,6 +682,6 @@ func New(
 	cachesStoreDir string,
 ) AccountCache {
 	ac, _ := (&accountCache{Logger: logger, cachesStoreDir: cachesStoreDir}).WithOptions(
-		kc, workers, cacheSyncers, timeTxGetters, refreshInterval, timeTxGetterInterval, timeTxsToGet)
+		kc, bfc, workers, cacheSyncers, timeTxGetters, refreshInterval, timeTxGetterInterval, timeTxsToGet)
 	return ac
 }

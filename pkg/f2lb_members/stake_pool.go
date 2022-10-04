@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/safanaj/go-f2lb/pkg/koiosutils/accountcache"
-	"github.com/safanaj/go-f2lb/pkg/koiosutils/poolcache"
+	"github.com/safanaj/go-f2lb/pkg/caches/accountcache"
+	"github.com/safanaj/go-f2lb/pkg/caches/poolcache"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 )
 

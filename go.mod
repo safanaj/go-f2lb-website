@@ -3,6 +3,7 @@ module github.com/safanaj/go-f2lb
 go 1.18
 
 require (
+	github.com/blockfrost/blockfrost-go v0.1.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cardano-community/koios-go-client v1.3.0
 	github.com/echovl/cardano-go v0.1.14
@@ -37,6 +38,8 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.12.3 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -61,4 +64,4 @@ require (
 )
 
 //replace github.com/cardano-community/koios-go-client => github.com/safanaj/koios-go-client v1.2.1
-replace github.com/fivebinaries/go-cardano-serialization => github.com/safanaj/go-cardano-serialization v0.0.0-20220918214458-0e661e11911f
+replace github.com/fivebinaries/go-cardano-serialization => github.com/safanaj/go-cardano-serialization v0.0.0-20220930095728-b817e2b018d1

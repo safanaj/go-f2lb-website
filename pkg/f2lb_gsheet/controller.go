@@ -12,10 +12,11 @@ import (
 	"google.golang.org/api/sheets/v4"
 
 	koios "github.com/cardano-community/koios-go-client"
+	"github.com/safanaj/go-f2lb/pkg/caches/accountcache"
+	"github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
+	"github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
+	"github.com/safanaj/go-f2lb/pkg/caches/poolcache"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_members"
-	"github.com/safanaj/go-f2lb/pkg/koiosutils"
-	"github.com/safanaj/go-f2lb/pkg/koiosutils/accountcache"
-	"github.com/safanaj/go-f2lb/pkg/koiosutils/poolcache"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 )
@@ -111,7 +112,8 @@ var _ Controller = &controller{}
 func NewController(ctx context.Context, logger logging.Logger) Controller {
 	cctx, cctxCancel := context.WithCancel(ctx)
 	kc := koiosutils.New(cctx)
-	ac := accountcache.New(kc, uint32(acWorkers), uint32(acCacheSyncers), uint32(acTxGetters),
+	bfc := blockfrostutils.New(cctx)
+	ac := accountcache.New(kc, bfc, uint32(acWorkers), uint32(acCacheSyncers), uint32(acTxGetters),
 		acRefreshInterval, acTxGetterInterval, uint32(acTxsToGet),
 		logger.WithName("accountcache"), cachesStoreDirPath)
 	pc := poolcache.New(kc, uint32(pcWorkers), uint32(pcCacheSyncers),

@@ -15,7 +15,7 @@ import (
 	"unsafe"
 
 	// koios "github.com/cardano-community/koios-go-client"
-	ku "github.com/safanaj/go-f2lb/pkg/koiosutils"
+	ku "github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 )
