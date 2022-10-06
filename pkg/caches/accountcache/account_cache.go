@@ -14,10 +14,10 @@ import (
 	"time"
 	"unsafe"
 
-	koios "github.com/cardano-community/koios-go-client"
+	// koios "github.com/cardano-community/koios-go-client/v2"
 	bfu "github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
 	ku "github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
-	"github.com/safanaj/go-f2lb/pkg/ccli"
+	// "github.com/safanaj/go-f2lb/pkg/ccli"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 )
 
@@ -47,10 +47,9 @@ type (
 			bfc *bfu.BlockFrostClient,
 			workers uint32,
 			cacheSyncers uint32,
-			timeTxGetters uint32,
 			refreshInterval time.Duration,
-			timeTxGetterInterval time.Duration,
-			timeTxsToGet uint32,
+			workersInterval time.Duration,
+			accountInfosToGet uint32,
 		) (AccountCache, error)
 	}
 
@@ -58,17 +57,7 @@ type (
 		StakeAddress() string
 		DelegatedPool() string
 		AdaAmount() uint64
-		LastDelegationTime() time.Time
-	}
-
-	txItem struct {
-		saddr string
-		tx    koios.TxHash
-	}
-
-	txTime struct {
-		saddr string
-		t     time.Time
+		Status() string
 	}
 )
 
@@ -76,7 +65,9 @@ type accountInfo struct {
 	stakeAddress          string
 	delegatedPoolIdBech32 string
 	adaAmount             uint64
-	lastDelegationTime    time.Time
+	status                string
+	// deprecated on koios v2
+	//lastDelegationTime    time.Time
 }
 
 var (
@@ -84,10 +75,13 @@ var (
 	_ encoding.BinaryUnmarshaler = (*accountInfo)(nil)
 )
 
-func (ai *accountInfo) StakeAddress() string          { return ai.stakeAddress }
-func (ai *accountInfo) DelegatedPool() string         { return ai.delegatedPoolIdBech32 }
-func (ai *accountInfo) AdaAmount() uint64             { return ai.adaAmount }
-func (ai *accountInfo) LastDelegationTime() time.Time { return ai.lastDelegationTime }
+func (ai *accountInfo) StakeAddress() string  { return ai.stakeAddress }
+func (ai *accountInfo) DelegatedPool() string { return ai.delegatedPoolIdBech32 }
+func (ai *accountInfo) AdaAmount() uint64     { return ai.adaAmount }
+func (ai *accountInfo) Status() string        { return ai.status }
+
+// deprecated on koios v2
+// func (ai *accountInfo) LastDelegationTime() time.Time { return ai.lastDelegationTime }
 
 func (ai *accountInfo) MarshalBinary() (data []byte, err error) {
 	var buf bytes.Buffer
@@ -128,13 +122,16 @@ type accountCache struct {
 	workersWg sync.WaitGroup
 	workersCh chan any
 
-	timeTxGetterCtxCancel func()
-	// timeTxGetterFinished  chan any
-	timeTxGetterInterval time.Duration
-	timeTxGetterCh       chan txItem
-	timeTxGetters        uint32
-	timeTxGetterWg       sync.WaitGroup
-	timeTxsToGet         uint32
+	workersInterval   time.Duration
+	accountInfosToGet uint32
+
+	// timeTxGetterCtxCancel func()
+	// // timeTxGetterFinished  chan any
+	// timeTxGetterInterval time.Duration
+	// timeTxGetterCh       chan txItem
+	// timeTxGetters        uint32
+	// timeTxGetterWg       sync.WaitGroup
+	// timeTxsToGet         uint32
 
 	readyWaiterCh chan any
 }
@@ -239,116 +236,53 @@ func (c *accountCache) GobDecode(dat []byte) error {
 	return nil
 }
 
-func (ac *accountCache) lastDelegOrAccountInfoGetter(end context.Context) {
-	defer ac.workersWg.Done()
-	for item := range ac.workersCh {
-		// fmt.Printf("worker got: %v\n", item)
-		ac.V(4).Info("worker", "got", item)
-		switch v := item.(type) {
-		case string:
-			tx, err := ac.kc.GetLastDelegationTx(v)
-			if err != nil {
-				ac.Error(err, "workers.GetLastDelegationTx()", "item", v)
-				// we have stopped some accounts from that cacheing path, so remove them from the added count
-				// to allow the cache to be ready
-				// atomic.AddUint32(&ac.addeditems, ^uint32(0))
-				ac.V(3).Info("sending to workersCh", "saddr", v, "t", time.Time{})
-				go func() {
-					ac.workersCh <- txTime{saddr: v, t: time.Time{}}
-					ac.V(3).Info("sent to workersCh", "saddr", v, "t", time.Time{})
-				}()
-				// return
-			} else {
-				ac.timeTxGetterCh <- txItem{v, tx}
-			}
-		case txTime:
-			delegatedPool, totalAda, err := ac.kc.GetStakeAddressInfo(v.saddr)
-			if err != nil {
-				ac.Error(err, "workers.GetStakeAddressInfo() - koios", "stake address", v.saddr)
-				// we have stopped some accounts from that cacheing path, so remove them from the added count
-				// to allow the cache to be ready
-				// atomic.AddUint32(&ac.addeditems, ^uint32(0))
-				delegatedPool, totalAda, err = ac.bfc.GetStakeAddressInfo(v.saddr)
-				if err != nil {
-					ac.Error(err, "workers.GetStakeAddressInfo() - blockfrost", "stake address", v.saddr)
-
-					cctx, _ := context.WithTimeout(end, 10*time.Second)
-					delegatedPool, err = ccli.GetDelegatedPoolForStakeAddress(cctx, v.saddr)
-					if err != nil {
-						ac.Error(err, "workers.GetDelegatedPoolForStakeAddress() - using ccli", "stake address", v.saddr)
-						atomic.AddUint32(&ac.addeditems, ^uint32(0))
-						continue
-					}
-				}
-			}
-			ac.infoCh <- &accountInfo{
-				stakeAddress:          v.saddr,
-				delegatedPoolIdBech32: delegatedPool,
-				adaAmount:             uint64(totalAda),
-				lastDelegationTime:    v.t,
-			}
-		}
-	}
-}
-
-func (ac *accountCache) txsTimesGetter(end context.Context) {
-	d := time.Duration(ac.timeTxGetterInterval)
+func (c *accountCache) accountsInfosGetter(end context.Context) {
+	d := time.Duration(c.workersInterval)
 	t := time.NewTimer(d)
 
-	// defer close(ac.timeTxGetterFinished)
-	defer ac.timeTxGetterWg.Done()
-	go func() {
+	defer c.workersWg.Done()
 
-		round := 0
-		ntxs := 0
-		txs := make(map[koios.TxHash]any)
-		tx2saddr := make(map[koios.TxHash]string)
-		saddr2time := make(map[string]time.Time)
+	go func() {
+		round := 1
+		naddrs := 0
+		infos := make(map[string]any)
 
 		getAndReset := func(f func() error) {
 			err := f()
 			if err != nil {
-				ac.Error(err, "accountCache.getAndReset")
+				c.Error(err, "accountCache.getAndReset")
 			}
 			// reset everything
 			round = 0
-			ntxs = 0
-			txs = make(map[koios.TxHash]any)
-			tx2saddr = make(map[koios.TxHash]string)
-			saddr2time = make(map[string]time.Time)
+			naddrs = 0
+			infos = make(map[string]any)
 		}
 
-		getAndResetTxsTimes := func() {
+		// TODO: manage from koios missing accounts
+		getAndResetAccountsInfos := func() {
 			getAndReset(func() error {
-				txs_ := make([]koios.TxHash, 0, len(txs))
-				for k, _ := range txs {
-					txs_ = append(txs_, k)
+				saddrs_l := []string{}
+				for sa, _ := range infos {
+					saddrs_l = append(saddrs_l, sa)
 				}
-				if len(txs_) == 0 {
+				if len(saddrs_l) == 0 {
 					return nil
 				}
-				tx2time, err := ac.kc.GetTxsTimes(txs_)
-				if err == nil {
-					ac.V(3).Info("accountCache.txsTimesGetter: GetTxsTimes(txs)", "got len", len(tx2time), "ntxs", ntxs)
-					if len(saddr2time) < ntxs {
-						// we have stopped some accounts from that cacheing path, so remove them from the added count
-						// to allow the cache to be ready
-						atomic.AddUint32(&ac.addeditems, ^uint32(ntxs-len(saddr2time)-1))
-					}
-
-					for tx, t := range tx2time {
-						if saddr, ok := tx2saddr[tx]; ok {
-							saddr2time[saddr] = t
-						}
-					}
-					// fmt.Printf("accountCache.txsTimesGetter: flow %d accounts\n", len(saddr2time))
-					ac.V(3).Info("accountCache.txsTimesGetter", "flow len", len(saddr2time))
-					for saddr, t := range saddr2time {
-						ac.workersCh <- txTime{saddr, t}
-					}
-				} else {
-					ac.Error(err, "accountCache.txsTimesGetter: GetTxsTimes(txs)")
+				c.V(3).Info("GetStakeAddressesInfos: Processing stake addresses", "len", len(saddrs_l))
+				sa2ai, err := c.kc.GetStakeAddressesInfos(saddrs_l...)
+				if err != nil {
 					return err
+				}
+				c.V(3).Info("GetStakeAddressesInfos: Got sa2ai", "len", len(sa2ai), "saddrs len", len(saddrs_l))
+				for _, ai := range sa2ai {
+					c.V(4).Info("GetStakeAddressesInfos (sa2ai): Forwarding accountInfo",
+						"stakeAddress", ai.Bech32, "delegated pool", ai.DelegatedPool, "amount", ai.TotalAda, "status", ai.Status)
+					c.infoCh <- &accountInfo{
+						stakeAddress:          ai.Bech32,
+						delegatedPoolIdBech32: ai.DelegatedPool,
+						adaAmount:             uint64(ai.TotalAda),
+						status:                ai.Status,
+					}
 				}
 				return nil
 			})
@@ -359,31 +293,181 @@ func (ac *accountCache) txsTimesGetter(end context.Context) {
 			case <-end.Done():
 				return
 			case <-t.C:
-				if (round > 0 && len(txs) == ntxs) || len(txs) > int(ac.timeTxsToGet) {
-					getAndResetTxsTimes()
+				// collect strings
+				if round > 0 && (len(infos) == naddrs || len(infos) > int(c.accountInfosToGet)) {
+					getAndResetAccountsInfos()
 				} else {
-					if round == 0 && len(txs) == ntxs && ntxs > 0 {
+					if round == 0 && len(infos) == naddrs {
 						round++
 					}
-					ntxs = len(txs)
+					naddrs = len(infos)
 				}
-				t.Reset(d)
 
-			case txi, stillOpen := <-ac.timeTxGetterCh:
-				if stillOpen {
-					txs[txi.tx] = struct{}{}
-					tx2saddr[txi.tx] = txi.saddr
-					saddr2time[txi.saddr] = time.Time{}
-				} else {
+				t.Reset(d)
+			case xI, more := <-c.workersCh:
+				if !more {
 					return
 				}
-				if len(txs) > int(ac.timeTxsToGet) {
-					getAndResetTxsTimes()
+				c.V(4).Info("worker", "got", xI)
+				switch v := xI.(type) {
+				case string:
+					infos[v] = struct{}{}
+					if len(infos) > int(c.accountInfosToGet) {
+						getAndResetAccountsInfos()
+					}
 				}
 			}
 		}
 	}()
 }
+
+// deprecated on koios v2
+// func (ac *accountCache) lastDelegOrAccountInfoGetter(end context.Context) {
+// 	defer ac.workersWg.Done()
+// 	for item := range ac.workersCh {
+// 		// fmt.Printf("worker got: %v\n", item)
+// 		ac.V(4).Info("worker", "got", item)
+// 		switch v := item.(type) {
+// 		case string:
+// 			tx, err := ac.kc.GetLastDelegationTx(v)
+// 			if err != nil {
+// 				ac.Error(err, "workers.GetLastDelegationTx()", "item", v)
+// 				// we have stopped some accounts from that cacheing path, so remove them from the added count
+// 				// to allow the cache to be ready
+// 				// atomic.AddUint32(&ac.addeditems, ^uint32(0))
+// 				ac.V(3).Info("sending to workersCh", "saddr", v, "t", time.Time{})
+// 				go func() {
+// 					ac.workersCh <- txTime{saddr: v, t: time.Time{}}
+// 					ac.V(3).Info("sent to workersCh", "saddr", v, "t", time.Time{})
+// 				}()
+// 				// return
+// 			} else {
+// 				ac.timeTxGetterCh <- txItem{v, tx}
+// 			}
+// 		case txTime:
+// 			delegatedPool, totalAda, err := ac.kc.GetStakeAddressInfo(v.saddr)
+// 			if err != nil {
+// 				ac.Error(err, "workers.GetStakeAddressInfo() - koios", "stake address", v.saddr)
+// 				// we have stopped some accounts from that cacheing path, so remove them from the added count
+// 				// to allow the cache to be ready
+// 				// atomic.AddUint32(&ac.addeditems, ^uint32(0))
+// 				delegatedPool, totalAda, err = ac.bfc.GetStakeAddressInfo(v.saddr)
+// 				if err != nil {
+// 					ac.Error(err, "workers.GetStakeAddressInfo() - blockfrost", "stake address", v.saddr)
+
+// 					cctx, _ := context.WithTimeout(end, 10*time.Second)
+// 					delegatedPool, err = ccli.GetDelegatedPoolForStakeAddress(cctx, v.saddr)
+// 					if err != nil {
+// 						ac.Error(err, "workers.GetDelegatedPoolForStakeAddress() - using ccli", "stake address", v.saddr)
+// 						atomic.AddUint32(&ac.addeditems, ^uint32(0))
+// 						continue
+// 					}
+// 				}
+// 			}
+// 			ac.infoCh <- &accountInfo{
+// 				stakeAddress:          v.saddr,
+// 				delegatedPoolIdBech32: delegatedPool,
+// 				adaAmount:             uint64(totalAda),
+// 				lastDelegationTime:    v.t,
+// 			}
+// 		}
+// 	}
+// }
+
+// deprecated on koios v2
+// func (ac *accountCache) txsTimesGetter(end context.Context) {
+// 	d := time.Duration(ac.timeTxGetterInterval)
+// 	t := time.NewTimer(d)
+
+// 	// defer close(ac.timeTxGetterFinished)
+// 	defer ac.timeTxGetterWg.Done()
+// 	go func() {
+
+// 		round := 0
+// 		ntxs := 0
+// 		txs := make(map[koios.TxHash]any)
+// 		tx2saddr := make(map[koios.TxHash]string)
+// 		saddr2time := make(map[string]time.Time)
+
+// 		getAndReset := func(f func() error) {
+// 			err := f()
+// 			if err != nil {
+// 				ac.Error(err, "accountCache.getAndReset")
+// 			}
+// 			// reset everything
+// 			round = 0
+// 			ntxs = 0
+// 			txs = make(map[koios.TxHash]any)
+// 			tx2saddr = make(map[koios.TxHash]string)
+// 			saddr2time = make(map[string]time.Time)
+// 		}
+
+// 		getAndResetTxsTimes := func() {
+// 			getAndReset(func() error {
+// 				txs_ := make([]koios.TxHash, 0, len(txs))
+// 				for k, _ := range txs {
+// 					txs_ = append(txs_, k)
+// 				}
+// 				if len(txs_) == 0 {
+// 					return nil
+// 				}
+// 				tx2time, err := ac.kc.GetTxsTimes(txs_)
+// 				if err == nil {
+// 					ac.V(3).Info("accountCache.txsTimesGetter: GetTxsTimes(txs)", "got len", len(tx2time), "ntxs", ntxs)
+// 					if len(saddr2time) < ntxs {
+// 						// we have stopped some accounts from that cacheing path, so remove them from the added count
+// 						// to allow the cache to be ready
+// 						atomic.AddUint32(&ac.addeditems, ^uint32(ntxs-len(saddr2time)-1))
+// 					}
+
+// 					for tx, t := range tx2time {
+// 						if saddr, ok := tx2saddr[tx]; ok {
+// 							saddr2time[saddr] = t
+// 						}
+// 					}
+// 					// fmt.Printf("accountCache.txsTimesGetter: flow %d accounts\n", len(saddr2time))
+// 					ac.V(3).Info("accountCache.txsTimesGetter", "flow len", len(saddr2time))
+// 					for saddr, t := range saddr2time {
+// 						ac.workersCh <- txTime{saddr, t}
+// 					}
+// 				} else {
+// 					ac.Error(err, "accountCache.txsTimesGetter: GetTxsTimes(txs)")
+// 					return err
+// 				}
+// 				return nil
+// 			})
+// 		}
+
+// 		for {
+// 			select {
+// 			case <-end.Done():
+// 				return
+// 			case <-t.C:
+// 				if (round > 0 && len(txs) == ntxs) || len(txs) > int(ac.timeTxsToGet) {
+// 					getAndResetTxsTimes()
+// 				} else {
+// 					if round == 0 && len(txs) == ntxs && ntxs > 0 {
+// 						round++
+// 					}
+// 					ntxs = len(txs)
+// 				}
+// 				t.Reset(d)
+
+// 			case txi, stillOpen := <-ac.timeTxGetterCh:
+// 				if stillOpen {
+// 					txs[txi.tx] = struct{}{}
+// 					tx2saddr[txi.tx] = txi.saddr
+// 					saddr2time[txi.saddr] = time.Time{}
+// 				} else {
+// 					return
+// 				}
+// 				if len(txs) > int(ac.timeTxsToGet) {
+// 					getAndResetTxsTimes()
+// 				}
+// 			}
+// 		}
+// 	}()
+// }
 
 func (ac *accountCache) addMany(saddrs []string) {
 	if !ac.running {
@@ -560,9 +644,7 @@ func (ac *accountCache) Start() {
 		return
 	}
 	ac.refresherFinished = make(chan any)
-	// ac.timeTxGetterFinished = make(chan any)
 	ac.workersCh = make(chan any)
-	ac.timeTxGetterCh = make(chan txItem)
 	ac.infoCh = make(chan any)
 
 	ac.cacheSyncerWg.Add(int(ac.cacheSyncers))
@@ -571,15 +653,10 @@ func (ac *accountCache) Start() {
 	}
 
 	ctx, ctxCancel := context.WithCancel(ac.kc.GetContext())
-	ac.timeTxGetterCtxCancel = ctxCancel
-	ac.timeTxGetterWg.Add(int(ac.timeTxGetters))
-	for i := 0; i < int(ac.timeTxGetters); i++ {
-		go ac.txsTimesGetter(ctx)
-	}
 
 	ac.workersWg.Add(int(ac.workers))
 	for i := 0; i < int(ac.workers); i++ {
-		go ac.lastDelegOrAccountInfoGetter(ctx)
+		go ac.accountsInfosGetter(ctx)
 	}
 
 	ac.running = true
@@ -609,9 +686,6 @@ func (ac *accountCache) Stop() {
 
 	ac.running = false
 	ac.V(2).Info("Stopping AccountCache")
-	ac.timeTxGetterCtxCancel()
-	ac.timeTxGetterWg.Wait()
-	// <-ac.timeTxGetterFinished
 
 	ac.V(2).Info("AccountCache timeTxGetter stopped")
 	ac.refresherTick.Stop()
@@ -622,9 +696,6 @@ func (ac *accountCache) Stop() {
 	close(ac.workersCh)
 	ac.workersWg.Wait()
 	ac.V(2).Info("AccountCache workers stopped")
-
-	close(ac.timeTxGetterCh)
-	ac.V(2).Info("AccountCache closed timeTxGetter channel")
 
 	close(ac.infoCh)
 	ac.V(2).Info("AccountCache closed cacheSyncer channel")
@@ -640,23 +711,21 @@ func (ac *accountCache) WithOptions(
 	bfc *bfu.BlockFrostClient,
 	workers uint32,
 	cacheSyncers uint32,
-	timeTxGetters uint32,
 	refreshInterval time.Duration,
-	timeTxGetterInterval time.Duration,
-	timeTxsToGet uint32,
+	workersInterval time.Duration,
+	accountInfosToGet uint32,
 ) (AccountCache, error) {
 	if ac.running {
 		return nil, fmt.Errorf("AccountCache is running")
 	}
 	newAccountCache := &accountCache{
-		kc:                   kc,
-		bfc:                  bfc,
-		workers:              workers,
-		cacheSyncers:         cacheSyncers,
-		timeTxGetters:        timeTxGetters,
-		timeTxGetterInterval: timeTxGetterInterval,
-		timeTxsToGet:         timeTxsToGet,
-		refreshInterval:      refreshInterval,
+		kc:                kc,
+		bfc:               bfc,
+		workers:           workers,
+		cacheSyncers:      cacheSyncers,
+		refreshInterval:   refreshInterval,
+		workersInterval:   workersInterval,
+		accountInfosToGet: accountInfosToGet,
 	}
 	if ac.cache == nil {
 		newAccountCache.cache = new(sync.Map)
@@ -674,14 +743,13 @@ func New(
 	bfc *bfu.BlockFrostClient,
 	workers uint32,
 	cacheSyncers uint32,
-	timeTxGetters uint32,
 	refreshInterval time.Duration,
-	timeTxGetterInterval time.Duration,
-	timeTxsToGet uint32,
+	workersInterval time.Duration,
+	accountInfosToGet uint32,
 	logger logging.Logger,
 	cachesStoreDir string,
 ) AccountCache {
 	ac, _ := (&accountCache{Logger: logger, cachesStoreDir: cachesStoreDir}).WithOptions(
-		kc, bfc, workers, cacheSyncers, timeTxGetters, refreshInterval, timeTxGetterInterval, timeTxsToGet)
+		kc, bfc, workers, cacheSyncers, refreshInterval, workersInterval, accountInfosToGet)
 	return ac
 }

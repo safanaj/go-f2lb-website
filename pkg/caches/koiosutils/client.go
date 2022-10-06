@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	koios "github.com/cardano-community/koios-go-client"
+	koios "github.com/cardano-community/koios-go-client/v2"
 )
 
 type KoiosClient struct {
@@ -53,23 +53,23 @@ func (kc *KoiosClient) GetTickerToPoolIdMapFor(tickers ...string) (map[string]st
 	page := uint(1)
 	for {
 		opts := kc.k.NewRequestOptions()
-		opts.Page(page)
+		opts.SetCurrentPage(page)
 		page = page + 1
-		pools, err := kc.k.GetPoolList(kc.ctx, opts)
+		pools, err := kc.k.GetPools(kc.ctx, opts)
 		if err != nil || len(pools.Data) == 0 {
 			break
 		}
 
 		for _, p := range pools.Data {
-			if p.PoolID == "" || p.Ticker == nil || (p.Ticker != nil && *p.Ticker == "") {
+			if p.PoolID == "" || p.Ticker == "" {
 				continue
 			}
 
 			if getAll {
-				r[*p.Ticker] = string(p.PoolID)
-			} else if _, ok := m[*p.Ticker]; ok {
-				r[*p.Ticker] = string(p.PoolID)
-				delete(m, *p.Ticker)
+				r[p.Ticker] = string(p.PoolID)
+			} else if _, ok := m[p.Ticker]; ok {
+				r[p.Ticker] = string(p.PoolID)
+				delete(m, p.Ticker)
 				if len(m) == 0 {
 					break
 				}
@@ -108,8 +108,8 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 	opts_.QuerySet("select", "pool_id_bech32,meta_json,active_stake,live_stake,live_delegators")
 
 	for {
-		opts, _ := opts_.Clone()
-		opts.Page(page)
+		opts := opts_.Clone()
+		opts.SetCurrentPage(page)
 		page = page + 1
 		pools, err := kc.k.GetPoolInfos(kc.ctx, pids, opts)
 		if err != nil || len(pools.Data) == 0 {
@@ -117,21 +117,79 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 		}
 
 		for _, p := range pools.Data {
-			if p.ID == "" || p.MetaJSON.Ticker == nil || (p.MetaJSON.Ticker != nil && *p.MetaJSON.Ticker == "") {
+			if p.PoolID == "" || p.MetaJSON.Ticker == nil || (p.MetaJSON.Ticker != nil && *p.MetaJSON.Ticker == "") {
 				continue
 			}
 			pi := &PoolInfo{
-				Bech32:         string(p.ID),
+				Bech32:         string(p.PoolID),
 				Ticker:         *p.MetaJSON.Ticker,
 				ActiveStake:    uint32(p.ActiveStake.Shift(-6).IntPart()),
 				LiveStake:      uint32(p.LiveStake.Shift(-6).IntPart()),
 				LiveDelegators: uint32(p.LiveDelegators),
 			}
 
-			res[string(p.ID)] = pi
+			res[pi.Bech32] = pi
 		}
 
 		if IsResponseComplete(pools.Response) {
+			break
+		}
+	}
+	return res, err
+}
+
+type AccountInfo struct {
+	Bech32        string
+	DelegatedPool string
+	Status        string
+	TotalAda      uint32
+}
+
+func (kc *KoiosClient) GetStakeAddressesInfos(stakeAddrs ...string) (map[string]*AccountInfo, error) {
+	if len(stakeAddrs) == 0 {
+		return nil, nil
+	}
+	var err error
+	res := make(map[string]*AccountInfo)
+	saddrs := make([]koios.Address, 0, len(stakeAddrs))
+
+	for _, saddr := range stakeAddrs {
+		saddrs = append(saddrs, koios.Address(saddr))
+	}
+
+	page := uint(1)
+	opts_ := kc.k.NewRequestOptions()
+
+	opts_.QuerySet("select", "delegated_pool,total_balance,status,stake_address")
+
+	for {
+		opts := opts_.Clone()
+		opts.SetCurrentPage(page)
+		page = page + 1
+		infos, err := kc.k.GetAccountsInfo(kc.ctx, saddrs, opts)
+		if err != nil || len(infos.Data) == 0 {
+			break
+		}
+
+		for _, i := range infos.Data {
+			if string(i.StakeAddress) == "" {
+				continue
+			}
+			dp := ""
+			if i.DelegatedPool != nil && string(*i.DelegatedPool) != "" {
+				dp = string(*i.DelegatedPool)
+			}
+			ai := &AccountInfo{
+				Bech32:        string(i.StakeAddress),
+				DelegatedPool: dp,
+				Status:        i.Status,
+				TotalAda:      uint32(i.TotalBalance.Shift(-6).IntPart()),
+			}
+
+			res[ai.Bech32] = ai
+		}
+
+		if IsResponseComplete(infos.Response) {
 			break
 		}
 	}
@@ -144,7 +202,9 @@ func (kc *KoiosClient) GetStakeAddressInfo(stakeAddr string) (delegatedPool stri
 	opts.QuerySet("select", "delegated_pool,total_balance")
 	info, err = kc.k.GetAccountInfo(kc.ctx, koios.Address(stakeAddr), opts)
 	if err == nil {
-		delegatedPool = string(info.Data.DelegatedPool)
+		if info.Data.DelegatedPool != nil && *info.Data.DelegatedPool != "" {
+			delegatedPool = string(*info.Data.DelegatedPool)
+		}
 		totalAda = uint32(info.Data.TotalBalance.Shift(-6).IntPart())
 	}
 	return
@@ -155,20 +215,20 @@ func (kc *KoiosClient) GetLastDelegationTx(stakeAddr string) (koios.TxHash, erro
 	page := uint(1)
 	for {
 		opts := kc.k.NewRequestOptions()
-		opts.Page(page)
+		opts.SetCurrentPage(page)
 		page++
-		res, err := kc.k.GetAccountUpdates(kc.ctx, koios.StakeAddress(stakeAddr), opts)
+		res, err := kc.k.GetAccountUpdates(kc.ctx, koios.Address(stakeAddr), nil, opts)
 		if err != nil {
 			return koios.TxHash(""), err
 		}
-		if len(res.Data) == 0 {
+		if len(res.Data.Updates) == 0 {
 			break
 		}
-		for i := len(res.Data) - 1; i > 0; i-- {
-			if res.Data[i].ActionType != "delegation" {
+		for i := len(res.Data.Updates) - 1; i > 0; i-- {
+			if res.Data.Updates[i].ActionType != "delegation" {
 				continue
 			}
-			lastDelegTx = res.Data[i].TxHash
+			lastDelegTx = res.Data.Updates[i].TxHash
 			break
 		}
 		if IsResponseComplete(res.Response) {
@@ -184,8 +244,8 @@ func (kc *KoiosClient) GetTxsTimes(txs []koios.TxHash) (map[koios.TxHash]time.Ti
 	opts_.QuerySet("select", "tx_hash,tx_timestamp")
 	ret := make(map[koios.TxHash]time.Time)
 	for {
-		opts, _ := opts_.Clone()
-		opts.Page(page)
+		opts := opts_.Clone()
+		opts.SetCurrentPage(page)
 		page++
 		res, err := kc.k.GetTxsInfo(kc.ctx, txs, opts)
 		if err != nil || len(res.Data) == 0 {
@@ -212,20 +272,20 @@ func (kc *KoiosClient) GetLastDelegationTime(stakeAddr string) (time.Time, error
 	page := uint(1)
 	for {
 		opts := kc.k.NewRequestOptions()
-		opts.Page(page)
+		opts.SetCurrentPage(page)
 		page++
-		res, err := kc.k.GetAccountUpdates(kc.ctx, koios.StakeAddress(stakeAddr), opts)
+		res, err := kc.k.GetAccountUpdates(kc.ctx, koios.Address(stakeAddr), nil, opts)
 		if err != nil {
 			return time.Time{}, err
 		}
-		if len(res.Data) == 0 {
+		if len(res.Data.Updates) == 0 {
 			break
 		}
-		for i := len(res.Data) - 1; i > 0; i-- {
-			if res.Data[i].ActionType != "delegation" {
+		for i := len(res.Data.Updates) - 1; i > 0; i-- {
+			if res.Data.Updates[i].ActionType != "delegation" {
 				continue
 			}
-			lastDelegTx = res.Data[i].TxHash
+			lastDelegTx = res.Data.Updates[i].TxHash
 			break
 		}
 		if IsResponseComplete(res.Response) {
@@ -242,7 +302,7 @@ func (kc *KoiosClient) GetLastDelegationTime(stakeAddr string) (time.Time, error
 		}
 		// return time.Parse(time.RFC3339, res.Data.TxTimestamp+"Z")
 		// return time.Unix(res.Data.TxTimestamp, 0), nil
-		return res.Data.TxTimestamp.Time, nil
+		return res.Data.TxInfo.TxTimestamp.Time, nil
 	}
 	return time.Time{}, fmt.Errorf("LastDelegationTxNotFound")
 }

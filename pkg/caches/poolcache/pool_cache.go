@@ -267,7 +267,7 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 	defer c.workersWg.Done()
 
 	go func() {
-		round := 0
+		round := 1
 		ntickers := 0
 		tickers := make(map[string]any)
 		npools := 0

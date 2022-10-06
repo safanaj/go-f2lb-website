@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/api/sheets/v4"
 
-	koios "github.com/cardano-community/koios-go-client"
+	koios "github.com/cardano-community/koios-go-client/v2"
 	"github.com/safanaj/go-f2lb/pkg/caches/accountcache"
 	"github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
 	"github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
@@ -31,12 +31,11 @@ var (
 
 	cachesStoreDirPath = ""
 	// account cache flags
-	acWorkers          = 30
-	acCacheSyncers     = 5
-	acTxGetters        = 10
-	acTxsToGet         = 50
-	acRefreshInterval  = time.Duration(30 * time.Minute)
-	acTxGetterInterval = time.Duration(1 * time.Minute)
+	acWorkers           = 10
+	acCacheSyncers      = 5
+	acAccountInfosToGet = 50
+	acRefreshInterval   = time.Duration(30 * time.Minute)
+	acWorkersInterval   = time.Duration(1 * time.Minute)
 
 	// pool cache flags
 	pcWorkers         = 10
@@ -113,8 +112,8 @@ func NewController(ctx context.Context, logger logging.Logger) Controller {
 	cctx, cctxCancel := context.WithCancel(ctx)
 	kc := koiosutils.New(cctx)
 	bfc := blockfrostutils.New(cctx)
-	ac := accountcache.New(kc, bfc, uint32(acWorkers), uint32(acCacheSyncers), uint32(acTxGetters),
-		acRefreshInterval, acTxGetterInterval, uint32(acTxsToGet),
+	ac := accountcache.New(kc, bfc, uint32(acWorkers), uint32(acCacheSyncers),
+		acRefreshInterval, acWorkersInterval, uint32(acAccountInfosToGet),
 		logger.WithName("accountcache"), cachesStoreDirPath)
 	pc := poolcache.New(kc, uint32(pcWorkers), uint32(pcCacheSyncers),
 		pcRefreshInterval, pcWorkersInterval, uint32(pcPoolInfosToGet),
@@ -422,7 +421,6 @@ func (c *controller) Refresh() error {
 					if ai, ok := c.accountCache.Get(r.StakeAddrs[0]); ok {
 						delete(saddrs_m, r.StakeAddrs[0])
 						r.AdaDelegated = uint16(ai.AdaAmount())
-						r.lastDelegationTxTime = ai.LastDelegationTime()
 						if poolInQueue := c.mainQueue.GetByPoolId(ai.DelegatedPool()); poolInQueue != nil {
 							r.DelegatedPool = poolInQueue.Ticker
 						} else {
@@ -724,9 +722,6 @@ func (c *controller) getAccountInfos(saddrs []string) {
 			if r == nil {
 				continue
 			}
-			if (r.lastDelegationTxTime != time.Time{}) {
-				continue
-			}
 			if atomic.LoadUint32(&stakeAddressInfoRunning) > uint32(runtime.NumCPU()*30) {
 				stakeAddressInfoWaitGroup.Wait()
 			}
@@ -768,17 +763,17 @@ func (c *controller) getAccountInfos(saddrs []string) {
 		atomic.AddUint32(&stakeAddressInfoRunning, uint32(1))
 		go func(r *MainQueueRec) {
 			defer stakeAddressInfoWaitGroup.Done()
-			if (r.lastDelegationTxTime == time.Time{}) {
-				if ldt, ok := saddr2time[r.StakeAddrs[0]]; ok {
-					r.lastDelegationTxTime = ldt
-				} else {
-					r.lastDelegationTxTime, _ = c.kc.GetLastDelegationTime(r.StakeAddrs[0])
-				}
-			}
-			if (r.lastDelegationTxTime != time.Time{}) && startAccountInfoAt.After(r.lastDelegationTxTime) &&
-				(r.DelegatedPool != "") {
-				return
-			}
+			// if (r.lastDelegationTxTime == time.Time{}) {
+			// 	if ldt, ok := saddr2time[r.StakeAddrs[0]]; ok {
+			// 		r.lastDelegationTxTime = ldt
+			// 	} else {
+			// 		r.lastDelegationTxTime, _ = c.kc.GetLastDelegationTime(r.StakeAddrs[0])
+			// 	}
+			// }
+			// if (r.lastDelegationTxTime != time.Time{}) && startAccountInfoAt.After(r.lastDelegationTxTime) &&
+			// 	(r.DelegatedPool != "") {
+			// 	return
+			// }
 			delegatedPool, totalAda, err := c.kc.GetStakeAddressInfo(r.StakeAddrs[0])
 			if err != nil {
 				koiosErrors = append(koiosErrors, err)

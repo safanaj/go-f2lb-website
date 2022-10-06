@@ -47,7 +47,8 @@ type MainQueueRec struct {
 	initialAdaDeclaration string // N
 
 	// computed/discovered last delegation tx time
-	lastDelegationTxTime time.Time
+	// lastDelegationTxTime time.Time
+	stakeAddressStatus string
 }
 
 func (r *MainQueueRec) MarshalJSON() ([]byte, error) {
@@ -219,8 +220,11 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 			if rec.DelegatedPool == "" && ractual.DelegatedPool != "" {
 				rec.AdaDelegated = ractual.AdaDelegated
 			}
-			if (rec.lastDelegationTxTime == time.Time{}) && (ractual.lastDelegationTxTime != time.Time{}) {
-				rec.lastDelegationTxTime = ractual.lastDelegationTxTime
+			// if (rec.lastDelegationTxTime == time.Time{}) && (ractual.lastDelegationTxTime != time.Time{}) {
+			// 	rec.lastDelegationTxTime = ractual.lastDelegationTxTime
+			// }
+			if rec.stakeAddressStatus == "" && ractual.stakeAddressStatus != "" {
+				rec.stakeAddressStatus = ractual.stakeAddressStatus
 			}
 			mq.cacheByTicker.Store(rec.Ticker, rec)
 		}

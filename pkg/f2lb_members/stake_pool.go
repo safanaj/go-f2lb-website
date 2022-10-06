@@ -82,7 +82,8 @@ type (
 		MainStakeKey() string
 		DelegatedPool() string
 		AdaAmount() uint64
-		LastDelegationTime() time.Time
+		Status() string
+		// LastDelegationTime() time.Time
 
 		PoolIdBech32() string
 		PoolIdHex() string
@@ -400,10 +401,19 @@ func (sp *stakePool) AdaAmount() uint64 {
 	}
 	return 0
 }
-func (sp *stakePool) LastDelegationTime() time.Time {
+func (sp *stakePool) Status() string {
 	if ai, ok := sp.ac.Get(sp.MainStakeAddress()); ok {
-		return ai.LastDelegationTime()
+		return ai.Status()
 	}
+	return "unknown"
+}
+
+// deprecated on koios v2
+func (sp *stakePool) LastDelegationTime() time.Time {
+	// if ai, ok := sp.ac.Get(sp.MainStakeAddress()); ok {
+	// 	// return ai.LastDelegationTime()
+	// 	return time.Time{}
+	// }
 	return time.Time{}
 }
 
