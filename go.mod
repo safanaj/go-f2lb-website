@@ -8,7 +8,6 @@ require (
 	github.com/cardano-community/koios-go-client/v2 v2.0.1
 	github.com/echovl/cardano-go v0.1.14
 	github.com/fivebinaries/go-cardano-serialization v0.0.0-00010101000000-000000000000
-	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-logr/logr v1.2.3
@@ -29,6 +28,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/echovl/ed25519 v0.2.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect

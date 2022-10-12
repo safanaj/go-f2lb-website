@@ -52,25 +52,38 @@ func ToYAMLOrDie(a any) string {
 	return string(yamlDat)
 }
 
-func StakeKeyHashToStakeAddressOrDie(val string) string {
+func StakeKeyHashToStakeAddress(val string) (string, error) {
 	keyHashBytes := make([]byte, hex.DecodedLen(len(val)))
-	_, err := hex.Decode(keyHashBytes, []byte(val))
+	if _, err := hex.Decode(keyHashBytes, []byte(val)); err != nil {
+		return "", err
+	}
+	return address.NewRewardAddress(network.MainNet(), address.NewKeyStakeCredential(keyHashBytes)).String(), nil
+}
+func StakeKeyHashToStakeAddressOrDie(val string) string {
+	addr, err := StakeKeyHashToStakeAddress(val)
 	CheckErr(err)
-	return address.NewRewardAddress(network.MainNet(), address.NewKeyStakeCredential(keyHashBytes)).String()
+	return addr
 }
 
-func StakeAddressToStakeKeyHashOrDie(val string) string {
+func StakeAddressToStakeKeyHash(val string) (string, error) {
 	addr, err := address.NewAddress(val)
-	CheckErr(err)
+	if err != nil {
+		return "", nil
+	}
 	switch a := addr.(type) {
 	case *address.BaseAddress:
-		return hex.EncodeToString(addr.(*address.BaseAddress).Stake.Payload)
+		return hex.EncodeToString(addr.(*address.BaseAddress).Stake.Payload), nil
 	case *address.RewardAddress:
-		return hex.EncodeToString(addr.(*address.RewardAddress).Stake.Payload)
+		return hex.EncodeToString(addr.(*address.RewardAddress).Stake.Payload), nil
 	default:
-		CheckErr(fmt.Errorf("Unsupported addess type: %T", a))
+		return "", fmt.Errorf("Unsupported addess type: %T", a)
 	}
-	return ""
+	return addr, nil
+}
+func StakeAddressToStakeKeyHashOrDie(val string) string {
+	kh, err := StakeAddressToStakeKeyHash(val)
+	CheckErr(err)
+	return kh
 }
 
 type Epoch uint64

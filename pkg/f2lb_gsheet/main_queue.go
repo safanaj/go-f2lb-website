@@ -183,11 +183,21 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 				continue
 			}
 			if val[:5] == "stake" {
+				kh, err := utils.StakeAddressToStakeKeyHash(val)
+				if err != nil {
+					fmt.Println(fmt.Errorf("Invalid bech32 stake address for ticker: %s", ticker))
+					continue
+				}
 				mqRec.StakeAddrs = append(mqRec.StakeAddrs, val)
-				mqRec.StakeKeys = append(mqRec.StakeKeys, utils.StakeAddressToStakeKeyHashOrDie(val))
+				mqRec.StakeKeys = append(mqRec.StakeKeys, kh)
 			} else {
+				addr, err := utils.StakeKeyHashToStakeAddress(val)
+				if err != nil {
+					fmt.Println(fmt.Errorf("Invalid hex stake address for ticker: %s", ticker))
+					continue
+				}
 				mqRec.StakeKeys = append(mqRec.StakeKeys, val)
-				mqRec.StakeAddrs = append(mqRec.StakeAddrs, utils.StakeKeyHashToStakeAddressOrDie(val))
+				mqRec.StakeAddrs = append(mqRec.StakeAddrs, addr)
 			}
 		}
 
