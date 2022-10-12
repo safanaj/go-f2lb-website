@@ -179,7 +179,7 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 
 		// compute for column I
 		for _, val := range regexp.MustCompile("[[:space:]]").Split(v[8].(string), -1) {
-			if val == "" {
+			if val == "" || len(val) < 6 {
 				continue
 			}
 			if val[:5] == "stake" {
