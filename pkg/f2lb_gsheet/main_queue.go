@@ -17,7 +17,7 @@ import (
 const mainQueueSheet = "MainQueue"
 
 // the first 2 rows are headers
-const mainQueueRange = "A3:N"
+const mainQueueRange = "A3:O"
 
 type MainQueueRec struct {
 	// columns
@@ -133,12 +133,12 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 	records := make([]*MainQueueRec, 0, len(vr.Values))
 
 	for _, v := range vr.Values {
-		qppVal, _ := strconv.ParseUint(v[1].(string), 10, 16)
-		adVal, _ := strconv.ParseUint(v[3].(string), 10, 16)
-		egVal, _ := strconv.ParseUint(v[4].(string), 10, 16)
-		currPosVal, _ := strconv.ParseUint(v[6].(string), 10, 16)
+		qppVal, _ := strconv.ParseUint(v[2].(string), 10, 16)
+		adVal, _ := strconv.ParseUint(v[4].(string), 10, 16)
+		egVal, _ := strconv.ParseUint(v[5].(string), 10, 16)
+		currPosVal, _ := strconv.ParseUint(v[7].(string), 10, 16)
 
-		ticker := v[2].(string) // C
+		ticker := v[3].(string) // D
 		orderedTickers = append(orderedTickers, ticker)
 		mqRec = (*MainQueueRec)(nil)
 		if mqRecI, ok := mq.cacheByTicker.Load(ticker); ok {
@@ -150,17 +150,17 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 			mqRec = &MainQueueRec{
 				DiscordName:           v[0].(string),      // A
 				QPP:                   uint16(qppVal),     // B
-				Ticker:                ticker,             // C
-				AD:                    uint16(adVal),      // D
-				EG:                    uint16(egVal),      // E
-				delegStatus:           v[5].(string),      // F
-				mainQCurrPos:          uint16(currPosVal), // G
-				addonQStatus:          v[7].(string),      // H
-				missedEpochs:          v[9].(string),      // J
-				addedToGoogleGroup:    v[10].(string),     // K
-				PoolIdHex:             v[11].(string),     // L
-				discordID:             v[12].(string),     // M
-				initialAdaDeclaration: v[13].(string),     // N
+				Ticker:                ticker,             // D
+				AD:                    uint16(adVal),      // E
+				EG:                    uint16(egVal),      // F
+				delegStatus:           v[6].(string),      // G
+				mainQCurrPos:          uint16(currPosVal), // H
+				addonQStatus:          v[8].(string),      // J
+				missedEpochs:          v[10].(string),     // K
+				addedToGoogleGroup:    v[11].(string),     // L
+				PoolIdHex:             v[12].(string),     // M
+				discordID:             v[13].(string),     // N
+				initialAdaDeclaration: v[14].(string),     // O
 			}
 
 		}
@@ -178,14 +178,14 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 		}
 
 		// compute for column I
-		for _, val := range regexp.MustCompile("[[:space:]]").Split(v[8].(string), -1) {
+		for _, val := range regexp.MustCompile("[[:space:]]").Split(v[9].(string), -1) {
 			if val == "" || len(val) < 6 {
 				continue
 			}
 			if val[:5] == "stake" {
 				kh, err := utils.StakeAddressToStakeKeyHash(val)
 				if err != nil {
-					fmt.Println(fmt.Errorf("Invalid bech32 stake address for ticker: %s", ticker))
+					fmt.Println(fmt.Errorf("MainQueue parsing: Invalid bech32 stake address for ticker: %s", ticker))
 					continue
 				}
 				mqRec.StakeAddrs = append(mqRec.StakeAddrs, val)
@@ -193,7 +193,7 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 			} else {
 				addr, err := utils.StakeKeyHashToStakeAddress(val)
 				if err != nil {
-					fmt.Println(fmt.Errorf("Invalid hex stake address for ticker: %s", ticker))
+					fmt.Println(fmt.Errorf("MainQueue parsing: Invalid hex stake address for ticker: %s", ticker))
 					continue
 				}
 				mqRec.StakeKeys = append(mqRec.StakeKeys, val)

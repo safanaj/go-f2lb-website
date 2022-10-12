@@ -182,11 +182,21 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 				continue
 			}
 			if val[:5] == "stake" {
+				kh, err := utils.StakeAddressToStakeKeyHash(val)
+				if err != nil {
+					fmt.Println(fmt.Errorf("AddonQueue parsing: Invalid bech32 stake address for ticker: %s", ticker))
+					continue
+				}
 				aqRec.StakeAddrs = append(aqRec.StakeAddrs, val)
-				aqRec.StakeKeys = append(aqRec.StakeKeys, utils.StakeAddressToStakeKeyHashOrDie(val))
+				aqRec.StakeKeys = append(aqRec.StakeKeys, kh)
 			} else {
+				addr, err := utils.StakeKeyHashToStakeAddress(val)
+				if err != nil {
+					fmt.Println(fmt.Errorf("AddonQueue parsing: Invalid hex stake address for ticker: %s", ticker))
+					continue
+				}
 				aqRec.StakeKeys = append(aqRec.StakeKeys, val)
-				aqRec.StakeAddrs = append(aqRec.StakeAddrs, utils.StakeKeyHashToStakeAddressOrDie(val))
+				aqRec.StakeAddrs = append(aqRec.StakeAddrs, addr)
 			}
 		}
 

@@ -78,7 +78,7 @@ func StakeAddressToStakeKeyHash(val string) (string, error) {
 	default:
 		return "", fmt.Errorf("Unsupported addess type: %T", a)
 	}
-	return addr, nil
+	return "", fmt.Errorf("Ops! Unsupported addess type: %T", addr)
 }
 func StakeAddressToStakeKeyHashOrDie(val string) string {
 	kh, err := StakeAddressToStakeKeyHash(val)
