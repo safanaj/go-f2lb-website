@@ -15,8 +15,10 @@
 // @import "@creativebulma/bulma-tooltip/src/sass/_animation";
 // @import "@creativebulma/bulma-tooltip/src/sass/_position";
 // @import "@creativebulma/bulma-tooltip/src/sass/_variables";
+@import "@creativebulma/bulma-divider/src/sass/index";
 
 @import "bulma-pageloader/dist/css/bulma-pageloader";
+@import "bulma-switch/src/sass/index";
 
 html.theme-s {
     background-color: #fad82f;

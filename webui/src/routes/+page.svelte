@@ -1,8 +1,11 @@
 <script context="module">
   import {
       useCardanoSerializationLib,
-      getDelegationSignedTx
+      getDelegationSignedTx,
+      getSignedTx,
+      assembleWitnessSet
   } from '$lib/cardano/csl.js'
+  import { Buffer } from 'buffer';
   // import * as wasm from '@emurgo/cardano-serialization-lib-browser/';
 
   let cardano = window.cardano;
@@ -18,12 +21,13 @@
 </svelte:head>
 
 <script>
-  import {User} from '$lib/pb/control_pb';
+  import {User, Delegation, TxId} from '$lib/pb/control_pb';
   import {
       mainQueueMembers, addonQueueMembers, serviceClients,
       epochData, cardanoWallet, activePool, topPool
   } from '$lib/stores'
   import Member from '$lib/Member.svelte'
+  import TxSubmitConfirmation from '$lib/cardano/TxSubmitConfirmation.svelte'
   // import { doCallInPromise } from '$lib/utils'
   import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
   import { getContext } from 'svelte';
@@ -33,6 +37,7 @@
   $: user = $cardanoWallet.user
   $: wrongPool = (user||{}).delegatedpool != (mainServed||{}).ticker && (user||{}).delegatedpool != (mainServed||{}).poolidbech32
   $: topTicker = ($topPool || {}).ticker || 'Unknown'
+  $: hasPayer = ($epochData.notes||{}).payer_available === 'true'
 
   const isWrongPool = user => user !== undefined && (user.delegatedpool != mainServed.ticker && user.delegatedpool != mainServed.poolidbech32)
 
@@ -40,7 +45,6 @@
 
   const doDelegation = () => {
       let {api, wasm, address} = $cardanoWallet
-      // console.log('pageLoaderEl', pageLoaderObj.el)
       pageLoaderObj.el.classList.toggle('is-active')
       getDelegationSignedTx(api, wasm, address, mainServed.poolidbech32)
           .then(api.submitTx)
@@ -49,14 +53,126 @@
           .catch(err => { pageLoaderObj.el.classList.toggle('is-active'); console.log(err); })
   }
 
+
+  let signedTxCborHex = null;
+  let avoidSubmitConfirmation = false;
+  const getTxIdAndPayerVKey = (tx) => {
+      const tx_ = wasm.Transaction.from_bytes(Buffer.from(tx.cborhex, 'hex'))
+      // console.log("Got TX_:", tx_.to_json())
+      // console.log("Got TX cborhex:", tx.cborhex)
+      const txHash = wasm.hash_transaction(tx_.body()).to_hex()
+      const payer_vkey_hex = tx_.witness_set().vkeys().get(0).to_hex()
+      tx_.free()
+
+      const txId = new TxId()
+      txId.setHash(txHash)
+
+      return {txId, payer_vkey_hex}
+  }
+
+  const getSignedTxWithWitnessSet = (tx_hex, payer_vkey_hex, delegator_vkey_hex) => {
+      const witset = assembleWitnessSet(wasm, payer_vkey_hex, delegator_vkey_hex)
+      return getSignedTx(wasm, tx_hex, witset)
+  }
+
+  const doOfferedDelegation = async () => {
+      let {api, wasm} = $cardanoWallet
+      pageLoaderObj.el.classList.toggle('is-active')
+      if ($cardanoWallet.stakeAddr === "" || $topPool.poolidbech32 === "") {
+          console.log("Error delegation data incomplete", $cardanoWallet, $topPool)
+          return
+      }
+      let deleg = new Delegation()
+      deleg.setStakeaddress($cardanoWallet.stakeAddr)
+      deleg.setPoolid($topPool.poolidbech32)
+
+      let tx = await new Promise((resolve, reject) => {
+          $serviceClients.Control.buildDelegationTx(deleg, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(tx => tx.toObject()).catch(console.log)
+      if (!tx) {
+          pageLoaderObj.el.classList.toggle('is-active')
+          return
+      }
+
+      const {txId, payer_vkey_hex} = getTxIdAndPayerVKey(tx)
+      let witset
+      try {
+          if ($cardanoWallet.name === 'eternl') {
+              witset = await api.signTx(tx.cborhex, true)
+          } else {
+              witset = await api.signTx(tx.cborhex)
+          }
+      } catch (e) {
+          console.log("Error or cancelled", e)
+          $serviceClients.Control.canceledTx(txId)
+          pageLoaderObj.el.classList.toggle('is-active')
+          return
+      }
+
+      const tws = wasm.TransactionWitnessSet.from_bytes(Buffer.from(witset, 'hex'))
+      const delegator_vkey_hex = tws.vkeys().get(0).to_hex()
+      tws.free()
+
+      let signedTx = getSignedTxWithWitnessSet(tx.cborhex, payer_vkey_hex, delegator_vkey_hex)
+
+      if (signedTx) {
+          // {
+          //     const tx_ = wasm.Transaction.from_bytes(Buffer.from(signedTx, 'hex'))
+          //     console.log("Got signed TX:", tx_.to_json())
+          //     tx_.free()
+          // }
+
+          if (avoidSubmitConfirmation) {
+              try {
+                  let txid = await api.submitTx(signedTx)
+                  console.log("Tx submitted", txId.toObject(), txid)
+                  $serviceClients.Control.submittedTx(txId)
+              } catch (e) {
+                  console.log("Tx submit err", e)
+                  $serviceClients.Control.canceledTx(txId)
+              }
+          } else {
+              // going to open the TX submit confirmation modal just setting the watched variable
+              signedTxCborHex = signedTx
+          }
+      }
+      pageLoaderObj.el.classList.toggle('is-active')
+  }
+
+  const doTxSubmitConfirmed = async () => {
+      const signedTx = signedTxCborHex;
+      signedTxCborHex = null
+      const res = getTxIdAndPayerVKey({cborhex: signedTx})
+      try {
+          let txid = await api.submitTx(signedTx)
+          console.log("Tx submitted", res.txId.toObject(), txid)
+          $serviceClients.Control.submittedTx(res.txId)
+      } catch (e) {
+          console.log("Tx submit err", e)
+          $serviceClients.Control.canceledTx(res.txId)
+      }
+  }
+
+  const doTxSubmitDiscarded = () => {
+      const signedTx = signedTxCborHex;
+      signedTxCborHex = null
+      const res = getTxIdAndPayerVKey({cborhex: signedTx})
+      console.log("Tx submit discarded", res.txId)
+      $serviceClients.Control.canceledTx(res.txId)
+  }
+
 </script>
+
+{#key signedTxCborHex}
+<TxSubmitConfirmation on:TxSubmitConfirmed={doTxSubmitConfirmed} on:TxSubmitDiscarded={doTxSubmitDiscarded} txCborHex={signedTxCborHex} />
+{/key}
 
 <section class="section">
   <div class="columns m-0 has-text-centered">
     <div class="column">
       <h1 class="block">Welcome to F2LB (unofficial) Website</h1>
       <p class="block">Visit <a href="https://www.f2lb.org/">F2LB</a> to read about the project and the community</p>
-      <!-- <p class="block">Visit also <a href="https://f2lb.info/">F2LB.info</a></p> -->
+      <p class="block">Visit also <a href="https://f2lb.info/">F2LB.info</a></p>
       {#if $activePool !== null && ($activePool||{activestake: 0}).activestake > 0}
       <div class="box themed">
         The F2LB community stake was delegated to the pool {$activePool.ticker} that now has {$activePool.activestake} ADA of active stake,
@@ -80,7 +196,22 @@
       {/if}
       {#key $cardanoWallet.stakeKey}
         {#if wrongPool}
-          <button class="button" on:click={doDelegation}>Delegate to the SPO on top of the queue, currently {mainServed.ticker}</button>
+          <div class="block mt-3">
+            <button class="button" on:click={doDelegation}>Delegate to the SPO on top of the queue, currently {mainServed.ticker}</button>
+            {#if hasPayer}
+              <div class="divider">OR</div>
+              <div class="field is-grouped is-justify-content-center">
+                <p class="control">
+                  <button class="button" on:click={doOfferedDelegation}>Delegation fee kindly offered</button>
+                </p>
+                <p class="control">
+                  <input bind:value={avoidSubmitConfirmation}
+                         id="switchTxSubmitConfirm" type="checkbox" name="switchTxSubmitConfirm" class="switch is-rounded">
+                  <label for="switchTxSubmitConfirm">Avoid tx submit confirmation</label>
+                </p>
+              </div>
+            {/if}
+          </div>
         {/if}
       {/key}
 

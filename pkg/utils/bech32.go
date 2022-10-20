@@ -2,31 +2,19 @@ package utils
 
 import (
 	"encoding/hex"
-	"github.com/btcsuite/btcutil/bech32"
+	"github.com/echovl/cardano-go/bech32"
 )
 
 func HexToBech32(hrp, hexa string) (string, error) {
 	var (
-		err       error
-		dat, conv []byte
-		encoded   string
+		err error
+		dat []byte
 	)
-
 	dat, err = hex.DecodeString(hexa)
 	if err != nil {
-		goto reterr
+		return "", err
 	}
-	conv, err = bech32.ConvertBits(dat, 8, 5, true)
-	if err != nil {
-		goto reterr
-	}
-	encoded, err = bech32.Encode(hrp, conv)
-	if err != nil {
-		goto reterr
-	}
-	return encoded, nil
-reterr:
-	return "", err
+	return bech32.EncodeFromBase256(hrp, dat)
 }
 
 func HexToBech32OrDie(hrp, hexa string) string {
@@ -37,20 +25,14 @@ func HexToBech32OrDie(hrp, hexa string) string {
 
 func Bech32ToHex(be32 string) (string, error) {
 	var (
-		err           error
-		decoded, conv []byte
+		err     error
+		decoded []byte
 	)
-	_, decoded, err = bech32.Decode(be32)
+	_, decoded, err = bech32.DecodeToBase256(be32)
 	if err != nil {
-		goto reterr
+		return "", err
 	}
-	conv, err = bech32.ConvertBits(decoded, 5, 8, false)
-	if err != nil {
-		goto reterr
-	}
-	return hex.EncodeToString(conv), nil
-reterr:
-	return "", err
+	return hex.EncodeToString(decoded), nil
 }
 
 func Bech32ToHexOrDie(be32 string) string {

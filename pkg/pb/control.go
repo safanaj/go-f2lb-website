@@ -7,9 +7,12 @@ import (
 	"strings"
 	"time"
 
+	// "github.com/echovl/cardano-go"
+
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
+	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 	"github.com/safanaj/go-f2lb/pkg/webserver"
 )
@@ -28,13 +31,15 @@ type controlServiceServer struct {
 	uuid2stream map[string]ControlMsgService_ControlServer
 
 	adminPools map[string]any
+
+	payer *txbuilder.Payer
 }
 
 var _ ControlMsgServiceServer = &controlServiceServer{}
 var _ ControlServiceRefresher = &controlServiceServer{}
 
-func NewControlServiceServer(c f2lb_gsheet.Controller, adminPools []string) ControlMsgServiceServer {
-	cs := &controlServiceServer{ctrl: c, adminPools: make(map[string]any)}
+func NewControlServiceServer(c f2lb_gsheet.Controller, adminPools []string, payer *txbuilder.Payer) ControlMsgServiceServer {
+	cs := &controlServiceServer{ctrl: c, adminPools: make(map[string]any), payer: payer}
 	for _, p := range adminPools {
 		cs.adminPools[strings.TrimSpace(p)] = struct{}{}
 	}
@@ -94,6 +99,7 @@ func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlSe
 			"accountcache_len":     fmt.Sprintf("%d", s.ctrl.GetAccountCache().Len()),
 			"accountcache_added":   fmt.Sprintf("%d", s.ctrl.GetAccountCache().AddedItems()),
 			"missing_pools":        strings.Join(s.ctrl.GetPoolCache().GetMissingPoolInfos(), ", "),
+			"payer_available":      fmt.Sprintf("%t", s.payer != nil),
 		},
 	})
 
@@ -184,4 +190,42 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 		StakeAddress:  saddr_,
 		DelegatedPool: delegPool,
 	}, nil
+}
+
+func (s *controlServiceServer) BuildDelegationTx(ctx context.Context, deleg *Delegation) (*PartiallySignedTx, error) {
+	if s.payer == nil {
+		return nil, fmt.Errorf("Payer not available")
+	}
+
+	s.payer.Info("Control.BuildDelegationTx", "deleg", deleg)
+	memberTicker := ""
+	if sp := s.ctrl.GetStakePoolSet().Get(deleg.GetStakeAddress()); sp != nil && sp.Ticker() != "" {
+		memberTicker = sp.Ticker()
+	}
+	if txHex := s.payer.BuildDelegationTx(
+		deleg.GetStakeAddress(), deleg.GetPoolId(),
+		memberTicker, deleg.GetUtxoIdHint(),
+	); txHex == "" {
+		return nil, fmt.Errorf("Unable to build TX")
+	} else {
+		return &PartiallySignedTx{
+			CborHex: txHex,
+		}, nil
+	}
+}
+
+func (s *controlServiceServer) CanceledTx(ctx context.Context, txid *TxId) (*emptypb.Empty, error) {
+	if s.payer == nil {
+		return nil, fmt.Errorf("Payer not available")
+	}
+	s.payer.CanceledTx(txid.GetHash())
+	return &emptypb.Empty{}, nil
+}
+
+func (s *controlServiceServer) SubmittedTx(ctx context.Context, txid *TxId) (*emptypb.Empty, error) {
+	if s.payer == nil {
+		return nil, fmt.Errorf("Payer not available")
+	}
+	s.payer.SubmittedTx(txid.GetHash())
+	return &emptypb.Empty{}, nil
 }

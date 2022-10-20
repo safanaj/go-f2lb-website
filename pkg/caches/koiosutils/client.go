@@ -2,6 +2,7 @@ package koiosutils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -305,4 +306,53 @@ func (kc *KoiosClient) GetLastDelegationTime(stakeAddr string) (time.Time, error
 		return res.Data.TxInfo.TxTimestamp.Time, nil
 	}
 	return time.Time{}, fmt.Errorf("LastDelegationTxNotFound")
+}
+
+func (kc *KoiosClient) GetTxsMetadata(txs []string) (map[string]string, error) {
+	if len(txs) == 0 {
+		return nil, nil
+	}
+	var err error
+	res := make(map[string]string)
+	txhs := make([]koios.TxHash, 0, len(txs))
+
+	for _, txh := range txs {
+		txhs = append(txhs, koios.TxHash(txh))
+	}
+
+	page := uint(1)
+	opts_ := kc.k.NewRequestOptions()
+
+	// opts_.QuerySet("select", "")
+
+	for {
+		opts := opts_.Clone()
+		opts.SetCurrentPage(page)
+		page = page + 1
+		mds, err := kc.k.GetTxsMetadata(kc.ctx, txhs, opts)
+		if err != nil || len(mds.Data) == 0 {
+			break
+		}
+
+		for _, i := range mds.Data {
+			if string(i.TxHash) == "" {
+				continue
+			}
+
+			msg := ""
+			metadata := map[string][]string{}
+			if raw, ok := i.Metadata["674"]; ok {
+				json.Unmarshal(raw, &metadata)
+				if s, ok := metadata["msg"]; ok && len(s) == 1 {
+					msg = s[0]
+				}
+			}
+			res[string(i.TxHash)] = msg
+		}
+
+		if IsResponseComplete(mds.Response) {
+			break
+		}
+	}
+	return res, err
 }

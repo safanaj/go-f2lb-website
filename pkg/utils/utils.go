@@ -9,8 +9,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/fivebinaries/go-cardano-serialization/address"
-	"github.com/fivebinaries/go-cardano-serialization/network"
+	// "github.com/fivebinaries/go-cardano-serialization/address"
+	// "github.com/fivebinaries/go-cardano-serialization/network"
+	"github.com/echovl/cardano-go"
 )
 
 func CheckErr(e error) {
@@ -57,7 +58,11 @@ func StakeKeyHashToStakeAddress(val string) (string, error) {
 	if _, err := hex.Decode(keyHashBytes, []byte(val)); err != nil {
 		return "", err
 	}
-	return address.NewRewardAddress(network.MainNet(), address.NewKeyStakeCredential(keyHashBytes)).String(), nil
+	addr, err := cardano.NewStakeAddress(cardano.Mainnet, cardano.StakeCredential{Type: cardano.KeyCredential, KeyHash: keyHashBytes})
+	if err != nil {
+		return "", err
+	}
+	return addr.String(), nil
 }
 func StakeKeyHashToStakeAddressOrDie(val string) string {
 	addr, err := StakeKeyHashToStakeAddress(val)
@@ -66,17 +71,15 @@ func StakeKeyHashToStakeAddressOrDie(val string) string {
 }
 
 func StakeAddressToStakeKeyHash(val string) (string, error) {
-	addr, err := address.NewAddress(val)
+	addr, err := cardano.NewAddress(val)
 	if err != nil {
 		return "", nil
 	}
-	switch a := addr.(type) {
-	case *address.BaseAddress:
-		return hex.EncodeToString(addr.(*address.BaseAddress).Stake.Payload), nil
-	case *address.RewardAddress:
-		return hex.EncodeToString(addr.(*address.RewardAddress).Stake.Payload), nil
+	switch addr.Type {
+	case cardano.Base, cardano.Stake:
+		return hex.EncodeToString(addr.Stake.Hash()), nil
 	default:
-		return "", fmt.Errorf("Unsupported addess type: %T", a)
+		return "", fmt.Errorf("Unsupported addess type: %v", addr.Type)
 	}
 	return "", fmt.Errorf("Ops! Unsupported addess type: %T", addr)
 }

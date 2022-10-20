@@ -12,6 +12,9 @@ service ControlMsgService {
   rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
   rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Auth(StakeAddr) returns (User) {}
+  rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
+  rpc CanceledTx(TxId) returns (google.protobuf.Empty) {}
+  rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
 }
 
 message ControlMsg {
@@ -27,6 +30,7 @@ message ControlMsg {
   string data = 5;
 }
 
+// Auth
 message User {
     enum Type {
     VISITOR = 0;
@@ -44,4 +48,19 @@ message User {
 
 message StakeAddr {
   string stakeAddress = 1;
+}
+
+// Tx
+message Delegation {
+  string stakeAddress = 1;
+  string poolId = 2;
+  string utxoIdHint = 3;
+}
+
+message PartiallySignedTx {
+  string cborHex = 1;
+}
+
+message TxId {
+  string hash = 1;
 }

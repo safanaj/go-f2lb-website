@@ -4,9 +4,8 @@ go 1.18
 
 require (
 	github.com/blockfrost/blockfrost-go v0.1.0
-	github.com/btcsuite/btcutil v1.0.2
 	github.com/cardano-community/koios-go-client/v2 v2.0.1
-	github.com/fivebinaries/go-cardano-serialization v0.0.0-00010101000000-000000000000
+	github.com/echovl/cardano-go v0.0.0-00010101000000-000000000000
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-logr/logr v1.2.3
@@ -14,6 +13,7 @@ require (
 	github.com/iand/logfmtr v0.2.1
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/spf13/pflag v1.0.5
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
 	google.golang.org/api v0.88.0
 	google.golang.org/grpc v1.47.0
@@ -23,9 +23,11 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
+	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
-	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
+	github.com/echovl/ed25519 v0.2.0 // indirect
+	github.com/fatih/color v1.13.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -36,10 +38,12 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.12.3 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -49,7 +53,6 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	golang.org/x/sys v0.0.0-20220624220833-87e55d714810 // indirect
 	golang.org/x/text v0.3.7 // indirect
@@ -61,4 +64,8 @@ require (
 )
 
 //replace github.com/cardano-community/koios-go-client => github.com/safanaj/koios-go-client v1.2.1
-replace github.com/fivebinaries/go-cardano-serialization => github.com/safanaj/go-cardano-serialization v0.0.0-20220930095728-b817e2b018d1
+// replace github.com/fivebinaries/go-cardano-serialization => github.com/safanaj/go-cardano-serialization v0.0.0-20220930095728-b817e2b018d1
+
+// replace github.com/echovl/cardano-go => /home/marco/src/Others/cardano-go
+
+replace github.com/echovl/cardano-go => github.com/safanaj/cardano-go v0.0.0-20221020223616-7f705bdf8bce

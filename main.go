@@ -16,6 +16,7 @@ import (
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 	"github.com/safanaj/go-f2lb/pkg/pb"
+	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 	"github.com/safanaj/go-f2lb/pkg/webserver"
 )
@@ -27,14 +28,19 @@ var adminPoolsStr string = "BRNS,STPZ1"
 //go:embed all:webui/build
 var rootFS embed.FS
 
-func main() {
-	showVersion := flag.Bool("version", false, "show version and exit")
-	flag.StringVar(&adminPoolsStr, "admin-pools", adminPoolsStr, "Comma separated pools with admin permission")
+func addFlags() {
 	f2lb_gsheet.AddFlags(flag.CommandLine)
 	logging.AddFlags(flag.CommandLine)
 	ccli.AddFlags(flag.CommandLine)
 	blockfrostutils.AddFlags(flag.CommandLine)
+	txbuilder.AddFlags(flag.CommandLine)
+}
+
+func main() {
+	showVersion := flag.Bool("version", false, "show version and exit")
+	flag.StringVar(&adminPoolsStr, "admin-pools", adminPoolsStr, "Comma separated pools with admin permission")
 	flag.StringVar(&listenAddr, "listen", listenAddr, "IP:PORT or :PORT to listen on all interfaces")
+	addFlags()
 	flag.Parse()
 	if *showVersion {
 		fmt.Printf("%s %s\n", progname, version)
@@ -43,10 +49,13 @@ func main() {
 
 	log := logging.GetLogger().WithName(progname)
 	mainCtx, mainCtxCancel := context.WithCancel(context.Background())
-	webCtx := utils.SetupShutdownSignals(mainCtx)
-	f2lbCtrl := f2lb_gsheet.NewController(mainCtx, log.WithName("f2lbController"))
+	childCtx, childCtxCancel := context.WithCancel(mainCtx)
+	webCtx := utils.SetupShutdownSignals(childCtx)
+	f2lbCtrl := f2lb_gsheet.NewController(childCtx, log.WithName("f2lbController"))
+	payer, err := txbuilder.NewPayer(childCtx, log.WithName("payer"))
+	utils.CheckErr(err)
 
-	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl, strings.Split(adminPoolsStr, ","))
+	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl, strings.Split(adminPoolsStr, ","), payer)
 	mainQueueServiceServer := pb.NewMainQueueServiceServer(f2lbCtrl.GetMainQueue(), f2lbCtrl.GetStakePoolSet())
 	addonQueueServiceServer := pb.NewAddonQueueServiceServer(f2lbCtrl.GetAddonQueue(), f2lbCtrl.GetStakePoolSet())
 	supportersServiceServer := pb.NewSupporterServiceServer(f2lbCtrl.GetSupporters())
@@ -56,14 +65,12 @@ func main() {
 	f2lbCtrl.SetRefresherChannel(controlServiceServer.(pb.ControlServiceRefresher).GetRefresherChannel())
 	controlServiceServer.(pb.ControlServiceRefresher).StartRefresher(webCtx)
 
-	// go func() {
 	startControllerAt := time.Now()
 	log.V(1).Info("Starting controller", "at", startControllerAt.Format(time.RFC850))
 	if err := f2lbCtrl.Start(); err != nil {
 		utils.CheckErr(err)
 	}
 	log.V(1).Info("Controller started", "in", time.Since(startControllerAt).String())
-	// }()
 
 	webSrv := webserver.New(listenAddr, nil)
 	webserver.SetRootFS(rootFS)
@@ -96,8 +103,11 @@ func main() {
 	go func() {
 		<-webCtx.Done()
 		f2lbCtrl.Stop()
-		webSrv.Stop(mainCtx)
+		webSrv.Stop(childCtx)
 		log.V(2).Info("Server shutdown done, going to close ...")
+		childCtxCancel()
+		time.Sleep(1 * time.Second)
+		<-childCtx.Done()
 		mainCtxCancel()
 	}()
 

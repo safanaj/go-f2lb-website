@@ -19459,6 +19459,9 @@ export const useCardanoSerializationLib = async () => {
   return {
     wasm,
 
+    // functions
+    hash_transaction,
+
     // classes
     Address,
     AssetName,
@@ -19742,13 +19745,15 @@ const getDelegationTx = async (api, wasm, addr_bech32, pool_bech32) => {
   return tx
 }
 
-const getSignedTx = (wasm, tx_, witset_) => {
+export const getSignedTx = (wasm, tx_, witset_) => {
   // TODO: check witness set vkeys against tx body
   const tws = wasm.TransactionWitnessSet.from_bytes(Buffer.from(witset_, 'hex'))
   const _tx = wasm.Transaction.from_bytes(Buffer.from(tx_, 'hex'))
   const txBody = _tx.body()
+  const auxData = _tx.auxiliary_data()
   _tx.free()
-  const _signedTx = wasm.Transaction.new(txBody, tws)
+  const _signedTx = wasm.Transaction.new(txBody, tws, auxData)
+  //auxData.free() // don't free this, it is already a nulled ptr
   txBody.free()
   tws.free()
   const signedTx = Buffer.from(_signedTx.to_bytes().buffer).toString('hex')
@@ -19763,4 +19768,17 @@ export const getDelegationSignedTx = async (api, wasm, addr_bech32, pool_bech32)
     throw new Error("ooops !!! This should not happen in getDelegationSignedTx")
   }
   return getSignedTx(wasm, tx_, witset_)
+}
+
+export const assembleWitnessSet = (wasm, ...witset_vkey_hexes) => {
+  const vkeys = wasm.Vkeywitnesses.new()
+  for (let vkey_hex of witset_vkey_hexes) {
+    vkeys.add(wasm.Vkeywitness.from_hex(vkey_hex))
+  }
+  const witset_ = wasm.TransactionWitnessSet.new()
+  witset_.set_vkeys(vkeys)
+  vkeys.free()
+  const witset = Buffer.from(witset_.to_bytes().buffer).toString('hex')
+  witset_.free()
+  return witset
 }
