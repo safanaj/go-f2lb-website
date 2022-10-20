@@ -6,7 +6,6 @@ require (
 	github.com/blockfrost/blockfrost-go v0.1.0
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/cardano-community/koios-go-client/v2 v2.0.1
-	github.com/echovl/cardano-go v0.1.14
 	github.com/fivebinaries/go-cardano-serialization v0.0.0-00010101000000-000000000000
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
@@ -24,10 +23,8 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
-	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
-	github.com/echovl/ed25519 v0.2.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect

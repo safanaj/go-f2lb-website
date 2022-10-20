@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/safanaj/go-f2lb/pkg/api"
 	"github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
 	"github.com/safanaj/go-f2lb/pkg/ccli"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
@@ -72,6 +73,8 @@ func main() {
 	pb.RegisterMainQueueServiceServer(webSrv.GetGrpcServer(), mainQueueServiceServer)
 	pb.RegisterSupporterServiceServer(webSrv.GetGrpcServer(), supportersServiceServer)
 	pb.RegisterMemberServiceServer(webSrv.GetGrpcServer(), memberServiceServer)
+
+	api.RegisterApiV0(webSrv.GetGinEngine().Group("/api/v0"), f2lbCtrl)
 
 	pages, paths := webserver.GetPagesAndPaths()
 	for i, _ := range pages {
