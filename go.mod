@@ -68,4 +68,4 @@ require (
 
 // replace github.com/echovl/cardano-go => /home/marco/src/Others/cardano-go
 
-replace github.com/echovl/cardano-go => github.com/safanaj/cardano-go v0.0.0-20221020223616-7f705bdf8bce
+replace github.com/echovl/cardano-go => github.com/safanaj/cardano-go v0.0.0-20221024103531-2e6f45080b11

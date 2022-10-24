@@ -19714,6 +19714,29 @@ const getUtxos = async (api, wasm) => {
   return utxos
 }
 
+const getOneUtxo = async (api, wasm, allowMultiAsset) => {
+  let found = null
+  const utxos = await getUtxos(api, wasm)
+  for (let i = 0; i < utxos.len(); i++) {
+    const utxo = utxos.get(i)
+    if (allowMultiAsset) {
+      found = utxo
+      break
+    }
+    const o = utxo.output()
+    const ov = o.to_js_value()
+    o.free()
+    if ((ov.amount||{}).multiasset) {
+      utxo.free()
+      continue
+    }
+    found = utxo
+    break
+  }
+  utxos.free()
+  return found
+}
+
 const getChangeAddr = async (api, wasm) => {
   return wasm.Address.from_bytes(Buffer.from(await api.getChangeAddress(), 'hex'))
 }
@@ -19781,4 +19804,19 @@ export const assembleWitnessSet = (wasm, ...witset_vkey_hexes) => {
   const witset = Buffer.from(witset_.to_bytes().buffer).toString('hex')
   witset_.free()
   return witset
+}
+
+export const getUtxoHint = async (api, wasm, allowMultiAsset) => {
+  const hint = await getOneUtxo(api, wasm, allowMultiAsset)
+  if (hint !== null) {
+    const i = hint.input()
+    const o = hint.output()
+    hint.free()
+    const iv = i.to_js_value()
+    i.free()
+    const ov = o.to_js_value()
+    o.free()
+    return `${iv.transaction_id}#${iv.index}|${ov.address}:${ov.amount.coin}`
+  }
+  return ""
 }
