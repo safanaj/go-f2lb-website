@@ -33,7 +33,7 @@
   import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
   import { getContext } from 'svelte';
 
-  $: mainServed = $mainQueueMembers[0];
+  $: mainServed = $topPool || $mainQueueMembers[0];
   $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
   $: user = $cardanoWallet.user
   $: wrongPool = (user||{}).delegatedpool != (mainServed||{}).ticker && (user||{}).delegatedpool != (mainServed||{}).poolidbech32
