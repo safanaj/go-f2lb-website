@@ -84,7 +84,7 @@ func main() {
 	api.RegisterApiV0(webSrv.GetGinEngine().Group("/api/v0"), f2lbCtrl)
 
 	pages, paths := webserver.GetPagesAndPaths()
-	for i, _ := range pages {
+	for i := range pages {
 		if paths[i] == "/index" {
 			paths[i] = "/"
 		}

@@ -26,7 +26,7 @@
       supportersList, cardanoWallet, activePool, topPool
   } from '$lib/stores';
   import { doCallInPromise, waitFor } from '$lib/utils';
-  import { User, ControlMsg } from '$lib/pb/control_pb';
+  import { ControlMsg } from '$lib/pb/control_pb';
 
   // import * as wasm from '@emurgo/cardano-serialization-lib-browser/';
 
@@ -112,6 +112,7 @@
     Block community
   </p>
   <span class="is-pulled-right"><a href="https://gogs.bardels.me/marco/go-f2lb-website">source code</span>
+  <!-- svelte-ignore missing-declaration -->
   <span class="is-pulled-left">version: {__APP_VERSION__}</span>
 </footer>
 

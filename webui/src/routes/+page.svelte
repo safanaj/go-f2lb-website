@@ -7,11 +7,7 @@
       getUtxoHint,
   } from '$lib/cardano/csl.js'
   import { Buffer } from 'buffer';
-  // import * as wasm from '@emurgo/cardano-serialization-lib-browser/';
-
-  let cardano = window.cardano;
   let wasm = {}
-  let wasm2 = {}
 
   useCardanoSerializationLib().then(x => { wasm = {...x} })
 
@@ -29,7 +25,6 @@
   } from '$lib/stores'
   import Member from '$lib/Member.svelte'
   import TxSubmitConfirmation from '$lib/cardano/TxSubmitConfirmation.svelte'
-  // import { doCallInPromise } from '$lib/utils'
   import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
   import { getContext } from 'svelte';
 
@@ -39,8 +34,6 @@
   $: wrongPool = (user||{}).delegatedpool != (mainServed||{}).ticker && (user||{}).delegatedpool != (mainServed||{}).poolidbech32
   $: topTicker = ($topPool || {}).ticker || 'Unknown'
   $: hasPayer = ($epochData.notes||{}).payer_available === 'true'
-
-  const isWrongPool = user => user !== undefined && (user.delegatedpool != mainServed.ticker && user.delegatedpool != mainServed.poolidbech32)
 
   const pageLoaderObj = getContext('pageLoader')
 

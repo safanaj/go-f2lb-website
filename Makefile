@@ -20,7 +20,10 @@ clean:
 	rm -rf webui/dist webui/build webui/version.json
 
 clean-all: clean
-	rm -rf webui/node_modules vendor
+	rm -rf webui/node_modules webui/.svelte-kit vendor
+
+lint:
+	golint && ( cd webui && yarn install && yarn run lint )
 
 go-deps:
 	$(GO) mod tidy -v && $(GO) mod vendor -v

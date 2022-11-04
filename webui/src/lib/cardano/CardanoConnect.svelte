@@ -8,7 +8,6 @@
       getStakeKey,
       getStakeAddr
   } from '$lib/cardano/csl.js'
-  // import * as wasm from '@emurgo/cardano-serialization-lib-browser/';
 
   let cardano = window.cardano;
   let wasm = {}
@@ -26,7 +25,7 @@
 
 <script>
   import { createEventDispatcher, tick, getContext, onMount } from 'svelte'
-  import { Buffer } from 'buffer';
+  // import { Buffer } from 'buffer';
   import CardanoConnectButton from '$lib/cardano/CardanoConnectButton.svelte';
   import { cardanoWallet, serviceClients } from '$lib/stores'
   import {StakeAddr} from '$lib/pb/control_pb.js'
@@ -55,6 +54,8 @@
           api.experimental.on('accountChange', onAccountChange)
           console.log("onAccountChange (api.experimental)", api, w)
       } else {
+          // no-op
+          (() => {})()
       }
   }
 
@@ -65,12 +66,6 @@
   let loadingEl;
   const pageLoaderObj = getContext('pageLoader')
 
-  const toggleLoading = () => {
-      loadingEl.classList.toggle("is-hidden");
-      if (pageLoaderObj.el !== undefined) {
-          pageLoaderObj.el.classList.toggle("is-active");
-      }
-  }
   const openLoader = () => {
       if (pageLoaderObj.el !== undefined) {
           pageLoaderObj.el.classList.add("is-active");
@@ -97,7 +92,6 @@
   const selectWallet = async (w) => {
       // console.log("CardanoConnect.selectWallet: ", cardano, cardano?.[w.id], w, maybeStoredConnectedWalletName, w.id)
       closeModal();
-      // toggleLoading();
       openLoader();
       const cardanoWallet = cardano?.[w.id];
       await cardanoWallet.enable().then(async (api) => {
@@ -135,7 +129,6 @@
                   dat = await doAuth(dat)
               }
               walletConnected(dat);
-              //toggleLoading();
               closeLoader();
           });
       }).catch((err) => {
@@ -147,7 +140,6 @@
               info: err?.info
           });
           walletDisconnected();
-          //toggleLoading();
           closeLoader();
       }).then(tick);
   }
@@ -208,7 +200,6 @@
                       pageLoaderObj.el = undefined
                       await selectWallet(w[0]).catch(err => {
                           console.log(err);
-                          /*toggleLoading();*/
                           closeLoader();
                       })
                       pageLoaderObj.el = opl

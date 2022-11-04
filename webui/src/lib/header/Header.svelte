@@ -3,10 +3,10 @@
   import { page } from '$app/stores';
   import f2lbLogo from '$lib/assets/f2lb_small.png';
   import {Empty} from "google-protobuf/google/protobuf/empty_pb";
-  import {StakeAddr} from '$lib/pb/control_pb.js'
+
   import { serviceClients, cardanoWallet, theme } from '$lib/stores'
   import CardanoConnect from '$lib/cardano/CardanoConnect.svelte';
-  import FaMoon from 'svelte-icons/fa/FaMoon.svelte'
+  // import FaMoon from 'svelte-icons/fa/FaMoon.svelte'
   import FaSun from 'svelte-icons/fa/FaSun.svelte'
   import FaAngry from 'svelte-icons/fa/FaAngry.svelte'
 

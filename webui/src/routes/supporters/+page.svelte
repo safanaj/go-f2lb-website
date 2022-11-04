@@ -3,8 +3,7 @@
 </svelte:head>
 
 <script>
-  import { page } from '$app/stores';
-  import { supportersList, serviceClients } from '$lib/stores'
+  import { supportersList } from '$lib/stores'
   import Supporter from '$lib/Supporter.svelte'
   import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
 </script>
