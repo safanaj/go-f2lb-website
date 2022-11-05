@@ -1,7 +1,7 @@
 go-f2lb-website
 
 vendor
-
+node_modules
 proto/.built
 pkg/pb/*.pb.go
 
@@ -12,3 +12,7 @@ webui/src/lib/pb/*_pb.*
 webui/src/lib/pb/*_pb_service.*
 tests
 webui/version.json
+package*.json
+yarn.lock
+webui/yarn.lock
+webui/package.json
