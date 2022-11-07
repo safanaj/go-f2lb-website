@@ -16,3 +16,5 @@ package*.json
 yarn.lock
 webui/yarn.lock
 webui/package.json
+launch.json
+creds.json

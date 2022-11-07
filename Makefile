@@ -18,9 +18,11 @@ clean:
 	rm -f webui/src/lib/pb/*_pb.* webui/src/lib/pb/*_pb_service.*
 	rm -f proto/.built
 	rm -rf webui/dist webui/build webui/version.json
+	rm -f package-lock.json
 
 clean-all: clean
 	rm -rf webui/node_modules webui/.svelte-kit vendor
+	rm -f package-lock.json
 
 lint:
 	golint && ( cd webui && yarn install && yarn run lint )
@@ -75,7 +77,13 @@ build-static-go: proto/.built
 		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
 		-v -o $(COMPONENT) $(SRCS)
 
-build: proto/.built build-webui build-go
+build-go-nomod: vendor webui/build proto/.built
+	$(ENVVAR) GOOS=$(GOOS) $(GO) build \
+		-gcflags "-e" \
+		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
+		-v -o $(COMPONENT) $(SRCS)
+
+build: proto/.built build-webui build-go-nomod
 
 start: build
 	./$(COMPONENT)

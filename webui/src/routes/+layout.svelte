@@ -1,4 +1,6 @@
 <script context="module">
+// @ts-nocheck
+
   import { theme } from '$lib/stores';
 
   if ((window||{}).localStorage !== undefined) {
@@ -111,7 +113,7 @@
     visit <a href="https://www.f2lb.org/">F2LB</a> to learn about First 2 Lifetime
     Block community
   </p>
-  <span class="is-pulled-right"><a href="https://gogs.bardels.me/marco/go-f2lb-website">source code</span>
+  <span class="is-pulled-right"><a href="https://github.com/safanaj/go-f2lb-website.git">source code</span>
   <!-- svelte-ignore missing-declaration -->
   <span class="is-pulled-left">version: {__APP_VERSION__}</span>
 </footer>
