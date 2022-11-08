@@ -9,8 +9,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	// "github.com/fivebinaries/go-cardano-serialization/address"
-	// "github.com/fivebinaries/go-cardano-serialization/network"
 	"github.com/echovl/cardano-go"
 )
 
@@ -97,18 +95,39 @@ type Slot uint64
 // "slotLength": 1, // one second per slot
 // "systemStart": "2017-09-23T21:44:51Z", // is in time.RFC3339 format
 // systemStart corresponds to the unix epoch 1506203091
-const systemStartUnixEpoch = 1506203091
+const (
+	systemStartUnixEpoch = 1506203091
+
+	FirstShelleySlot  = 5788800
+	FirstShelleyEpoch = 211
+	EpochLength       = 432000
+)
 
 func TimeToEpoch(t time.Time) Epoch {
 	secondsSinceSystemStart := t.Unix() - systemStartUnixEpoch
-	return Epoch(secondsSinceSystemStart / 432000)
+	return Epoch(secondsSinceSystemStart / EpochLength)
 }
 func TimeToSlot(t time.Time) Slot {
 	secondsSinceSystemStart := t.Unix() - systemStartUnixEpoch
-	return Slot(secondsSinceSystemStart % 432000)
+	return Slot(secondsSinceSystemStart % EpochLength)
 }
-func CurrentEpoch() Epoch              { return TimeToEpoch(time.Now()) }
-func EpochStartTime(e Epoch) time.Time { return time.Unix(systemStartUnixEpoch+(int64(e)*432000), 0) }
+func TimeToAbsSlot(t time.Time) Slot {
+	secondsSinceSystemStart := t.Unix() - systemStartUnixEpoch
+	return Slot(secondsSinceSystemStart)
+}
+
+func CurrentEpoch() Epoch      { return TimeToEpoch(time.Now()) }
+func CurrentSlotInEpoch() Slot { return TimeToSlot(time.Now()) }
+func EpochStartTime(e Epoch) time.Time {
+	return time.Unix(systemStartUnixEpoch+(int64(e)*EpochLength), 0)
+}
 func EpochEndTime(e Epoch) time.Time {
-	return time.Unix(systemStartUnixEpoch+((int64(e)+1)*432000)-1, 0)
+	return time.Unix(systemStartUnixEpoch+((int64(e)+1)*EpochLength)-1, 0)
+}
+
+func GetFirstSlotOfEpochSinceShelley(e Epoch) Slot {
+	if int(e) < FirstShelleyEpoch {
+		return Slot(0)
+	}
+	return Slot(FirstShelleySlot + ((int(e) - FirstShelleyEpoch) * EpochLength))
 }
