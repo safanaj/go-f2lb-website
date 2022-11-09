@@ -76,6 +76,7 @@ type (
 		StartingEpochOnMainQueue() uint16
 		StartingTimeOnMainQueue() time.Time
 		StartingEpochOnAddonQueue() uint16
+		SetStartingEpochOnAddonQueue(uint16)
 		StartingTimeOnAddonQueue() time.Time
 
 		MainStakeAddress() string
@@ -366,7 +367,8 @@ func (sp *stakePool) StartingEpochOnMainQueue() uint16 { return sp.startingEpoch
 func (sp *stakePool) StartingTimeOnMainQueue() time.Time {
 	return utils.EpochStartTime(utils.Epoch(sp.startingEpochOnMainQueue))
 }
-func (sp *stakePool) StartingEpochOnAddonQueue() uint16 { return sp.startingEpochOnMainQueue }
+func (sp *stakePool) StartingEpochOnAddonQueue() uint16     { return sp.startingEpochOnAddonQueue }
+func (sp *stakePool) SetStartingEpochOnAddonQueue(e uint16) { sp.startingEpochOnAddonQueue = e }
 func (sp *stakePool) StartingTimeOnAddonQueue() time.Time {
 	return utils.EpochStartTime(utils.Epoch(sp.startingEpochOnAddonQueue))
 }

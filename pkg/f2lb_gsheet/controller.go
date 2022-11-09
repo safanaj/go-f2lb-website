@@ -490,22 +490,21 @@ func (c *controller) Refresh() error {
 		missingFromKoios := make(map[string]string)
 		for i, r := range c.mainQueue.GetRecords() {
 			vals := f2lb_members.FromMainQueueValues{
-				Ticker:                    r.Ticker,
-				DiscordName:               r.DiscordName,
-				AD:                        r.AD,
-				EG:                        r.EG,
-				MainQCurrPos:              r.mainQCurrPos,
-				StakeKeys:                 r.StakeKeys,
-				StakeAddrs:                r.StakeAddrs,
-				QPP:                       r.QPP,
-				DelegStatus:               r.delegStatus,
-				AddonQStatus:              r.addonQStatus,
-				MissedEpochs:              r.missedEpochs,
-				AddedToGoogleGroup:        r.addedToGoogleGroup,
-				DiscordID:                 r.discordID,
-				InitialAdaDeclaration:     r.initialAdaDeclaration,
-				StartingEpochOnMainQueue:  start,
-				StartingEpochOnAddonQueue: 0, // this have to be fixed from the deleg cycle sheets
+				Ticker:                   r.Ticker,
+				DiscordName:              r.DiscordName,
+				AD:                       r.AD,
+				EG:                       r.EG,
+				MainQCurrPos:             r.mainQCurrPos,
+				StakeKeys:                r.StakeKeys,
+				StakeAddrs:               r.StakeAddrs,
+				QPP:                      r.QPP,
+				DelegStatus:              r.delegStatus,
+				AddonQStatus:             r.addonQStatus,
+				MissedEpochs:             r.missedEpochs,
+				AddedToGoogleGroup:       r.addedToGoogleGroup,
+				DiscordID:                r.discordID,
+				InitialAdaDeclaration:    r.initialAdaDeclaration,
+				StartingEpochOnMainQueue: start,
 			}
 
 			c.stakePoolSet.SetWithValuesFromMainQueue(vals)
@@ -535,17 +534,19 @@ func (c *controller) Refresh() error {
 		}
 
 		// check if something in AddonQ is missing from MainQ and add it to the StakePoolSet
-		for _, r := range c.addonQueue.GetRecords() {
+		aqStart := uint16(c.delegCycle.epoch)
+		for i, r := range c.addonQueue.GetRecords() {
 			sp := c.stakePoolSet.Get(r.Ticker)
 			if sp == nil {
 				// this is missing from mainQ, lets add it
 				vals := f2lb_members.FromMainQueueValues{
-					Ticker:      r.Ticker,
-					DiscordName: r.DiscordName,
-					AD:          r.AD,
-					EGAQ:        r.EG,
-					StakeKeys:   r.StakeKeys,
-					StakeAddrs:  r.StakeAddrs,
+					Ticker:                    r.Ticker,
+					DiscordName:               r.DiscordName,
+					AD:                        r.AD,
+					EGAQ:                      r.EG,
+					StakeKeys:                 r.StakeKeys,
+					StakeAddrs:                r.StakeAddrs,
+					StartingEpochOnAddonQueue: aqStart, // this have to be fixed from the deleg cycle sheets
 				}
 				c.stakePoolSet.SetWithValuesFromMainQueue(vals)
 				c.V(5).Info("Added missing from MainQ SP", "vals", vals, "rec", r)
@@ -554,6 +555,12 @@ func (c *controller) Refresh() error {
 			} else {
 				// this is in mainQ, lets update EG from addonQ
 				sp.SetEpochGrantedOnAddonQueue(r.EG)
+				sp.SetStartingEpochOnAddonQueue(aqStart)
+			}
+			if i == 0 {
+				aqStart += uint16(c.delegCycle.aqTopRemainingEpochs)
+			} else {
+				aqStart += r.EG
 			}
 		}
 
