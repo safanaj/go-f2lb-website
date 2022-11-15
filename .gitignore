@@ -9,6 +9,7 @@ webui/.svelte-kit
 webui/build
 webui/src/lib/pb/*_pb.*
 webui/src/lib/pb/*_pb_service.*
+webui/version.json
 tests
 launch.json
 creds.json
