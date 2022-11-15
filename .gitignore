@@ -1,7 +1,6 @@
 go-f2lb-website
 
 vendor
-
 proto/.built
 pkg/pb/*.pb.go
 
@@ -10,5 +9,7 @@ webui/.svelte-kit
 webui/build
 webui/src/lib/pb/*_pb.*
 webui/src/lib/pb/*_pb_service.*
-tests
 webui/version.json
+tests
+launch.json
+creds.json

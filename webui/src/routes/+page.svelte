@@ -14,7 +14,7 @@
 </script>
 
 <svelte:head>
-<title>Welcome</title>
+<title>Welcome to F2LB Queue Manager</title>
 </svelte:head>
 
 <script>
