@@ -96,6 +96,16 @@
                 >
             <FaInfoCircle />
           </span>
+        {:else if addonqueue}
+          <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
+                data-tooltip={`
+                bech32: ${member.poolidbech32}
+                hex: ${member.poolidhex}
+                on top at: (epoch ${member.startingepochonaddonqueue}) ${member.startingtimeonaddonqueue}
+                `}
+                >
+            <FaInfoCircle />
+          </span>
         {/if}
 
         {#if warningActive }
@@ -221,6 +231,7 @@
   </p>
   {#if !addonqueue}
   <p>current position: {member.mainqcurrpos}</p>
+  {/if}
   <p>on top at epoch: {member.startingepoch}</p>
   <p>on top at time: {member.startingtime}</p>
   <p class="hex">
@@ -236,8 +247,6 @@
   <p>active stake: {member.activestake}</p>
   <p>live stake: {member.livestake}</p>
   <p>live delegators: {member.livedelegators}</p>
-
-  {/if}
 
   {/if}
 

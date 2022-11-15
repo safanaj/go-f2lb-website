@@ -562,8 +562,14 @@ func (pc *poolCache) IsTickerMissingFromKoiosPoolList(t string) bool {
 	return !ok
 }
 
-func (pc *poolCache) Len() uint32        { return pc.nitems }
-func (pc *poolCache) Pending() uint32    { return pc.addeditems - pc.nitems }
+func (pc *poolCache) Len() uint32 { return pc.nitems }
+func (pc *poolCache) Pending() uint32 {
+	if pc.addeditems >= pc.nitems {
+		return pc.addeditems - pc.nitems
+	} else {
+		return uint32(len(pc.missingTickersFromList))
+	}
+}
 func (pc *poolCache) AddedItems() uint32 { return pc.addeditems }
 func (pc *poolCache) IsRunning() bool    { return pc.running }
 func (pc *poolCache) Ready() bool {

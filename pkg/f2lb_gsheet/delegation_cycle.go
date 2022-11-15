@@ -11,13 +11,16 @@ import (
 const delegationCycleSheet = "Delegation Cycle"
 
 // the first row is the header
-const delegationCycleRange = "A2:G"
+const delegationCycleRange = "A2:O"
 
 type DelegationCycle struct {
 	epoch              uint32
 	topTicker          string
 	topRemainingEpochs uint32
 	activeTicker       string
+
+	aqTopTicker          string
+	aqTopRemainingEpochs uint32
 }
 
 func (m *DelegationCycle) GetRange() string {
@@ -46,5 +49,20 @@ func (m *DelegationCycle) Refresh(vr *ValueRange) {
 		remaining++
 	}
 	m.topRemainingEpochs = remaining
+
+	if len(first) > 14 {
+		// process column O for the addon queue topTicker and remaining epochs
+		m.aqTopTicker = first[14].(string)
+		remaining := uint32(1)
+		for _, v := range vr.Values[1:] {
+			if m.aqTopTicker != v[14].(string) {
+				log.V(3).Info("DelegationCycle.Refresh", "AQ top ticker", m.aqTopTicker, "AQ remaining", remaining, "AQ found", v[14].(string))
+				break
+			}
+			remaining++
+		}
+		m.aqTopRemainingEpochs = remaining
+	}
+
 	return
 }
