@@ -23,6 +23,18 @@ type txDone struct {
 	submitted bool
 }
 
+type DumpPayerData struct {
+	Metadata2Utxo map[string][]cardano.UTxO `json:"metadata2utxo"`
+	Utxos         []cardano.UTxO            `json:"utxos"`
+	Processing    []cardano.UTxO            `json:"processing"`
+	Pending       map[string][]cardano.UTxO `json:"pending"`
+}
+
+type delegReqData struct {
+	saddr, poolid, member, utxoid string
+	resCh                         chan string
+}
+
 type Payer struct {
 	logging.Logger
 	ctx context.Context
@@ -34,8 +46,9 @@ type Payer struct {
 
 	refreshCh chan struct{}
 	txDoneCh  chan txDone
+	dumpCh    chan chan DumpPayerData
 
-	delegReqCh      chan chan []string
+	delegReqCh      chan delegReqData
 	utxos           map[string][]*cardano.UTxO
 	tx2md           map[string]string
 	processingUTxOs []*cardano.UTxO
@@ -108,7 +121,8 @@ func NewPayer(ctx context.Context, logger logging.Logger) (*Payer, error) {
 		addr:            addr,
 		refreshCh:       make(chan struct{}),
 		txDoneCh:        make(chan txDone),
-		delegReqCh:      make(chan chan []string),
+		delegReqCh:      make(chan delegReqData),
+		dumpCh:          make(chan chan DumpPayerData),
 		utxos:           make(map[string][]*cardano.UTxO),
 		processingUTxOs: make([]*cardano.UTxO, 0, 0),
 		md2UTxOs:        make(map[string][]**cardano.UTxO),
@@ -157,6 +171,8 @@ func (p *Payer) refreshFilteredUTxOs() error {
 		}
 	}
 
+	p.V(5).Info("refreshing utxos", "tx2md", _tx2md)
+
 	for _, utxo := range utxos {
 		if k, ok := _tx2md[utxo.TxHash.String()]; ok {
 			if a, ok := _utxos[utxo.TxHash.String()]; ok {
@@ -164,13 +180,19 @@ func (p *Payer) refreshFilteredUTxOs() error {
 			} else {
 				_utxos[utxo.TxHash.String()] = []*cardano.UTxO{utxo}
 			}
+
+			autxos := _utxos[utxo.TxHash.String()]
+			putxo := &autxos[len(autxos)-1]
+
 			if a, ok := _md2UTxOs[k]; ok {
-				a = append(a, &utxo)
+				a = append(a, putxo)
 			} else {
-				_md2UTxOs[k] = []**cardano.UTxO{&utxo}
+				_md2UTxOs[k] = []**cardano.UTxO{putxo}
 			}
 		}
 	}
+
+	p.V(5).Info("refreshing utxos", "utxos", _utxos, "md2utxos", _md2UTxOs)
 
 	p.utxos = _utxos
 	p.tx2md = _tx2md
@@ -300,76 +322,98 @@ func (p *Payer) Run() error {
 					}
 				}
 				p.cleanAllUTxOPtrs()
+				if done.submitted {
+					time.AfterFunc(20*time.Second, func() {
+						p.Refresh()
+					})
+				}
 			}
+		case ch := <-p.dumpCh:
+			dump := DumpPayerData{
+				Metadata2Utxo: make(map[string][]cardano.UTxO),
+				Utxos:         make([]cardano.UTxO, 0, len(p.utxos)),
+				Processing:    make([]cardano.UTxO, 0, len(p.processingUTxOs)),
+				Pending:       make(map[string][]cardano.UTxO),
+			}
+			for k, pps := range p.md2UTxOs {
+				if _, ok := dump.Metadata2Utxo[k]; !ok {
+					dump.Metadata2Utxo[k] = []cardano.UTxO{}
+				}
+				for _, pp := range pps {
+					if pp != nil {
+						if *pp != nil {
+							dump.Metadata2Utxo[k] = append(dump.Metadata2Utxo[k], **pp)
+						}
+					}
+				}
+			}
+			for _, ps := range p.utxos {
+				for _, p := range ps {
+					if p != nil {
+						dump.Utxos = append(dump.Utxos, *p)
+					}
+				}
+			}
+			for txhash, pps := range p.pendingTxs {
+				dump.Pending[txhash] = make([]cardano.UTxO, 0, len(pps))
+				for _, pp := range pps {
+					if pp != nil {
+						if *pp != nil {
+							dump.Pending[txhash] = append(dump.Pending[txhash], **pp)
+						}
+					}
+				}
+			}
+			for _, _p := range p.processingUTxOs {
+				if _p != nil {
+					dump.Processing = append(dump.Processing, *_p)
+				}
 
-		case delegResCh, ok := <-p.delegReqCh:
-			// p.Info("Got delegation request", "ok", ok)
+			}
+			ch <- dump
+
+		case delegReq, ok := <-p.delegReqCh:
 			if !ok {
 				return nil
 			}
-			var req []string
-			var saddr, poolid, member, utxoid string
-			wait, cancelWait := context.WithTimeout(p.ctx, time.Millisecond)
-			select {
-			case req = <-delegResCh:
-				cancelWait()
-				// p.Info("Got delegation request payload", "req", req)
-				if len(req) < 2 {
-					// log error
-					close(delegResCh)
-					continue
-				}
-				saddr = req[0]
-				poolid = req[1]
-				if len(req) > 2 && req[2] != "" {
-					member = req[2]
-				}
-				if len(req) > 3 && req[3] != "" {
-					utxoid = req[3]
-				}
-
-				var hint *cardano.UTxO
-				if utxoid != "" {
-					p.Info("Hint received", "utxoid", utxoid)
-					hint_, err := getUtxoHinted(utxoid)
-					if err != nil {
-						p.Error(err, "trying getting utxo hint")
-					}
-					hint = hint_
-					p.Info("Hint composed", "hint", hint)
-				}
-
-				// find an uxto for member or fallback on a shared one
-				utxo_, msg := p.findUTxO(member)
-				if utxo_ == nil {
-					close(delegResCh)
-					continue
-				}
-
-				p.processingUTxOs = append(p.processingUTxOs, utxo_)
-				tx, err := p.buildDelegationTx(saddr, poolid, msg, utxo_, hint)
+			var hint *cardano.UTxO
+			if delegReq.utxoid != "" {
+				p.Info("Hint received", "utxoid", delegReq.utxoid)
+				hint_, err := getUtxoHinted(delegReq.utxoid)
 				if err != nil {
-					p.Error(err, "build delegation tx failed")
-					close(delegResCh)
-					p.cleanProcessingUTxO(utxo_)
-					continue
+					p.Error(err, "trying getting utxo hint")
 				}
-
-				if newTxHash, err := tx.Hash(); err == nil {
-					p.pendingTxs[newTxHash.String()] = []**cardano.UTxO{&utxo_}
-				} else {
-					p.Error(err, "Tx hash failed")
-					return err
-				}
-
-				p.cleanProcessingUTxO(utxo_)
-
-				delegResCh <- []string{tx.Hex()}
-				close(delegResCh)
-
-			case <-wait.Done():
-				p.Info("Got delegation request w/o payload")
+				hint = hint_
+				p.Info("Hint composed", "hint", hint)
 			}
+
+			// find an uxto for member or fallback on a shared one
+			utxo_, msg := p.findUTxO(delegReq.member)
+			if utxo_ == nil {
+				close(delegReq.resCh)
+				continue
+			}
+
+			p.processingUTxOs = append(p.processingUTxOs, utxo_)
+			tx, err := p.buildDelegationTx(delegReq.saddr, delegReq.poolid, msg, utxo_, hint)
+			if err != nil {
+				p.Error(err, "build delegation tx failed")
+				close(delegReq.resCh)
+				p.cleanProcessingUTxO(utxo_)
+				continue
+			}
+
+			if newTxHash, err := tx.Hash(); err == nil {
+				p.pendingTxs[newTxHash.String()] = []**cardano.UTxO{&utxo_}
+			} else {
+				p.Error(err, "Tx hash failed")
+				close(delegReq.resCh)
+				return err
+			}
+
+			p.cleanProcessingUTxO(utxo_)
+
+			delegReq.resCh <- tx.Hex()
 		}
 	}
 }
@@ -489,16 +533,19 @@ func (p *Payer) BuildDelegationTx(saddr, poolid, member, utxoid string) string {
 	if saddr == "" || poolid == "" {
 		return ""
 	}
-	delegResCh := make(chan []string)
-	go func() { delegResCh <- []string{saddr, poolid, member, utxoid} }()
-	p.delegReqCh <- delegResCh
-	time.Sleep(time.Millisecond * 10)
-	txHexes, stillOpen := <-delegResCh
-	if !stillOpen || len(txHexes) != 1 {
-		p.Info("BuildDelegation for response WARN", "txHexes", txHexes, "stillOpen", stillOpen)
+	delegResCh := make(chan string)
+	delegReq := delegReqData{
+		resCh: delegResCh,
+		saddr: saddr, poolid: poolid, member: member, utxoid: utxoid,
+	}
+	p.delegReqCh <- delegReq
+	txHex, stillOpen := <-delegResCh
+	if !stillOpen {
+		p.Info("BuildDelegation error response channel closed", "req", delegReq, "stillOpen", stillOpen)
 		return ""
 	}
-	return txHexes[0]
+	close(delegResCh)
+	return txHex
 }
 
 func (p *Payer) cleanAllUTxOPtrs() {
@@ -545,6 +592,7 @@ func (p *Payer) cleanProcessingUTxO(utxo_ *cardano.UTxO) {
 	}
 }
 
-func (p *Payer) Refresh()                { p.refreshCh <- struct{}{} }
-func (p *Payer) SubmittedTx(hash string) { p.txDoneCh <- txDone{hash: hash, submitted: true} }
-func (p *Payer) CanceledTx(hash string)  { p.txDoneCh <- txDone{hash: hash, submitted: false} }
+func (p *Payer) Refresh()                          { p.refreshCh <- struct{}{} }
+func (p *Payer) SubmittedTx(hash string)           { p.txDoneCh <- txDone{hash: hash, submitted: true} }
+func (p *Payer) CanceledTx(hash string)            { p.txDoneCh <- txDone{hash: hash, submitted: false} }
+func (p *Payer) DumpInto(outCh chan DumpPayerData) { p.dumpCh <- outCh }

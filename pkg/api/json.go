@@ -3,15 +3,17 @@ package api
 import (
 	"encoding/hex"
 	"encoding/json"
-	"golang.org/x/crypto/blake2b"
 	"net/http"
 	"time"
+
+	"golang.org/x/crypto/blake2b"
 
 	koios "github.com/cardano-community/koios-go-client/v2"
 	"github.com/gin-gonic/gin"
 
 	"github.com/safanaj/go-f2lb/pkg/ccli"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
+	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 )
 
@@ -110,4 +112,17 @@ func RegisterApiV0(rg *gin.RouterGroup, ctrl f2lb_gsheet.Controller) {
 		return
 	})
 
+	// payer data
+	rg.GET("/dump.payer", func(c *gin.Context) {
+		payer := txbuilder.GetPayer()
+		if payer == nil {
+			c.IndentedJSON(http.StatusOK, map[string]string{"error": "payer not available"})
+			return
+		}
+		outCh := make(chan txbuilder.DumpPayerData)
+		payer.DumpInto(outCh)
+		dumpData := <-outCh
+		close(outCh)
+		c.IndentedJSON(http.StatusOK, dumpData)
+	})
 }

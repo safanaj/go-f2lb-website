@@ -177,3 +177,43 @@ func loadSecrets() (map[string]string, error) {
 
 	return secData, nil
 }
+
+func utxoToJsonEncodable(u cardano.UTxO) map[string]any {
+	return map[string]any{
+		"utxo":     fmt.Sprintf("%s#%d", u.TxHash.String(), u.Index),
+		"address":  u.Spender.String(),
+		"amount":   u.Amount,
+		"tx_hash":  u.TxHash.String(),
+		"tx_index": u.Index,
+	}
+}
+
+func utxosToJsonEncodable(utxos []cardano.UTxO) []map[string]any {
+	res := make([]map[string]any, 0, len(utxos))
+	for _, u := range utxos {
+		res = append(res, utxoToJsonEncodable(u))
+	}
+	return res
+}
+
+func (d DumpPayerData) MarshalJSON() ([]byte, error) {
+	type D struct {
+		Metadata2Utxo map[string][]map[string]any `json:"metadata2utxo"`
+		Utxos         []map[string]any            `json:"utxos"`
+		Processing    []map[string]any            `json:"processing"`
+		Pending       map[string][]map[string]any `json:"pending"`
+	}
+	d_ := D{
+		Metadata2Utxo: make(map[string][]map[string]any),
+		Pending:       make(map[string][]map[string]any),
+	}
+	for k, v := range d.Metadata2Utxo {
+		d_.Metadata2Utxo[k] = utxosToJsonEncodable(v)
+	}
+	for k, v := range d.Pending {
+		d_.Pending[k] = utxosToJsonEncodable(v)
+	}
+	d_.Utxos = utxosToJsonEncodable(d.Utxos)
+	d_.Processing = utxosToJsonEncodable(d.Processing)
+	return json.Marshal(d_)
+}
