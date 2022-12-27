@@ -55,6 +55,9 @@ func (c *controlServiceServer) GetRefresherChannel() chan string {
 
 func (c *controlServiceServer) Refresh(ctx context.Context, unused *emptypb.Empty) (*emptypb.Empty, error) {
 	c.ctrl.Refresh()
+	if c.payer != nil {
+		c.payer.Refresh()
+	}
 	return unused, nil
 }
 

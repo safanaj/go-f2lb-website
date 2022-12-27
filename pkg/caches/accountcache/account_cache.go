@@ -17,6 +17,7 @@ import (
 	// koios "github.com/cardano-community/koios-go-client/v2"
 	bfu "github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
 	ku "github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
+
 	// "github.com/safanaj/go-f2lb/pkg/ccli"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 )
@@ -262,7 +263,7 @@ func (c *accountCache) accountsInfosGetter(end context.Context) {
 		getAndResetAccountsInfos := func() {
 			getAndReset(func() error {
 				saddrs_l := []string{}
-				for sa, _ := range infos {
+				for sa := range infos {
 					saddrs_l = append(saddrs_l, sa)
 				}
 				if len(saddrs_l) == 0 {

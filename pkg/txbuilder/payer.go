@@ -178,7 +178,7 @@ func (p *Payer) refreshFilteredUTxOs() error {
 	return nil
 }
 
-func (p *Payer) emptyRefechChannel() {
+func (p *Payer) emptyRefreshChannel() {
 	for {
 		select {
 		case <-p.refreshCh:
@@ -241,7 +241,7 @@ func (p *Payer) Run() error {
 			if err := p.refreshFilteredUTxOs(); err != nil {
 				return err
 			}
-			p.emptyRefechChannel()
+			p.emptyRefreshChannel()
 
 		case _, more := <-p.refreshCh:
 			if !more {
@@ -250,7 +250,7 @@ func (p *Payer) Run() error {
 			if err := p.refreshFilteredUTxOs(); err != nil {
 				return err
 			}
-			p.emptyRefechChannel()
+			p.emptyRefreshChannel()
 
 		case done, more := <-p.txDoneCh:
 			p.Info("TX Done", "done", done, "more", more)
@@ -263,7 +263,7 @@ func (p *Payer) Run() error {
 				if done.submitted {
 					var utxopps []***cardano.UTxO
 					for _, mdutxops := range p.md2UTxOs {
-						for i, _ := range mdutxops {
+						for i := range mdutxops {
 							utxopps = append(utxopps, &mdutxops[i])
 						}
 					}
@@ -447,7 +447,7 @@ func (p *Payer) buildDelegationTx(saddr, poolid, msg string, utxo, hint *cardano
 	tb.AddAuxiliaryData(&cardano.AuxiliaryData{
 		Metadata: map[uint]interface{}{
 			674: map[string][]string{
-				"msg": []string{fmt.Sprintf("F2LB: %s", msg)},
+				"msg": {fmt.Sprintf("F2LB: %s", msg)},
 			},
 		},
 	})
@@ -495,7 +495,7 @@ func (p *Payer) BuildDelegationTx(saddr, poolid, member, utxoid string) string {
 	time.Sleep(time.Millisecond * 10)
 	txHexes, stillOpen := <-delegResCh
 	if !stillOpen || len(txHexes) != 1 {
-		// p.Info("BuildDelegation for response", "txHexes", txHexes, "stillOpen", stillOpen)
+		p.Info("BuildDelegation for response WARN", "txHexes", txHexes, "stillOpen", stillOpen)
 		return ""
 	}
 	return txHexes[0]

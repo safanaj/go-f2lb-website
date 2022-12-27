@@ -1,4 +1,4 @@
-VERSION ?= 0.3.2
+VERSION ?= 0.3.3
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = CGO_ENABLED=0
