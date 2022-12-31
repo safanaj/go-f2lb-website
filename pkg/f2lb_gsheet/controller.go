@@ -326,7 +326,9 @@ func (c *controller) Refresh() error {
 	var oldMainQueue *MainQueue
 	{
 		oldMainQueue = &MainQueue{}
-		oldMainQueue.Refresh(c.f2lb, &ValueRange{Values: oldTickersValues})
+		if err := oldMainQueue.Refresh(c.f2lb, &ValueRange{Values: oldTickersValues}); err != nil {
+			c.Error(err, "oldMainQueue.Refresh failed")
+		}
 	}
 
 	hintsMapping := getHintsMapping(poolsHintsPath)
@@ -346,7 +348,9 @@ func (c *controller) Refresh() error {
 	// wg.Add(1)
 	go func() {
 		defer wg.Done()
-		c.mainQueue.Refresh(c.f2lb, res[mainQueueVRI])
+		if err := c.mainQueue.Refresh(c.f2lb, res[mainQueueVRI]); err != nil {
+			c.Error(err, "mainQueue.Refresh failed")
+		}
 
 		var (
 			tickers []string
@@ -443,7 +447,7 @@ func (c *controller) Refresh() error {
 
 				if len(saddrs_m) > 0 && !c.accountCache.Ready() {
 					saddrs = []string{}
-					for k, _ := range saddrs_m {
+					for k := range saddrs_m {
 						saddrs = append(saddrs, k)
 					}
 					c.V(2).Info("Controller refresh accountCache, starting the hammer",
@@ -468,14 +472,18 @@ func (c *controller) Refresh() error {
 	// wg.Add(1)
 	go func() {
 		defer wg.Done()
-		c.addonQueue.Refresh(c.f2lb, res[addonQueueVRI])
+		if err := c.addonQueue.Refresh(c.f2lb, res[addonQueueVRI]); err != nil {
+			c.Error(err, "addonQueue.Refresh failed")
+		}
 		c.V(2).Info("Controller refresh filled addon Queue", "in", time.Since(startRefreshAt).String())
 	}()
 
 	// wg.Add(1)
 	go func() {
 		defer wg.Done()
-		c.supporters.Refresh(c.f2lb, res[supportersVRI])
+		if err := c.supporters.Refresh(c.f2lb, res[supportersVRI]); err != nil {
+			c.Error(err, "supporters.Refresh failed")
+		}
 		c.V(2).Info("Controller refresh filled supporters", "in", time.Since(startRefreshAt).String())
 	}()
 
@@ -617,7 +625,9 @@ func (c *controller) Start() error {
 	c.tick = time.NewTicker(c.refreshInterval)
 	c.accountCache.Start()
 	c.poolCache.Start()
-	err := c.Refresh()
+	if err := c.Refresh(); err != nil {
+		return err
+	}
 	go func() {
 		for {
 			select {
@@ -625,12 +635,13 @@ func (c *controller) Start() error {
 				// this is a kind of hard refresh
 				c.mainQueue.ResetCaches()
 				c.addonQueue.ResetCaches()
-				c.Refresh()
+				if err := c.Refresh(); err != nil {
+					c.Error(err, "Controller Refresh failed")
+				}
 			}
 		}
 	}()
-	return err
-	// return nil
+	return nil
 }
 
 func (c *controller) Stop() error {
