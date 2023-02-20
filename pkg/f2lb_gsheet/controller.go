@@ -544,6 +544,9 @@ func (c *controller) Refresh() error {
 		// check if something in AddonQ is missing from MainQ and add it to the StakePoolSet
 		aqStart := uint16(c.delegCycle.epoch)
 		for i, r := range c.addonQueue.GetRecords() {
+			if len(r.StakeAddrs) == 0 {
+				continue
+			}
 			sp := c.stakePoolSet.Get(r.Ticker)
 			if sp == nil {
 				// this is missing from mainQ, lets add it

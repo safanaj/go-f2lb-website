@@ -123,6 +123,10 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 	records := make([]*AddonQueueRec, 0, len(vr.Values))
 
 	for _, v := range vr.Values {
+		if len(v) < 9 {
+			continue
+		}
+
 		qppVal, _ := strconv.ParseUint(v[1].(string), 10, 16)
 		adVal, _ := strconv.ParseUint(v[3].(string), 10, 16)
 		egVal, _ := strconv.ParseUint(v[4].(string), 10, 16)
