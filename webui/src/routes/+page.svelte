@@ -188,8 +188,9 @@
       <!-- <p class="block">Visit also <a href="https://f2lb.info/">F2LB.info</a></p> -->
       {#if $activePool !== null && ($activePool||{activestake: 0}).activestake > 0}
         <div class="box themed">
-          The F2LB community stake was delegated to the pool {$activePool.ticker} that now has {$activePool.activestake} ADA of active stake,
-          now we are delegating to {topTicker}
+        The F2LB community stake was delegated to the pool {$activePool.ticker} that
+        now has {$activePool.activestake.toLocaleString("en-US")} ADA of active stake.<br />
+        Now we are delegating to {topTicker}
         </div>
       {/if}
       {#if user !== undefined}
