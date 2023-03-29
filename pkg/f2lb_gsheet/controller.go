@@ -189,11 +189,11 @@ func (c *controller) getTopOfQueues(mainQueueValuesN, addonQueueValuesN int) (in
 	ranges := make([]string, 2)
 	ranges[mainQueueVRI] = c.mainQueue.GetRange()
 	ranges[addonQueueVRI] = c.addonQueue.GetRange()
-	// the trick here is change the ranges to get only the 'A' column for a number of rows that surely include the top of the queue
+	// the trick here is change the ranges to get only the minumum number of columns for a number of rows that surely include the top of the queue
 	runesMQ := []rune(ranges[mainQueueVRI])
 	runesAQ := []rune(ranges[addonQueueVRI])
-	ranges[mainQueueVRI] = string(append(runesMQ[:len(runesMQ)-1], []rune(fmt.Sprintf("A%d", mainQueueValuesN+10))...))
-	ranges[addonQueueVRI] = string(append(runesAQ[:len(runesAQ)-1], []rune(fmt.Sprintf("A%d", addonQueueValuesN+10))...))
+	ranges[mainQueueVRI] = string(append(runesMQ[:len(runesMQ)-1], []rune(fmt.Sprintf("G%d", mainQueueValuesN+10))...))
+	ranges[addonQueueVRI] = string(append(runesAQ[:len(runesAQ)-1], []rune(fmt.Sprintf("B%d", addonQueueValuesN+10))...))
 
 	res, err := c.f2lb.Spreadsheets.Get(f2lbSpreadSheetID).Ranges(ranges...).IncludeGridData(true).Do()
 	if err != nil {
@@ -206,8 +206,14 @@ func (c *controller) getTopOfQueues(mainQueueValuesN, addonQueueValuesN int) (in
 			if len(rowData.Values) == 0 {
 				continue
 			}
-			if rowData.Values[0].EffectiveFormat.BackgroundColorStyle.ThemeColor == "" {
-				continue
+			if sheetIdx == int(mainQueueVRI) {
+				if rowData.Values[0].EffectiveFormat.BackgroundColorStyle.ThemeColor == "" && rowData.Values[6].FormattedValue == "" {
+					continue
+				}
+			} else {
+				if rowData.Values[0].EffectiveFormat.BackgroundColorStyle.ThemeColor == "" && rowData.Values[1].FormattedValue == "" {
+					continue
+				}
 			}
 			idxs[sheetIdx] = i
 			break

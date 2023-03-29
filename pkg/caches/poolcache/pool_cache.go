@@ -257,7 +257,6 @@ func (c *poolCache) GobDecode(dat []byte) error {
 			return err
 		}
 	}
-	return nil
 }
 
 func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
@@ -293,7 +292,7 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 		getAndResetTickers := func() {
 			getAndReset(func() error {
 				tickers_l := []string{}
-				for t, _ := range tickers {
+				for t := range tickers {
 					tickers_l = append(tickers_l, t)
 				}
 				if len(tickers_l) == 0 {
@@ -304,7 +303,7 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 					return err
 				}
 				if len(t2p) < len(tickers) {
-					for t, _ := range tickers {
+					for t := range tickers {
 						if _, ok := t2p[t]; !ok {
 							c.missingCh <- t
 						}
