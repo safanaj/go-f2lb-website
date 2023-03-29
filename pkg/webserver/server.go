@@ -42,8 +42,9 @@ func (ws *webServer) GetGrpcServer() *grpc.Server  { return ws.getRootHandler().
 func (ws *webServer) GetGinEngine() *gin.Engine    { return ws.getRootHandler().ginHandler }
 func (ws *webServer) SetPathsForPages(paths, pages []string) {
 	contentType := "text/html; charset=utf-8"
-	gh := ws.getRootHandler().ginHandler
+	gh := ws.GetGinEngine() // ws.getRootHandler().ginHandler
 	// gh.StaticFileFS("/favicon.svg", "/favicon.svg", http.FS(webFS))
+	gh.StaticFileFS("/favicon.png", "/favicon.png", http.FS(webFS))
 	for i, p := range paths {
 		var size int64
 		f, err := http.FS(webFS).Open(pages[i])
