@@ -11,6 +11,8 @@ import (
 
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/hako/durafmt"
+
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
@@ -92,8 +94,9 @@ func (s *controlServiceServer) StartRefresher(ctx context.Context) {
 
 func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlServer, t time.Time, cmsgType ControlMsg_Type) error {
 	dataBytes, _ := json.Marshal(map[string]any{
-		"cache_ready":       s.ctrl.GetAccountCache().Ready() && s.ctrl.GetPoolCache().Ready(),
-		"last_refresh_time": s.ctrl.GetLastRefreshTime().Format(time.RFC850),
+		"cache_ready":              s.ctrl.GetAccountCache().Ready() && s.ctrl.GetPoolCache().Ready(),
+		"last_refresh_time":        s.ctrl.GetLastRefreshTime().Format(time.RFC850),
+		"epoch_remaining_duration": durafmt.Parse(time.Duration(utils.EpochLength-utils.TimeToSlot(t)) * time.Second).String(),
 		"notes": map[string]string{
 			"poolcache_pending":    fmt.Sprintf("%d", s.ctrl.GetPoolCache().Pending()),
 			"poolcache_len":        fmt.Sprintf("%d", s.ctrl.GetPoolCache().Len()),

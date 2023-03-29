@@ -63,6 +63,7 @@
           date: obj.date,
           epoch: obj.epoch,
           slot: obj.slot,
+          epoch_remaining_duration: dat.epoch_remaining_duration,
           cache_ready: dat.cache_ready,
           last_refresh_time: dat.last_refresh_time,
           notes: dat.notes

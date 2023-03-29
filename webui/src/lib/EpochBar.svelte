@@ -24,7 +24,7 @@
       <span class="is-pulled-left is-hidden-touch">Koios caches are ready</span>
     {/if}
     <span class="is-inline-block">
-      epoch {data.epoch} ( {data.slot} / 432000 ) {progress} %
+      epoch {data.epoch} ( {data.slot} / 432000 ) {progress} % ( ~ {data.epoch_remaining_duration} )
     </span>
 
     {#if data.last_refresh_time }
