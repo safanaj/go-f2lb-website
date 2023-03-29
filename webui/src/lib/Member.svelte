@@ -6,6 +6,11 @@
   import FaCopy from 'svelte-icons/fa/FaCopy.svelte'
   import FaExternalLinkSquareAlt from 'svelte-icons/fa/FaExternalLinkSquareAlt.svelte'
   import { toast } from 'bulma-toast'
+
+  import poolpmLogo from '$lib/assets/pool.pm.ico';
+  import pooltoolioLogo from '$lib/assets/pooltool_io_logo_blue.svg';
+  import rawcardanoappLogo from '$lib/assets/rawcardano_app_logo.png';
+
   export let member;
   export let shortinfo;
   export let addonqueue;
@@ -172,6 +177,22 @@
       <FaInfoCircle />
     </span>
     {/if}
+    <!-- additional icons useful anchors/shortcuts-->
+    <span class="icon is-small">
+      <a href={"https://pool.pm/" + member.poolidhex} target="_blank">
+        <img src={poolpmLogo} alt="pool.pm" />
+      </a>
+    </span>
+    <span class="icon is-small">
+      <a href={"https://pooltool.io/pool/" + member.poolidhex + "/epochs"} target="_blank">
+        <img src={pooltoolioLogo} alt="pooltool.io" />
+      </a>
+    </span>
+    <span class="icon is-small">
+      <a href={"https://rawcardano.app/?pool=" + member.poolidbech32} target="_blank">
+        <img src={rawcardanoappLogo} alt="rawcardano.app" />
+      </a>
+    </span>
   </p>
 
   <p>Ada delegated: {member.adadelegated}</p>
