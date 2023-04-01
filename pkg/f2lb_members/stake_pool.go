@@ -88,10 +88,14 @@ type (
 
 		PoolIdBech32() string
 		PoolIdHex() string
+		PoolVrfKeyHash() string
 
 		ActiveStake() uint32
 		LiveStake() uint32
 		LiveDelegators() uint32
+
+		BlockHeight() uint32
+		// SetBlockHeight(uint32)
 	}
 
 	stakePoolSet struct {
@@ -431,6 +435,12 @@ func (sp *stakePool) PoolIdHex() string {
 	}
 	return ""
 }
+func (sp *stakePool) PoolVrfKeyHash() string {
+	if pi, ok := sp.pc.Get(sp.Ticker()); ok {
+		return pi.VrfKeyHash()
+	}
+	return ""
+}
 
 func (sp *stakePool) ActiveStake() uint32 {
 	if pi, ok := sp.pc.Get(sp.Ticker()); ok {
@@ -450,3 +460,16 @@ func (sp *stakePool) LiveDelegators() uint32 {
 	}
 	return 0
 }
+
+func (sp *stakePool) BlockHeight() uint32 {
+	if pi, ok := sp.pc.Get(sp.Ticker()); ok {
+		return pi.BlockHeight()
+	}
+	return 0
+}
+
+// func (sp *stakePool) SetBlockHeight(h uint32) {
+// 	if pi, ok := sp.pc.Get(sp.Ticker()); ok {
+// 		pi.SetBlockHeight(h)
+// 	}
+// }

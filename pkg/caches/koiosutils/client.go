@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
-	koios "github.com/cardano-community/koios-go-client/v2"
+	koios "github.com/cardano-community/koios-go-client/v3"
 )
+
+var useKoiosCachedInfo = true
 
 type KoiosClient struct {
 	ctx context.Context
@@ -35,6 +37,18 @@ func IsResponseComplete(res koios.Response) bool {
 		return (uint16(endSide_) % uint16(koios.PageSize)) < uint16(koios.PageSize-1)
 	}
 	return false
+}
+
+func (kc *KoiosClient) GetTip() (epoch, block, slot int, err error) {
+	opts := kc.k.NewRequestOptions()
+	tipResp, tipErr := kc.k.GetTip(kc.ctx, opts)
+	err = tipErr
+	if err == nil {
+		epoch = int(tipResp.Data.EpochNo)
+		block = int(tipResp.Data.BlockNo)
+		slot = int(tipResp.Data.AbsSlot)
+	}
+	return
 }
 
 // it takes a list of Ticker (as strings) and returns a map with Tickers as keys and PoolId as values
@@ -90,6 +104,7 @@ type PoolInfo struct {
 	ActiveStake    uint32
 	LiveStake      uint32
 	LiveDelegators uint32
+	VrfKeyHash     string
 }
 
 func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolInfo, error) {
@@ -106,7 +121,7 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 	page := uint(1)
 	opts_ := kc.k.NewRequestOptions()
 
-	opts_.QuerySet("select", "pool_id_bech32,meta_json,active_stake,live_stake,live_delegators")
+	opts_.QuerySet("select", "pool_id_bech32,meta_json,active_stake,live_stake,live_delegators,vrf_key_hash")
 
 	for {
 		opts := opts_.Clone()
@@ -127,6 +142,7 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 				ActiveStake:    uint32(p.ActiveStake.Shift(-6).IntPart()),
 				LiveStake:      uint32(p.LiveStake.Shift(-6).IntPart()),
 				LiveDelegators: uint32(p.LiveDelegators),
+				VrfKeyHash:     string(p.VrfKeyHash),
 			}
 
 			res[pi.Bech32] = pi
@@ -167,7 +183,7 @@ func (kc *KoiosClient) GetStakeAddressesInfos(stakeAddrs ...string) (map[string]
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		infos, err := kc.k.GetAccountsInfo(kc.ctx, saddrs, opts)
+		infos, err := kc.k.GetAccountsInfo(kc.ctx, saddrs, useKoiosCachedInfo, opts)
 		if err != nil || len(infos.Data) == 0 {
 			break
 		}
@@ -201,7 +217,7 @@ func (kc *KoiosClient) GetStakeAddressInfo(stakeAddr string) (delegatedPool stri
 	var info *koios.AccountInfoResponse
 	opts := kc.k.NewRequestOptions()
 	opts.QuerySet("select", "delegated_pool,total_balance")
-	info, err = kc.k.GetAccountInfo(kc.ctx, koios.Address(stakeAddr), opts)
+	info, err = kc.k.GetAccountInfo(kc.ctx, koios.Address(stakeAddr), useKoiosCachedInfo, opts)
 	if err == nil {
 		if info.Data.DelegatedPool != nil && *info.Data.DelegatedPool != "" {
 			delegatedPool = string(*info.Data.DelegatedPool)

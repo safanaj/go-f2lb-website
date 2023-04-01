@@ -3,7 +3,7 @@
 </svelte:head>
 
 <script>
-  import { addonQueueMembers } from '$lib/stores'
+  import { addonQueueMembers, epochData } from '$lib/stores'
   import Member from '$lib/Member.svelte'
   // import { doCallInPromise } from '$lib/utils'
   import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
@@ -26,7 +26,7 @@
   <article>
     <div class="box box-out">
       {#each $addonQueueMembers as m}
-        <Member member={m} addonqueue />
+        <Member member={m} addonqueue koiosTip={$epochData.koios_tip_block_height} />
       {/each}
     </div>
   </article>

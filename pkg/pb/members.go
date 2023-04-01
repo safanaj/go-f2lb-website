@@ -21,6 +21,7 @@ func newMemeberFromStakePool(sp f2lb_members.StakePool) *Member {
 		EpochGranted:              uint32(sp.EpochGranted()),
 		PoolIdHex:                 sp.PoolIdHex(),
 		PoolIdBech32:              sp.PoolIdBech32(),
+		PoolVrfVKeyHash:           sp.PoolVrfKeyHash(),
 		DelegatedPool:             sp.DelegatedPool(),
 		StartingEpoch:             uint32(sp.StartingEpochOnMainQueue()),
 		StartingTime:              sp.StartingTimeOnMainQueue().Format(time.RFC850),
@@ -31,6 +32,7 @@ func newMemeberFromStakePool(sp f2lb_members.StakePool) *Member {
 		ActiveStake:               sp.ActiveStake(),
 		LiveStake:                 sp.LiveStake(),
 		LiveDelegators:            sp.LiveDelegators(),
+		BlockHeight:               sp.BlockHeight(),
 	}
 }
 

@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/hex"
-	"github.com/echovl/cardano-go/bech32"
+	"github.com/safanaj/cardano-go/bech32"
 )
 
 func HexToBech32(hrp, hexa string) (string, error) {

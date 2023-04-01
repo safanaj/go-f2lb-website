@@ -4,9 +4,7 @@ go 1.18
 
 require (
 	github.com/blockfrost/blockfrost-go v0.1.0
-	github.com/cardano-community/koios-go-client/v2 v2.0.1
-	github.com/echovl/cardano-go v0.0.0-00010101000000-000000000000
-	github.com/fxamacker/cbor v1.5.1
+	github.com/cardano-community/koios-go-client/v3 v3.1.2
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-logr/logr v1.2.3
@@ -14,7 +12,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/iand/logfmtr v0.2.1
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/otiai10/copy v1.9.0
+	github.com/safanaj/cardano-go v0.1.16
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
@@ -50,6 +48,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/otiai10/copy v1.9.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
@@ -57,18 +56,11 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
-	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/time v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )
-
-//replace github.com/cardano-community/koios-go-client => github.com/safanaj/koios-go-client v1.2.1
-// replace github.com/fivebinaries/go-cardano-serialization => github.com/safanaj/go-cardano-serialization v0.0.0-20220930095728-b817e2b018d1
-
-// replace github.com/echovl/cardano-go => /home/marco/src/Others/cardano-go
-
-replace github.com/echovl/cardano-go => github.com/safanaj/cardano-go v0.0.0-20221024103531-2e6f45080b11

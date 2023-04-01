@@ -14,7 +14,7 @@ import (
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 
-	"github.com/echovl/cardano-go"
+	"github.com/safanaj/cardano-go"
 
 	"github.com/safanaj/go-f2lb/pkg/ccli"
 )

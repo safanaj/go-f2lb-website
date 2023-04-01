@@ -66,9 +66,10 @@
           epoch_remaining_duration: dat.epoch_remaining_duration,
           cache_ready: dat.cache_ready,
           last_refresh_time: dat.last_refresh_time,
+          koios_tip_block_height: dat.koios_tip_block_height,
           notes: dat.notes
       })
-      console.log("ControlMsg received, notes: ", dat.notes)
+      console.log("ControlMsg received, notes and tip: ", {...dat.notes, koios_tip: dat.koios_tip_block_height})
       if (obj.type == ControlMsg.Type.REFRESH) {
           Promise.all([
               doCallInPromise($serviceClients, 'MainQueue', 'listQueue', mainQueueMembers, 'membersList'),
@@ -77,6 +78,32 @@
               doCallInPromise($serviceClients, 'Member', 'active', activePool, null),
               doCallInPromise($serviceClients, 'Member', 'top', topPool, null),
           ]).then(tick)
+      } else {
+          new Promise(resolve => {
+              let resetMainQueue = false
+              let resetAddonQueue = false
+              $mainQueueMembers.forEach(m => {
+                  if (dat.tips[m.ticker] !== undefined) {
+                      resetMainQueue = true
+                      m.blockheight = dat.tips[m.ticker]
+                  }
+              })
+              $addonQueueMembers.forEach(m => {
+                  if (dat.tips[m.ticker] !== undefined) {
+                      resetAddonQueue = true
+                      m.blockheight = dat.tips[m.ticker]
+                  }
+              })
+
+              resolve({mainQ: resetMainQueue, addonQ: resetAddonQueue})
+          }).then(r => {
+              if (r.mainQ) {
+                  mainQueueMembers.set($mainQueueMembers)
+              }
+              if (r.addonQ) {
+                  addonQueueMembers.set($addonQueueMembers)
+              }
+          }).then(tick)
       }
   })
 

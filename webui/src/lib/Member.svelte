@@ -5,6 +5,8 @@
   import FaBan from 'svelte-icons/fa/FaBan.svelte'
   import FaCopy from 'svelte-icons/fa/FaCopy.svelte'
   import FaExternalLinkSquareAlt from 'svelte-icons/fa/FaExternalLinkSquareAlt.svelte'
+  import FaRegCheckCircle from 'svelte-icons/fa/FaRegCheckCircle.svelte'
+  import FaRegTimesCircle from 'svelte-icons/fa/FaRegTimesCircle.svelte'
   import { toast } from 'bulma-toast'
 
   import poolpmLogo from '$lib/assets/pool.pm.ico';
@@ -18,6 +20,7 @@
   export let idBoxHashPrefix = '';
   export let epochProgress = 0;
   export let mainServed = {};
+  export let koiosTip = 0;
   export const isFirst = false;
   export let topTicker = '';
   let boxId = idBoxHashPrefix === '' ? member.ticker : `${idBoxHashPrefix}-${member.ticker}`
@@ -28,6 +31,9 @@
 
   $: warningActive = epochProgress > 30 && epochProgress <= 90 && wrongPool
   $: dangerActive = epochProgress > 90 && wrongPool
+
+  $: wantTipCheck = koiosTip > 0 && member.blockheight > 0
+  $: tipCheckPassed = member.blockheight >= (koiosTip - 10)
 
   const findParentElt = (tgt, eltName) => {
       while (tgt.localName != eltName) {
@@ -91,25 +97,29 @@
             {member.ticker}
           {/if}
         </span>
-        {#if hasMainServed}
+        {#if hasMainServed || addonqueue}
           <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
                 data-tooltip={`
-                bech32: ${member.poolidbech32}
-                hex: ${member.poolidhex}
-                on top at: (epoch ${member.startingepoch}) ${member.startingtime}
+bech32: ${member.poolidbech32}
+hex: ${member.poolidhex}
+on top at: (epoch ${addonqueue ? member.startingepochonaddonqueue : member.startingepoch}) ${addonqueue ? member.startingtimeonaddonqueue : member.startingtime}
                 `}
                 >
             <FaInfoCircle />
           </span>
-        {:else if addonqueue}
-          <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
+        {/if}
+
+        {#if wantTipCheck}
+          <span class={`icon is-small has-tooltip-arrow has-tooltipl-multiline has-text-${tipCheckPassed ? "success" : "danger"}`}
                 data-tooltip={`
-                bech32: ${member.poolidbech32}
-                hex: ${member.poolidhex}
-                on top at: (epoch ${member.startingepochonaddonqueue}) ${member.startingtimeonaddonqueue}
-                `}
-                >
-            <FaInfoCircle />
+reported block height: ${member.blockheight}
+block height from koios: ${koiosTip}
+                `}>
+            {#if tipCheckPassed}
+              <FaRegCheckCircle />
+            {:else}
+              <FaRegTimesCircle />
+            {/if}
           </span>
         {/if}
 
@@ -166,17 +176,30 @@
 
 
   <p>Ticker: {member.ticker}
-    {#if hasMainServed }
     <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
           data-tooltip={`
-          bech32: ${member.poolidbech32}
-          hex: ${member.poolidhex}
-          on top at: (epoch ${member.startingepoch}) ${member.startingtime}
+bech32: ${member.poolidbech32}
+hex: ${member.poolidhex}
+on top at: (epoch ${addonqueue ? member.startingepochonaddonqueue : member.startingepoch}) ${addonqueue ? member.startingtimeonaddonqueue : member.startingtime}
           `}
           >
       <FaInfoCircle />
     </span>
+
+    {#if wantTipCheck}
+      <span class={`icon is-small has-tooltip-arrow has-tooltipl-multiline has-text-${tipCheckPassed ? "success" : "danger"}`}
+            data-tooltip={`
+reported block height: ${member.blockheight}
+block height from koios: ${koiosTip}
+            `}>
+        {#if tipCheckPassed}
+          <FaRegCheckCircle />
+        {:else}
+          <FaRegTimesCircle />
+        {/if}
+      </span>
     {/if}
+
     <!-- additional icons useful anchors/shortcuts-->
     <span class="icon is-small">
       <a href={"https://pool.pm/" + member.poolidhex} target="_blank">
@@ -250,11 +273,12 @@
       Pool Id (bech32): <span class="icon is-small"><FaCopy /></span> {member.poolidbech32}
     </span>
   </p>
+  <p><span class="text truncate">Pool VRF VKey Hash (hex): {member.poolvrfvkeyhash}</span></p>
   {#if !addonqueue}
   <p>current position: {member.mainqcurrpos}</p>
   {/if}
-  <p>on top at epoch: {member.startingepoch}</p>
-  <p>on top at time: {member.startingtime}</p>
+  <p>on top at epoch: {addonqueue ? member.startingepochonaddonqueue : member.startingepoch}</p>
+  <p>on top at time: {addonqueue ? member.startingtimeonaddonqueue : member.startingtime}</p>
   <p class="hex">
     <span class="text truncate is-clickable" on:click={copyAccountToClipboard}>
       Stake key hash: <span class="icon is-small"><FaCopy /></span> {member.stakekey}
@@ -268,6 +292,9 @@
   <p>active stake: {member.activestake}</p>
   <p>live stake: {member.livestake}</p>
   <p>live delegators: {member.livedelegators}</p>
+  {#if member.blockheight != 0 }
+    <p>block height: {member.blockheight}</p>
+  {/if}
 
   {/if}
 

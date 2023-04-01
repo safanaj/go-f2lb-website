@@ -247,7 +247,7 @@
       <div class="box box-out">
         {#each $mainQueueMembers as m, idx}
           <Member member={m} shortinfo {epochProgress} {mainServed} toBoxLinkPrefix="/main-queue"
-                  isFirst={idx == 0} {topTicker}  />
+                  isFirst={idx == 0} {topTicker} koiosTip={$epochData.koios_tip_block_height} />
         {/each}
       </div>
     </div>
@@ -255,7 +255,8 @@
       <p>Addon Queue <a class="is-hidden-desktop" href="/addon-queue"><span class="icon is-small has-text-dark"><FaArrowRight /></span></a></p>
       <div class="box box-out">
         {#each $addonQueueMembers as m}
-          <Member member={m} shortinfo addonqueue {epochProgress} toBoxLinkPrefix="/addon-queue" idBoxHashPrefix="aq" />
+          <Member member={m} shortinfo addonqueue {epochProgress} toBoxLinkPrefix="/addon-queue" idBoxHashPrefix="aq"
+                  koiosTip={$epochData.koios_tip_block_height} />
         {/each}
       </div>
     </div>

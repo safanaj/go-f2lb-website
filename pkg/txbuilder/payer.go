@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/bech32"
-	"github.com/echovl/cardano-go/crypto"
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/bech32"
+	"github.com/safanaj/cardano-go/crypto"
 
 	"github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
 	"github.com/safanaj/go-f2lb/pkg/ccli"

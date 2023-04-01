@@ -234,7 +234,6 @@ func (c *accountCache) GobDecode(dat []byte) error {
 			return err
 		}
 	}
-	return nil
 }
 
 func (c *accountCache) accountsInfosGetter(end context.Context) {
@@ -278,12 +277,13 @@ func (c *accountCache) accountsInfosGetter(end context.Context) {
 				for _, ai := range sa2ai {
 					c.V(4).Info("GetStakeAddressesInfos (sa2ai): Forwarding accountInfo",
 						"stakeAddress", ai.Bech32, "delegated pool", ai.DelegatedPool, "amount", ai.TotalAda, "status", ai.Status)
-					c.infoCh <- &accountInfo{
+					aInfo := &accountInfo{
 						stakeAddress:          ai.Bech32,
 						delegatedPoolIdBech32: ai.DelegatedPool,
 						adaAmount:             uint64(ai.TotalAda),
 						status:                ai.Status,
 					}
+					c.infoCh <- aInfo
 				}
 				return nil
 			})

@@ -58,9 +58,12 @@ type (
 		Ticker() string
 		IdBech32() string
 		IdHex() string
+		VrfKeyHash() string
 		ActiveStake() uint32
 		LiveStake() uint32
 		LiveDelegators() uint32
+		BlockHeight() uint32
+		SetBlockHeight(uint32)
 	}
 )
 
@@ -71,6 +74,9 @@ type poolInfo struct {
 	activeStake    uint32
 	liveStake      uint32
 	liveDelegators uint32
+	// vrfKeyHash     [32]byte
+	vrfKeyHash  string
+	blockHeight uint32
 }
 
 var (
@@ -78,22 +84,25 @@ var (
 	_ encoding.BinaryUnmarshaler = (*poolInfo)(nil)
 )
 
-func (pi *poolInfo) Ticker() string         { return pi.ticker }
-func (pi *poolInfo) IdBech32() string       { return pi.bech32 }
-func (pi *poolInfo) IdHex() string          { return pi.hex }
-func (pi *poolInfo) ActiveStake() uint32    { return pi.activeStake }
-func (pi *poolInfo) LiveStake() uint32      { return pi.liveStake }
-func (pi *poolInfo) LiveDelegators() uint32 { return pi.liveDelegators }
+func (pi *poolInfo) Ticker() string          { return pi.ticker }
+func (pi *poolInfo) IdBech32() string        { return pi.bech32 }
+func (pi *poolInfo) IdHex() string           { return pi.hex }
+func (pi *poolInfo) VrfKeyHash() string      { return pi.vrfKeyHash }
+func (pi *poolInfo) ActiveStake() uint32     { return pi.activeStake }
+func (pi *poolInfo) LiveStake() uint32       { return pi.liveStake }
+func (pi *poolInfo) LiveDelegators() uint32  { return pi.liveDelegators }
+func (pi *poolInfo) BlockHeight() uint32     { return pi.blockHeight }
+func (pi *poolInfo) SetBlockHeight(h uint32) { pi.blockHeight = h }
 
 func (pi *poolInfo) MarshalBinary() (data []byte, err error) {
 	var buf bytes.Buffer
-	_, err = fmt.Fprintln(&buf, pi.ticker, pi.bech32, pi.hex, pi.activeStake, pi.liveStake, pi.liveDelegators)
+	_, err = fmt.Fprintln(&buf, pi.ticker, pi.bech32, pi.hex, pi.activeStake, pi.liveStake, pi.liveDelegators, pi.vrfKeyHash)
 	return buf.Bytes(), err
 }
 
 func (pi *poolInfo) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(buf, &pi.ticker, &pi.bech32, &pi.hex, &pi.activeStake, &pi.liveStake, &pi.liveDelegators)
+	_, err := fmt.Fscanln(buf, &pi.ticker, &pi.bech32, &pi.hex, &pi.activeStake, &pi.liveStake, &pi.liveDelegators, &pi.vrfKeyHash)
 	return err
 }
 
@@ -188,6 +197,10 @@ func (pc *poolCache) cacheSyncer() {
 				}
 				if v.liveDelegators == 0 {
 					v.liveDelegators = old.(*poolInfo).liveDelegators
+				}
+				if v.vrfKeyHash == "" {
+					// copy(v.vrfKeyHash[:], old.(*poolInfo).vrfKeyHash[:])
+					v.vrfKeyHash = old.(*poolInfo).vrfKeyHash
 				}
 				pc.cache.Store(v.ticker, v)
 				pc.cache2.Store(v.bech32, v)
@@ -343,14 +356,17 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 				c.V(3).Info("GetPoolsInfos: Got p2i", "len", len(p2i), "poolids len", len(pids_l))
 				for p, i := range p2i {
 					c.V(4).Info("GetPoolsInfos (p2i): Forwarding poolInfo", "ticker", i.Ticker, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
-					c.infoCh <- &poolInfo{
+					pi := &poolInfo{
 						ticker:         i.Ticker,
 						bech32:         p,
 						hex:            utils.Bech32ToHexOrDie(p),
 						activeStake:    i.ActiveStake,
 						liveStake:      i.LiveStake,
 						liveDelegators: i.LiveDelegators,
+						vrfKeyHash:     i.VrfKeyHash,
 					}
+					// copy(pi.vrfKeyHash[:], []byte(i.VrfKeyHash))
+					c.infoCh <- pi
 					c.missingCh <- string(append([]rune{'-'}, []rune(i.Ticker)...))
 					delete(t2p, i.Ticker)
 				}

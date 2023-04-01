@@ -13,3 +13,5 @@ webui/version.json
 tests
 launch.json
 creds.json
+tests*
+pkg/libsodium/_c_libsodium_built

@@ -22,7 +22,8 @@
   <article>
     <div class="box box-out">
       {#each $mainQueueMembers as m, idx}
-        <Member member={m} {epochProgress} {mainServed} isFirst={idx == 0} {topTicker} />
+        <Member member={m} {epochProgress} {mainServed} isFirst={idx == 0} {topTicker}
+                koiosTip={$epochData.koios_tip_block_height} />
       {/each}
     </div>
   </article>

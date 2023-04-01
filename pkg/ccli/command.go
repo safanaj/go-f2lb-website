@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	flag "github.com/spf13/pflag"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/echovl/cardano-go"
+	flag "github.com/spf13/pflag"
+
+	"github.com/safanaj/cardano-go"
 )
 
 var socketPath, fallbackSocketPath string

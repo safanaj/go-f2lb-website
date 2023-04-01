@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/echovl/cardano-go"
+	// "github.com/safanaj/cardano-go"
 
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
@@ -93,10 +93,19 @@ func (s *controlServiceServer) StartRefresher(ctx context.Context) {
 }
 
 func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlServer, t time.Time, cmsgType ControlMsg_Type) error {
+	tips := map[string]uint32{}
+	for _, sp := range s.ctrl.GetStakePoolSet().StakePools() {
+		if sp.BlockHeight() == 0 {
+			continue
+		}
+		tips[sp.Ticker()] = sp.BlockHeight()
+	}
+
 	dataBytes, _ := json.Marshal(map[string]any{
 		"cache_ready":              s.ctrl.GetAccountCache().Ready() && s.ctrl.GetPoolCache().Ready(),
 		"last_refresh_time":        s.ctrl.GetLastRefreshTime().Format(time.RFC850),
 		"epoch_remaining_duration": durafmt.Parse(time.Duration(utils.EpochLength-utils.TimeToSlot(t)) * time.Second).String(),
+		"koios_tip_block_height":   s.ctrl.GetKoiosTipBlockHeight(),
 		"notes": map[string]string{
 			"poolcache_pending":    fmt.Sprintf("%d", s.ctrl.GetPoolCache().Pending()),
 			"poolcache_len":        fmt.Sprintf("%d", s.ctrl.GetPoolCache().Len()),
@@ -107,6 +116,7 @@ func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlSe
 			"missing_pools":        strings.Join(s.ctrl.GetPoolCache().GetMissingPoolInfos(), ", "),
 			"payer_available":      fmt.Sprintf("%t", s.payer != nil),
 		},
+		"tips": tips,
 	})
 
 	cmsg := &ControlMsg{
@@ -144,7 +154,6 @@ func (s *controlServiceServer) Control(stream ControlMsgService_ControlServer) e
 	case <-stream.Context().Done():
 		return nil
 	}
-	return nil
 }
 
 func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*User, error) {

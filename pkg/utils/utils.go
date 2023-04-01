@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/echovl/cardano-go"
+	"github.com/safanaj/cardano-go"
 )
 
 func CheckErr(e error) {

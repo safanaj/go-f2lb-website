@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	koios "github.com/cardano-community/koios-go-client/v2"
+	koios "github.com/cardano-community/koios-go-client/v3"
 	"github.com/gin-gonic/gin"
 
 	"github.com/safanaj/go-f2lb/pkg/ccli"
@@ -125,4 +125,7 @@ func RegisterApiV0(rg *gin.RouterGroup, ctrl f2lb_gsheet.Controller) {
 		close(outCh)
 		c.IndentedJSON(http.StatusOK, dumpData)
 	})
+
+	// block height, check signature and store reported block height by members
+	rg.POST("/report/tip", getReportTipHandler(ctrl))
 }

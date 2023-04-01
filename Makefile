@@ -1,7 +1,11 @@
-VERSION ?= 0.3.6
+VERSION ?= 0.4.0
 COMPONENT = go-f2lb-website
 FLAGS =
-ENVVAR = CGO_ENABLED=0
+ENVVAR = \
+	CGO_ENABLED=1 \
+	CGO_CFLAGS=-I$(CURDIR)/pkg/libsodium/_c_libsodium_built/include \
+	CGO_LDFLAGS=-L$(CURDIR)/pkg/libsodium/_c_libsodium_built
+
 GOOS ?= $(shell go env GOOS) #linux
 GO ?= go
 LDFLAGS ?= -s -w
@@ -21,7 +25,7 @@ clean:
 	rm -f package-lock.json
 
 clean-all: clean
-	rm -rf webui/node_modules webui/.svelte-kit vendor
+	rm -rf webui/node_modules webui/.svelte-kit vendor pkg/libsodium/_c_libsodium_built
 	rm -f package-lock.json
 
 lint:
@@ -32,6 +36,13 @@ go-deps:
 
 go-deps-verify: go-deps
 	$(GO) mod verify
+
+go-generate: go-deps
+	$(GO) generate ./...
+
+pkg/libsodium/_c_libsodium_built/libsodium.a:
+	$(MAKE) go-generate
+	touch $@
 
 proto/.built: $(PROTO_SRCS)
 	$(MAKE) build-proto
@@ -64,7 +75,7 @@ vendor:
 	$(MAKE) go-deps
 	touch $@
 
-build-go: vendor webui/build proto/.built
+build-go: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
 	$(ENVVAR) GOOS=$(GOOS) $(GO) build -mod=vendor \
 		-gcflags "-e" \
 		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \

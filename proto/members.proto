@@ -26,14 +26,17 @@ message Member {
   uint32 epochGranted = 7;
   string poolIdHex = 8;
   string poolIdBech32 = 9;
-  string delegatedPool = 10;
-  uint32 mainQCurrPos = 11;
-  uint32 startingEpoch = 12;
-  string startingTime = 13;
-  uint32 epochGrantedOnAddonQueue = 14;
-  uint32 startingEpochOnAddonQueue = 15;
-  string startingTimeOnAddonQueue = 16;
-  uint32 activeStake = 17;
-  uint32 liveStake = 18;
-  uint32 liveDelegators = 19;
+  string poolVrfVKeyHash = 10;
+  string delegatedPool = 20;
+  uint32 mainQCurrPos = 21;
+  uint32 startingEpoch = 22;
+  string startingTime = 23;
+  uint32 epochGrantedOnAddonQueue = 24;
+  uint32 startingEpochOnAddonQueue = 25;
+  string startingTimeOnAddonQueue = 26;
+  uint32 activeStake = 27;
+  uint32 liveStake = 28;
+  uint32 liveDelegators = 29;
+
+  uint32 blockHeight = 40;
 }

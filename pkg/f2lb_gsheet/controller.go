@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/api/sheets/v4"
 
-	koios "github.com/cardano-community/koios-go-client/v2"
+	koios "github.com/cardano-community/koios-go-client/v3"
 	"github.com/safanaj/go-f2lb/pkg/caches/accountcache"
 	"github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
 	"github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
@@ -78,6 +78,8 @@ type Controller interface {
 
 	GetTopOfQueues(int, int) (int, int, error)
 	GetValuesInBatch() ([]*ValueRange, error)
+
+	GetKoiosTipBlockHeight() int
 }
 
 type controller struct {
@@ -104,6 +106,8 @@ type controller struct {
 	mu              sync.RWMutex
 	isRefreshing    bool
 	lastRefreshTime time.Time
+
+	koiosTipBlockHeightCached int
 }
 
 var _ Controller = &controller{}
@@ -441,7 +445,7 @@ func (c *controller) Refresh() error {
 
 				if len(tickers_m) > 0 && !c.poolCache.Ready() {
 					tickers = []string{}
-					for k, _ := range tickers_m {
+					for k := range tickers_m {
 						tickers = append(tickers, k)
 					}
 					c.V(2).Info("Controller refresh poolCache, starting the hammer",
@@ -629,6 +633,8 @@ func (c *controller) GetKoiosClient() *koiosutils.KoiosClient { return c.kc }
 
 func (c *controller) GetLastRefreshTime() time.Time { return c.lastRefreshTime }
 
+func (c *controller) GetKoiosTipBlockHeight() int { return c.koiosTipBlockHeightCached }
+
 func (c *controller) IsRunning() bool { return c.tick != nil }
 func (c *controller) Start() error {
 	c.tick = time.NewTicker(c.refreshInterval)
@@ -650,6 +656,29 @@ func (c *controller) Start() error {
 			}
 		}
 	}()
+
+	// run a koios tip cacher, TODO: make a better/cleaner context cancel instead of ugly chaining
+	cctx, cctxCancel := context.WithCancel(c.ctx)
+	octxCancel := c.ctxCancel
+	c.ctxCancel = func() { cctxCancel(); octxCancel() }
+	go func() {
+		if _, block, _, err := c.kc.GetTip(); err == nil {
+			c.koiosTipBlockHeightCached = block
+		}
+		// TODO: fixed interval should be an option
+		t := time.NewTicker(3 * time.Minute)
+		for {
+			select {
+			case <-cctx.Done():
+				return
+			case <-t.C:
+				if _, block, _, err := c.kc.GetTip(); err == nil {
+					c.koiosTipBlockHeightCached = block
+				}
+			}
+		}
+	}()
+
 	return nil
 }
 
