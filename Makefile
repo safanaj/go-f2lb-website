@@ -1,4 +1,4 @@
-VERSION ?= 0.4.0
+VERSION ?= 0.4.1
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = \
@@ -85,7 +85,7 @@ build-static-go: proto/.built
 	@echo "--> Compiling the static binary"
 	$(ENVVAR) GOARCH=amd64 GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
 		-gcflags "-e" \
-		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
+		-ldflags "$(LDFLAGS) -extldflags=-static -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
 		-v -o $(COMPONENT) $(SRCS)
 
 build-go-nomod: vendor webui/build proto/.built
