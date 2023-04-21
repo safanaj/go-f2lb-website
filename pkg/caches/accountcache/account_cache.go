@@ -474,18 +474,18 @@ func (ac *accountCache) addMany(saddrs []string) {
 	if !ac.running {
 		return
 	}
-	isEmpty := ac.Len() == 0
+	// isEmpty := ac.Len() == 0
 	for _, saddr := range saddrs {
-		if !isEmpty {
-			if _, ok := ac.cache.Load(saddr); !ok {
-				atomic.AddUint32(&ac.addeditems, uint32(1))
-			}
+		// if !isEmpty {
+		if _, ok := ac.cache.Load(saddr); !ok {
+			atomic.AddUint32(&ac.addeditems, uint32(1))
 		}
+		// }
 		ac.workersCh <- saddr
 	}
-	if isEmpty {
-		atomic.AddUint32(&ac.addeditems, uint32(len(saddrs)))
-	}
+	// if isEmpty {
+	// 	atomic.AddUint32(&ac.addeditems, uint32(len(saddrs)))
+	// }
 }
 
 func (ac *accountCache) Add(saddr string) {

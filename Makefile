@@ -1,4 +1,4 @@
-VERSION ?= 0.4.1
+VERSION ?= 0.4.2
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = \
@@ -81,14 +81,14 @@ build-go: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built/libso
 		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
 		-v -o $(COMPONENT) $(SRCS)
 
-build-static-go: proto/.built
+build-static-go: proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
 	@echo "--> Compiling the static binary"
 	$(ENVVAR) GOARCH=amd64 GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
 		-gcflags "-e" \
 		-ldflags "$(LDFLAGS) -extldflags=-static -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
 		-v -o $(COMPONENT) $(SRCS)
 
-build-go-nomod: vendor webui/build proto/.built
+build-go-nomod: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
 	$(ENVVAR) GOOS=$(GOOS) $(GO) build \
 		-gcflags "-e" \
 		-ldflags "$(LDFLAGS) -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \

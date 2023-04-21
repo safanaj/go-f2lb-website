@@ -178,6 +178,13 @@ func (aq *AddonQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 		if strings.HasPrefix(aqRec.PoolIdHex, "pool") {
 			aqRec.PoolIdBech32 = aqRec.PoolIdHex
 			aqRec.PoolIdHex = ""
+			if hex, err := utils.Bech32ToHex(aqRec.PoolIdBech32); err == nil {
+				aqRec.PoolIdHex = hex
+			}
+		} else {
+			if bech32, err := utils.HexToBech32("pool", aqRec.PoolIdHex); err == nil {
+				aqRec.PoolIdBech32 = bech32
+			}
 		}
 
 		// compute for column I

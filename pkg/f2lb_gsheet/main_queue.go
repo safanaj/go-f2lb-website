@@ -150,17 +150,17 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 			mqRec = &MainQueueRec{
 				DiscordName:           v[0].(string),      // A
 				QPP:                   uint16(qppVal),     // B
-				Ticker:                ticker,             // D
-				AD:                    uint16(adVal),      // E
-				EG:                    uint16(egVal),      // F
-				delegStatus:           v[5].(string),      // G
-				mainQCurrPos:          uint16(currPosVal), // H
-				addonQStatus:          v[7].(string),      // J
-				missedEpochs:          v[9].(string),      // K
-				addedToGoogleGroup:    v[10].(string),     // L
-				PoolIdHex:             v[11].(string),     // M
-				discordID:             v[12].(string),     // N
-				initialAdaDeclaration: v[13].(string),     // O
+				Ticker:                ticker,             // C
+				AD:                    uint16(adVal),      // D
+				EG:                    uint16(egVal),      // E
+				delegStatus:           v[5].(string),      // F
+				mainQCurrPos:          uint16(currPosVal), // G
+				addonQStatus:          v[7].(string),      // H
+				missedEpochs:          v[9].(string),      // J
+				addedToGoogleGroup:    v[10].(string),     // K
+				PoolIdHex:             v[11].(string),     // L
+				discordID:             v[12].(string),     // M
+				initialAdaDeclaration: v[13].(string),     // N
 			}
 
 		}
@@ -168,11 +168,11 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 		if strings.HasPrefix(mqRec.PoolIdHex, "pool") {
 			mqRec.PoolIdBech32 = mqRec.PoolIdHex
 			mqRec.PoolIdHex = ""
-			if hex, err := utils.Bech32ToHex(mqRec.PoolIdBech32); err != nil {
+			if hex, err := utils.Bech32ToHex(mqRec.PoolIdBech32); err == nil {
 				mqRec.PoolIdHex = hex
 			}
 		} else {
-			if bech32, err := utils.HexToBech32("pool", mqRec.PoolIdHex); err != nil {
+			if bech32, err := utils.HexToBech32("pool", mqRec.PoolIdHex); err == nil {
 				mqRec.PoolIdBech32 = bech32
 			}
 		}
@@ -230,9 +230,6 @@ func (mq *MainQueue) Refresh(f2lb *F2LB, vr *ValueRange) error {
 			if rec.DelegatedPool == "" && ractual.DelegatedPool != "" {
 				rec.AdaDelegated = ractual.AdaDelegated
 			}
-			// if (rec.lastDelegationTxTime == time.Time{}) && (ractual.lastDelegationTxTime != time.Time{}) {
-			// 	rec.lastDelegationTxTime = ractual.lastDelegationTxTime
-			// }
 			if rec.stakeAddressStatus == "" && ractual.stakeAddressStatus != "" {
 				rec.stakeAddressStatus = ractual.stakeAddressStatus
 			}

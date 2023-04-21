@@ -9,9 +9,12 @@ import (
 	"time"
 
 	koios "github.com/cardano-community/koios-go-client/v3"
+	"github.com/safanaj/go-f2lb/pkg/utils"
 )
 
 var useKoiosCachedInfo = true
+
+type Relay = koios.Relay
 
 type KoiosClient struct {
 	ctx context.Context
@@ -105,6 +108,10 @@ type PoolInfo struct {
 	LiveStake      uint32
 	LiveDelegators uint32
 	VrfKeyHash     string
+	IsRetired      bool
+	Relays         []Relay
+	Margin         float32
+	Status         string
 }
 
 func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolInfo, error) {
@@ -121,8 +128,12 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 	page := uint(1)
 	opts_ := kc.k.NewRequestOptions()
 
-	opts_.QuerySet("select", "pool_id_bech32,meta_json,active_stake,live_stake,live_delegators,vrf_key_hash")
+	opts_.QuerySet("select", strings.Join([]string{
+		"pool_id_bech32", "meta_json", "active_stake", "live_stake", "live_delegators",
+		"vrf_key_hash", "retiring_epoch", "relays", "margin", "pool_status",
+	}, ","))
 
+	currentEpoch := koios.EpochNo(int(utils.CurrentEpoch()))
 	for {
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
@@ -143,6 +154,10 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 				LiveStake:      uint32(p.LiveStake.Shift(-6).IntPart()),
 				LiveDelegators: uint32(p.LiveDelegators),
 				VrfKeyHash:     string(p.VrfKeyHash),
+				IsRetired:      (p.RetiringEpoch != nil && currentEpoch > *p.RetiringEpoch) || p.PoolStatus == "retired",
+				Margin:         p.Margin,
+				Status:         p.PoolStatus,
+				Relays:         p.Relays,
 			}
 
 			res[pi.Bech32] = pi

@@ -282,7 +282,6 @@ func getOnlyTickers(rows [][]any) []string {
 
 func (c *controller) Refresh() error {
 	var wg sync.WaitGroup
-	// var t2p map[string]string
 
 	startRefreshAt := time.Now()
 	c.V(2).Info("Starting controller refresh", "at", startRefreshAt.Format(time.RFC850))
@@ -352,7 +351,6 @@ func (c *controller) Refresh() error {
 		defer wg.Done()
 		c.delegCycle.Refresh(res[delegCycleVRI])
 		c.V(2).Info("Controller refresh filled delegation cycle", "in", time.Since(startRefreshAt).String())
-		c.poolCache.Add(c.delegCycle.activeTicker)
 	}()
 
 	// wg.Add(1)
@@ -363,49 +361,64 @@ func (c *controller) Refresh() error {
 		}
 
 		var (
-			tickers []string
-			saddrs  []string
-			// err     error
+			saddrs         []string
+			toAddPoolCache []any
 		)
+
 		saddrs_m := make(map[string]any)
 		tickers_m := make(map[string]any)
+		tickers_with_pid_m := make(map[string]any)
+
 		for _, r := range append(c.mainQueue.GetRecords(), oldMainQueue.GetRecords()...) {
-			tickers_m[r.Ticker] = struct{}{}
 			// should we add all the addresses?
 			saddrs_m[r.StakeAddrs[0]] = struct{}{}
 
 			// c.V(2).Info("check for hints mapping", "ticker", r.Ticker)
-			if pid, ok := hintsMapping[r.Ticker]; ok {
-				// c.V(2).Info("hints mapping", "ticker", r.Ticker, "pool", pid)
-				if pid == "retired" {
-					delete(saddrs_m, r.StakeAddrs[0])
-					// c.accountCache.Del(r.StakeAddrs[0])
-					delete(tickers_m, r.Ticker)
-					// c.poolCache.Del(r.Ticker)
-					continue
-				}
-				// try to use hints mapping here as early speculation
-				if r.PoolIdBech32 == "" {
+			if r.PoolIdBech32 == "" {
+				if pid, ok := hintsMapping[r.Ticker]; ok {
+					// c.V(2).Info("hints mapping", "ticker", r.Ticker, "pool", pid)
+					if pid == "retired" {
+						delete(saddrs_m, r.StakeAddrs[0])
+						// c.accountCache.Del(r.StakeAddrs[0])
+						delete(tickers_m, r.Ticker)
+						// c.poolCache.Del(r.Ticker)
+						continue
+					}
+					// try to use hints mapping here as early speculation
 					r.PoolIdBech32 = pid
-					if hex, err := utils.Bech32ToHex(r.PoolIdBech32); err != nil {
+					if hex, err := utils.Bech32ToHex(r.PoolIdBech32); err == nil {
 						r.PoolIdHex = hex
 					}
 				}
 			}
+
 			saddrs = append(saddrs, r.StakeAddrs[0])
-			tickers = append(tickers, r.Ticker)
+
+			if r.PoolIdBech32 == "" {
+				tickers_m[r.Ticker] = struct{}{}
+			} else {
+				if _, ok := tickers_with_pid_m[r.Ticker]; !ok {
+					toAddPoolCache = append(toAddPoolCache, &poolcache.MinimalPoolInfo{Bech32: r.PoolIdBech32, Ticker: r.Ticker})
+					tickers_with_pid_m[r.Ticker] = struct{}{}
+				}
+			}
 		}
+
+		for t := range tickers_m {
+			if _, ok := tickers_with_pid_m[t]; !ok {
+				toAddPoolCache = append(toAddPoolCache, t)
+			}
+		}
+
+		saddrs = utils.UniquifyStrings(saddrs)
 		c.V(2).Info("Controller refresh adding to cache", "stake addresses",
 			len(saddrs), "in", time.Since(startRefreshAt).String())
 
-		saddrs = utils.UniquifyStrings(saddrs)
-		c.accountCache.AddMany(saddrs)
-
 		c.V(2).Info("Controller refresh adding to cache", "tickers",
-			len(tickers), "in", time.Since(startRefreshAt).String())
-		// here should add tickers to PoolCache and wait or sleep a bit
-		tickers = utils.UniquifyStrings(tickers)
-		c.poolCache.AddMany(tickers)
+			len(toAddPoolCache), "in", time.Since(startRefreshAt).String())
+
+		c.accountCache.AddMany(saddrs)
+		c.poolCache.AddMany(toAddPoolCache)
 
 		// the below waits are spending minutes on startup, to speedup the start up we can not wait for it
 		// and just notifiy the client via websocket to refresh the state on its side
@@ -444,7 +457,7 @@ func (c *controller) Refresh() error {
 				}
 
 				if len(tickers_m) > 0 && !c.poolCache.Ready() {
-					tickers = []string{}
+					tickers := []string{}
 					for k := range tickers_m {
 						tickers = append(tickers, k)
 					}
@@ -456,7 +469,7 @@ func (c *controller) Refresh() error {
 				}
 
 				if len(saddrs_m) > 0 && !c.accountCache.Ready() {
-					saddrs = []string{}
+					saddrs := []string{}
 					for k := range saddrs_m {
 						saddrs = append(saddrs, k)
 					}
@@ -573,6 +586,7 @@ func (c *controller) Refresh() error {
 				c.V(5).Info("Added missing from MainQ SP", "vals", vals, "rec", r)
 				// lets add also the stake addrs to the cache, should we add all the addresses?
 				c.accountCache.Add(r.StakeAddrs[0])
+				c.poolCache.AddMany([]any{&poolcache.MinimalPoolInfo{Ticker: r.Ticker, Bech32: r.PoolIdBech32}})
 			} else {
 				// this is in mainQ, lets update EG from addonQ
 				sp.SetEpochGrantedOnAddonQueue(r.EG)
@@ -594,6 +608,7 @@ func (c *controller) Refresh() error {
 					Ticker: c.delegCycle.activeTicker,
 				}
 				c.stakePoolSet.SetWithValuesFromMainQueue(vals)
+				c.poolCache.Add(c.delegCycle.activeTicker)
 			}
 		}
 

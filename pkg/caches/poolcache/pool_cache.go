@@ -25,10 +25,14 @@ const (
 	poolIdPrefix                  = "pool1"
 )
 
+func isTickerOrPoolIdBech32_a_PoolId(s string) bool {
+	return len(s) > len(poolIdPrefix) && s[:len(poolIdPrefix)] == poolIdPrefix
+}
+
 type (
 	PoolCache interface {
 		Add(string)
-		AddMany([]string)
+		AddMany([]any)
 		Del(string)
 		DelMany([]string)
 		Get(string) (PoolInfo, bool)
@@ -64,6 +68,14 @@ type (
 		LiveDelegators() uint32
 		BlockHeight() uint32
 		SetBlockHeight(uint32)
+		IsRetired() bool
+		Relays() []ku.Relay
+		Margin() float32
+	}
+
+	MinimalPoolInfo struct {
+		Ticker string
+		Bech32 string
 	}
 )
 
@@ -74,9 +86,11 @@ type poolInfo struct {
 	activeStake    uint32
 	liveStake      uint32
 	liveDelegators uint32
-	// vrfKeyHash     [32]byte
-	vrfKeyHash  string
-	blockHeight uint32
+	vrfKeyHash     string
+	blockHeight    uint32
+	isRetired      bool
+	relays         []ku.Relay
+	margin         float32
 }
 
 var (
@@ -93,6 +107,9 @@ func (pi *poolInfo) LiveStake() uint32       { return pi.liveStake }
 func (pi *poolInfo) LiveDelegators() uint32  { return pi.liveDelegators }
 func (pi *poolInfo) BlockHeight() uint32     { return pi.blockHeight }
 func (pi *poolInfo) SetBlockHeight(h uint32) { pi.blockHeight = h }
+func (pi *poolInfo) IsRetired() bool         { return pi.isRetired }
+func (pi *poolInfo) Relays() []ku.Relay      { return pi.relays }
+func (pi *poolInfo) Margin() float32         { return pi.margin }
 
 func (pi *poolInfo) MarshalBinary() (data []byte, err error) {
 	var buf bytes.Buffer
@@ -199,14 +216,22 @@ func (pc *poolCache) cacheSyncer() {
 					v.liveDelegators = old.(*poolInfo).liveDelegators
 				}
 				if v.vrfKeyHash == "" {
-					// copy(v.vrfKeyHash[:], old.(*poolInfo).vrfKeyHash[:])
 					v.vrfKeyHash = old.(*poolInfo).vrfKeyHash
+				}
+				if v.margin == 0 {
+					v.margin = old.(*poolInfo).margin
+				}
+				if v.relays == nil {
+					v.relays = old.(*poolInfo).relays
 				}
 				pc.cache.Store(v.ticker, v)
 				pc.cache2.Store(v.bech32, v)
 			} else {
 				atomic.AddUint32(&pc.nitems, uint32(1))
 				pc.cache2.Store(v.bech32, v)
+				if pc.nitems > pc.addeditems {
+					atomic.StoreUint32(&pc.addeditems, pc.nitems)
+				}
 				pc.V(2).Info("cache syncer added", "item", v.ticker, "now len", pc.Len(),
 					"addeditems", pc.addeditems, "nitems", pc.nitems)
 			}
@@ -342,7 +367,9 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 				t2p := make(map[string]string)
 				for pid, pi := range poolids {
 					pids_l = append(pids_l, pid)
-					t2p[pi.(*poolInfo).ticker] = pid
+					if pi.(*poolInfo).ticker != "" {
+						t2p[pi.(*poolInfo).ticker] = pid
+					}
 				}
 				if len(pids_l) == 0 {
 					return nil
@@ -364,21 +391,23 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 						liveStake:      i.LiveStake,
 						liveDelegators: i.LiveDelegators,
 						vrfKeyHash:     i.VrfKeyHash,
+						isRetired:      i.IsRetired,
+						relays:         i.Relays,
+						margin:         i.Margin,
 					}
-					// copy(pi.vrfKeyHash[:], []byte(i.VrfKeyHash))
-					c.infoCh <- pi
 					c.missingCh <- string(append([]rune{'-'}, []rune(i.Ticker)...))
 					delete(t2p, i.Ticker)
+					c.infoCh <- pi
 				}
 				if len(t2p) > 0 {
 					for t, p := range t2p {
 						c.V(4).Info("GetPoolsInfos (t2p): Forwarding poolInfo", "ticker", t, "bech32", p, "hex", utils.Bech32ToHexOrDie(p))
+						c.missingCh <- string(append([]rune{'-'}, []rune(t)...))
 						c.infoCh <- &poolInfo{
 							ticker: t,
 							bech32: p,
 							hex:    utils.Bech32ToHexOrDie(p),
 						}
-						c.missingCh <- string(append([]rune{'-'}, []rune(t)...))
 					}
 				}
 				return nil
@@ -413,17 +442,37 @@ func (c *poolCache) poolListOrPoolInfosGetter(end context.Context) {
 				if !more {
 					return
 				}
-				// in this channel we can recieve a TICKER (string) or a poolInfo{}
-				// in case of string we need just to list pools in an optimized way to get the Ids of them,
-				// in case of poolInfo we should populate it with additional info other the just the ids
+				c.V(4).Info("worker", "got", xI)
+
+				// in this channel we can recieve a TICKER (string) or poolIdBech32 (string) or a poolInfo{}
+				// in case of TICKER string we need just to list pools in an optimized way to get the Ids of them,
+				// in case of poolInfo or poolIdBech32 (string) we should populate it with additional info other the just the ids
 
 				switch v := xI.(type) {
 				case string:
+					if isTickerOrPoolIdBech32_a_PoolId(v) {
+						if pi, ok := poolids[v]; !ok {
+							if pi_, ok := c.cache2.Load(v); ok {
+								pi = pi_
+							} else {
+								pi = &poolInfo{
+									bech32: v,
+									hex:    utils.Bech32ToHexOrDie(v),
+								}
+							}
+							poolids[v] = pi
+						}
+						if len(poolids) > int(c.poolInfosToGet) {
+							getAndResetPoolInfos()
+						}
+						break
+					}
 					tickers[v] = struct{}{}
 					if len(tickers) > int(c.poolInfosToGet) {
 						getAndResetTickers()
 					}
 				case *poolInfo:
+					c.infoCh <- v
 					poolids[v.bech32] = v
 					if len(poolids) > int(c.poolInfosToGet) {
 						getAndResetPoolInfos()
@@ -482,7 +531,7 @@ func (pc *poolCache) GetMissingPoolInfos() []string {
 	missing := []string{}
 	pc.missingMu.RLock()
 	defer pc.missingMu.RUnlock()
-	for t, _ := range pc.missingTickersFromList {
+	for t := range pc.missingTickersFromList {
 		missing = append(missing, t)
 	}
 	return missing
@@ -492,46 +541,47 @@ func (pc *poolCache) FillMissingPoolInfos(p2t map[string]string) {
 	if !pc.running {
 		return
 	}
-	isEmpty := pc.Len() == 0
+
 	for p, t := range p2t {
-		if !isEmpty {
-			if _, ok := pc.cache.Load(t); !ok {
-				atomic.AddUint32(&pc.addeditems, uint32(1))
-				pc.V(4).Info("FillMissingPoolInfos: increased addeditems for missing one",
-					"increased by", 1, "ticker", t, "addeditems", pc.addeditems, "nitems", pc.nitems)
-			}
-		}
-		pc.workersCh <- &poolInfo{ticker: t, bech32: p}
-	}
-	if isEmpty {
-		atomic.AddUint32(&pc.addeditems, uint32(len(p2t)))
-		pc.V(4).Info("FillMissingPoolInfos: increased addeditems", "increased by", len(p2t))
+		pc.workersCh <- &poolInfo{ticker: t, bech32: p, hex: utils.Bech32ToHexOrDie(p)}
 	}
 }
 
-func (pc *poolCache) addMany(saddrs []string) {
+func (pc *poolCache) addMany(saddrs []any) {
 	if !pc.running {
 		return
 	}
-	isEmpty := pc.Len() == 0
-	for _, saddr := range saddrs {
-		if !isEmpty {
-			if _, ok := pc.cache.Load(saddr); !ok {
+	for _, saddrI := range saddrs {
+		switch v := saddrI.(type) {
+		case string:
+			tcache := pc.cache
+			if isTickerOrPoolIdBech32_a_PoolId(v) {
+				tcache = pc.cache2
+			}
+			if _, ok := tcache.Load(v); !ok {
 				atomic.AddUint32(&pc.addeditems, uint32(1))
 			}
+			pc.workersCh <- v
+		case *MinimalPoolInfo:
+			_, ok := pc.cache.Load(v.Ticker)
+			_, ok2 := pc.cache2.Load(v.Bech32)
+			if !ok && !ok2 {
+				atomic.AddUint32(&pc.addeditems, uint32(1))
+			}
+			pc.workersCh <- &poolInfo{
+				ticker: v.Ticker,
+				bech32: v.Bech32,
+				hex:    utils.Bech32ToHexOrDie(v.Bech32),
+			}
 		}
-		pc.workersCh <- saddr
-	}
-	if isEmpty {
-		atomic.AddUint32(&pc.addeditems, uint32(len(saddrs)))
 	}
 }
 
 func (pc *poolCache) Add(saddr string) {
-	pc.addMany([]string{saddr})
+	pc.addMany([]any{saddr})
 }
 
-func (pc *poolCache) AddMany(saddrs []string) {
+func (pc *poolCache) AddMany(saddrs []any) {
 	pc.addMany(saddrs)
 }
 
@@ -556,7 +606,7 @@ func (pc *poolCache) DelMany(saddrs []string) {
 }
 
 func (pc *poolCache) Get(tickerOrbech32 string) (PoolInfo, bool) {
-	if len(tickerOrbech32) > len(poolIdPrefix) && tickerOrbech32[:len(poolIdPrefix)] == poolIdPrefix {
+	if isTickerOrPoolIdBech32_a_PoolId(tickerOrbech32) {
 		pi, ok := pc.cache2.Load(tickerOrbech32)
 		if !ok {
 			return (*poolInfo)(nil), false

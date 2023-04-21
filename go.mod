@@ -12,7 +12,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/iand/logfmtr v0.2.1
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/safanaj/cardano-go v0.1.17
+	github.com/safanaj/cardano-go v0.1.19
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
