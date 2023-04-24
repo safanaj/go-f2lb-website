@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -64,12 +65,20 @@ func (ws *webServer) SetPathsForPages(paths, pages []string) {
 		gh.GET(p, func(c *gin.Context) {
 			f, _ := http.FS(webFS).Open(pages[i])
 			fi, _ := f.Stat()
-			c.DataFromReader(http.StatusOK, fi.Size(), contentType, f, nil)
+			ct := contentType
+			if strings.HasSuffix(fi.Name(), ".wasm") {
+				ct = "application/wasm"
+			}
+			c.DataFromReader(http.StatusOK, fi.Size(), ct, f, nil)
 
 		})
 
 		gh.HEAD(p, func(c *gin.Context) {
-			c.Header("Content-Type", contentType)
+			ct := contentType
+			if strings.HasSuffix(c.Request.URL.Path, ".wasm") {
+				ct = "application/wasm"
+			}
+			c.Header("Content-Type", ct)
 			c.Header("Content-Length", fmt.Sprintf("%d", size))
 			c.Status(http.StatusOK)
 		})

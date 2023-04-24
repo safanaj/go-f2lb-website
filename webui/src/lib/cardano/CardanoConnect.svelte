@@ -1,19 +1,27 @@
 <script context="module">
   import { connectedWalletName } from '$lib/stores';
 
+  // import {
+  //     useCardanoSerializationLib,
+  //     getBaseAddress,
+  //     getAddr,
+  //     getStakeKey,
+  //     getStakeAddr
+  // } from '$lib/cardano/csl.js'
+
   import {
-      useCardanoSerializationLib,
+      useCardanoMultiPlatformLib,
       getBaseAddress,
       getAddr,
       getStakeKey,
       getStakeAddr
-  } from '$lib/cardano/csl.js'
+  } from '$lib/cardano/cml.js'
 
   let cardano = window.cardano;
   let wasm = {}
-  let wasm2 = {}
 
-  useCardanoSerializationLib().then(x => { wasm = {...x} })
+  // useCardanoSerializationLib().then(x => { wasm = {...x} })
+  useCardanoMultiPlatformLib().then(x => { wasm = {...x} })
 
   let maybeStoredConnectedWalletName = null
   if ((window||{}).localStorage !== undefined) {
@@ -102,7 +110,6 @@
           //         icon: w.icon,
           //         api,
           //         wasm,
-          //         wasm2
           //     }
           //     dispatch(EVENT, dat)
           //     walletConnected(dat)
@@ -122,7 +129,6 @@
                   icon: w.icon,
                   api,
                   wasm,
-                  wasm2
               };
               dispatch(EVENT, dat);
               if (doAuthentication) {

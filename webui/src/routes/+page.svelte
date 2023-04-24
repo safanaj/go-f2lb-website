@@ -1,15 +1,25 @@
 <script context="module">
+  // import {
+  //     useCardanoSerializationLib,
+  //     getDelegationSignedTx,
+  //     getSignedTx,
+  //     assembleWitnessSet,
+  //     getUtxoHint,
+  // } from '$lib/cardano/csl.js'
+
   import {
-      useCardanoSerializationLib,
+      useCardanoMultiPlatformLib,
       getDelegationSignedTx,
       getSignedTx,
       assembleWitnessSet,
       getUtxoHint,
-  } from '$lib/cardano/csl.js'
+  } from '$lib/cardano/cml.js'
+
   import { Buffer } from 'buffer';
   let wasm = {}
 
-  useCardanoSerializationLib().then(x => { wasm = {...x} })
+  // useCardanoSerializationLib().then(x => { wasm = {...x} ; window.csl = wasm ; })
+  useCardanoMultiPlatformLib().then(x => { wasm = {...x} ; window.cml = wasm; })
 
 </script>
 

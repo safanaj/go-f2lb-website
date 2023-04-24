@@ -13,6 +13,7 @@
   "devDependencies": {
     "@creativebulma/bulma-divider": "^1.1.0",
     "@creativebulma/bulma-tooltip": "^1.2.0",
+    "@dcspark/cardano-multiplatform-lib-browser": "^3.1.2",
     "@emurgo/cardano-message-signing-browser": "^1.0.1",
     "@emurgo/cardano-serialization-lib-browser": "11.0.5",
     "@improbable-eng/grpc-web": "^0.15.0",
@@ -37,5 +38,6 @@
     "vite-plugin-top-level-await": "^1.1.1",
     "vite-plugin-wasm": "^2.1.0"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {}
 }

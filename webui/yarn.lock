@@ -12,6 +12,11 @@
   resolved "https://registry.npmjs.org/@creativebulma/bulma-tooltip/-/bulma-tooltip-1.2.0.tgz"
   integrity sha512-ooImbeXEBxf77cttbzA7X5rC5aAWm9UsXIGViFOnsqB+6M944GkB28S5R4UWRqjFd2iW4zGEkEifAU+q43pt2w==
 
+"@dcspark/cardano-multiplatform-lib-browser@^3.1.2":
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/@dcspark/cardano-multiplatform-lib-browser/-/cardano-multiplatform-lib-browser-3.1.2.tgz#1495d57b6d129c50a87bc838c11d0b7d7ad6939d"
+  integrity sha512-BDIF33nqEKAGn72+ESD1fLgnWCZJbPWnVKHr0cy7Al2zhvM30rGsajcJNHLPh2XXZQh1H35fBiHHR2uUyZRRpw==
+
 "@emurgo/cardano-message-signing-browser@^1.0.1":
   version "1.0.1"
   resolved "https://registry.npmjs.org/@emurgo/cardano-message-signing-browser/-/cardano-message-signing-browser-1.0.1.tgz"

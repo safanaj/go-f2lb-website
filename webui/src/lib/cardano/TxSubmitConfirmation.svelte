@@ -1,12 +1,16 @@
 <script context="module">
+  // import {
+  //     useCardanoSerializationLib,
+  // } from '$lib/cardano/csl.js'
   import {
-      useCardanoSerializationLib,
-  } from '$lib/cardano/csl.js'
+      useCardanoMultiPlatformLib,
+  } from '$lib/cardano/cml.js'
   import { Buffer } from 'buffer';
 
   let wasm = {}
 
-  useCardanoSerializationLib().then(x => { wasm = {...x} })
+  // useCardanoSerializationLib().then(x => { wasm = {...x} })
+  useCardanoMultiPlatformLib().then(x => { wasm = {...x} })
 
 </script>
 
