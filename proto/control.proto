@@ -3,6 +3,7 @@ syntax = "proto3";
 package pb;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 import "members.proto";
 import "supporters.proto";
 
@@ -12,6 +13,7 @@ service ControlMsgService {
   rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
   rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Auth(StakeAddr) returns (User) {}
+  rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {}
   rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
   rpc CanceledTx(TxId) returns (google.protobuf.Empty) {}
   rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
@@ -44,6 +46,7 @@ message User {
   Supporter supporter = 5;
   bool isAdmin = 6;
   string delegatedPool = 7;
+  bool isVerified = 8;
 }
 
 message StakeAddr {
@@ -63,4 +66,11 @@ message PartiallySignedTx {
 
 message TxId {
   string hash = 1;
+}
+
+// Authentication Signature (COSE Signature)
+message AuthnSignature {
+  string stakeAddress = 1;
+  string signature = 2;
+  string key = 3;
 }

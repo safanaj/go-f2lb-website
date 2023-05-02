@@ -29,6 +29,7 @@ require (
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/echovl/ed25519 v0.2.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -53,6 +54,7 @@ require (
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
+	github.com/veraison/go-cose v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
@@ -64,3 +66,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )
+
+replace github.com/safanaj/cardano-go => /home/marco/src/Mine/cardano-go

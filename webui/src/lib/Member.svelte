@@ -34,6 +34,16 @@
 
   $: wantTipCheck = koiosTip > 0 && member.blockheight > 0
   $: tipCheckPassed = member.blockheight >= (koiosTip - 10)
+  $: isTouchScreen = window.screen.availWidth < 1024
+
+  const toastMsgCopied = opts => {
+      let copts = {
+          message: "Copied",
+          type: "is-link",
+          position: "top-center",
+      }
+      toast({...copts, ...opts})
+  }
 
   const findParentElt = (tgt, eltName) => {
       while (tgt.localName != eltName) {
@@ -49,12 +59,7 @@
       } else if (tgt.classList.contains("bech32")) {
           navigator.clipboard.writeText(member.poolidbech32);
       }
-      toast({
-          message: "Copied",
-          type: "is-link",
-          position: "top-center",
-          appendTo: tgt
-      })
+      toastMsgCopied({appendTo: tgt})
   }
 
   const copyAccountToClipboard = (evt) => {
@@ -64,12 +69,7 @@
       } else if (tgt.classList.contains("bech32")) {
           navigator.clipboard.writeText(member.stakeaddr);
       }
-      toast({
-          message: "Copied",
-          type: "is-link",
-          position: "top-center",
-          appendTo: tgt
-      })
+      toastMsgCopied({appendTo: tgt})
   }
 
   const openPoolPm = () => {
@@ -176,46 +176,52 @@ block height from koios: ${koiosTip}
 
 
   <p>Ticker: {member.ticker}
-    <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
-          data-tooltip={`
-bech32: ${member.poolidbech32}
-hex: ${member.poolidhex}
-on top at: (epoch ${addonqueue ? member.startingepochonaddonqueue : member.startingepoch}) ${addonqueue ? member.startingtimeonaddonqueue : member.startingtime}
-          `}
-          >
-      <FaInfoCircle />
-    </span>
 
-    {#if wantTipCheck}
-      <span class={`icon is-small has-tooltip-arrow has-tooltipl-multiline has-text-${tipCheckPassed ? "success" : "danger"}`}
+    <span class={isTouchScreen ? "is-pulled-right" : ""}>
+
+      <span class="icon is-small has-tooltip-arrow has-tooltipl-multiline"
             data-tooltip={`
-reported block height: ${member.blockheight}
-block height from koios: ${koiosTip}
-            `}>
-        {#if tipCheckPassed}
-          <FaRegCheckCircle />
-        {:else}
-          <FaRegTimesCircle />
-        {/if}
+            bech32: ${member.poolidbech32}
+            hex: ${member.poolidhex}
+            on top at: (epoch ${addonqueue ? member.startingepochonaddonqueue : member.startingepoch}) ${addonqueue ? member.startingtimeonaddonqueue : member.startingtime}
+            `}
+            >
+        <FaInfoCircle />
       </span>
-    {/if}
 
-    <!-- additional icons useful anchors/shortcuts-->
-    <span class="icon is-small">
-      <a href={"https://pool.pm/" + member.poolidhex} target="_blank">
-        <img src={poolpmLogo} alt="pool.pm" />
-      </a>
+      {#if wantTipCheck}
+        <span class={`icon is-small has-tooltip-arrow has-tooltipl-multiline has-text-${tipCheckPassed ? "success" : "danger"}`}
+              data-tooltip={`
+              reported block height: ${member.blockheight}
+              block height from koios: ${koiosTip}
+              `}>
+          {#if tipCheckPassed}
+            <FaRegCheckCircle />
+          {:else}
+            <FaRegTimesCircle />
+          {/if}
+        </span>
+      {/if}
+
+<!-- additional icons useful anchors/shortcuts-->
+        <span class="icon is-small">
+          <a href={"https://pool.pm/" + member.poolidhex} target="_blank">
+            <img src={poolpmLogo} alt="pool.pm" />
+          </a>
+        </span>
+        <span class="icon is-small">
+          <a href={"https://pooltool.io/pool/" + member.poolidhex + "/epochs"} target="_blank">
+            <img src={pooltoolioLogo} alt="pooltool.io" />
+          </a>
+        </span>
+        <span class="icon is-small">
+          <a href={"https://rawcardano.app/?pool=" + member.poolidbech32} target="_blank">
+            <img src={rawcardanoappLogo} alt="rawcardano.app" />
+          </a>
+        </span>
+
     </span>
-    <span class="icon is-small">
-      <a href={"https://pooltool.io/pool/" + member.poolidhex + "/epochs"} target="_blank">
-        <img src={pooltoolioLogo} alt="pooltool.io" />
-      </a>
-    </span>
-    <span class="icon is-small">
-      <a href={"https://rawcardano.app/?pool=" + member.poolidbech32} target="_blank">
-        <img src={rawcardanoappLogo} alt="rawcardano.app" />
-      </a>
-    </span>
+
   </p>
 
   <p>Ada delegated: {member.adadelegated}</p>

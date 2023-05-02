@@ -4,20 +4,55 @@
   import f2lbLogo from '$lib/assets/f2lb_small.png';
   import {Empty} from "google-protobuf/google/protobuf/empty_pb";
 
+  import {AuthnSignature,StakeAddr} from '$lib/pb/control_pb.js'
   import { serviceClients, cardanoWallet, theme } from '$lib/stores'
   import CardanoConnect from '$lib/cardano/CardanoConnect.svelte';
+
   // import FaMoon from 'svelte-icons/fa/FaMoon.svelte'
   import FaSun from 'svelte-icons/fa/FaSun.svelte'
   import FaAngry from 'svelte-icons/fa/FaAngry.svelte'
-
+  import FaSignature from 'svelte-icons/fa/FaSignature.svelte'
+  import FaUserCheck from 'svelte-icons/fa/FaUserCheck.svelte'
   const isAdmin = () => {
       return ($cardanoWallet.user||{}).isadmin
+  }
+  const isVerified = () => {
+      return ($cardanoWallet.user||{}).isverified
   }
 
   const doRefresh = () => {
       return new Promise((resolve, reject) => {
           $serviceClients.Control.refresh(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
       }).then(tick)
+  }
+
+  let authnVerified = isVerified()
+  const doAuthnSign = () => {
+      return new Promise((resolve, reject) => {
+          $cardanoWallet.api.signData($cardanoWallet.stakeAddr, Buffer.from($cardanoWallet.stakeAddr).toString('hex'))
+              .then(sig => {
+                  let asig = new AuthnSignature()
+                  // if (sig.signature.slice(0, 2) !== 'd2') {
+                  //     // on the backend using go-cose, this have to be a tagged cbor
+                  //     asig.setSignature("d2" + sig.signature)
+                  // } else {
+                  //     asig.setSignature(sig.signature)
+                  // }
+                  asig.setSignature(sig.signature)
+                  asig.setKey(sig.key)
+                  asig.setStakeaddress($cardanoWallet.stakeAddr)
+                  $serviceClients.Control.authn(asig, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+              })
+      }).then(res => res.toObject().value).then(verified => {
+          if (verified) {
+              let sa = new StakeAddr()
+              sa.setStakeaddress($cardanoWallet.stakeAddr)
+              new Promise((resolve, reject) => {
+                  $serviceClients.Control.auth(sa, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+              }).then(u => u.toObject()).then(user => cardanoWallet.set({...$cardanoWallet, user})).then(() => authnVerified = isVerified())
+          }
+          return verified
+      }).then(tick).catch(console.log)
   }
 
   const switchTheme = () => {
@@ -60,6 +95,13 @@
         <li>
           {#if isAdmin()}
             <button class="button" on:click={doRefresh}>Refresh</button>
+          {/if}
+        </li>
+        <li>
+          {#if isVerified()}
+            <span class="icon is-medium mt-2 mr-1 ml-1"><FaUserCheck /></span>
+          {:else if $cardanoWallet.user !== undefined}
+            <button class="button" on:click={doAuthnSign}><FaSignature /></button>
           {/if}
         </li>
         {/key}

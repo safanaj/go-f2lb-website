@@ -1,12 +1,4 @@
 <script context="module">
-  // import {
-  //     useCardanoSerializationLib,
-  //     getDelegationSignedTx,
-  //     getSignedTx,
-  //     assembleWitnessSet,
-  //     getUtxoHint,
-  // } from '$lib/cardano/csl.js'
-
   import {
       useCardanoMultiPlatformLib,
       getDelegationSignedTx,
@@ -18,9 +10,9 @@
   import { Buffer } from 'buffer';
   let wasm = {}
 
-  // useCardanoSerializationLib().then(x => { wasm = {...x} ; window.csl = wasm ; })
   useCardanoMultiPlatformLib().then(x => { wasm = {...x} ; window.cml = wasm; })
 
+  window.Buffer = Buffer
 </script>
 
 <svelte:head>
@@ -37,6 +29,7 @@
   import TxSubmitConfirmation from '$lib/cardano/TxSubmitConfirmation.svelte'
   import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
   import { getContext } from 'svelte';
+  import { toast } from 'bulma-toast'
 
   $: mainServed = $topPool || $mainQueueMembers[0];
   $: epochProgress = Object.keys($epochData).length > 0 ? ($epochData.slot * 100 / 432000).toFixed(2) : 0;
@@ -47,14 +40,33 @@
 
   const pageLoaderObj = getContext('pageLoader')
 
+  const toastMsg = (msg, opts) => {
+      let dopts = {
+          message: msg,
+          position: "top-center",
+          duration: 5000,
+          dismissible: true,
+          type: 'is-success',
+      }
+      toast({...dopts, ...(opts ?? {})})
+  }
+  const toastErr = (err, opts) => {
+      toastMsg(err.toString(), {type: 'is-danger'})
+  }
+
   const doDelegation = () => {
       let {api, wasm, address} = $cardanoWallet
       pageLoaderObj.el.classList.toggle('is-active')
-      getDelegationSignedTx(api, wasm, address, mainServed.poolidbech32)
+      getDelegationSignedTx(api, wasm, address, mainServed.poolidbech32, console)
           .then(api.submitTx)
           .then(console.log)
-          .then(() => { pageLoaderObj.el.classList.toggle('is-active') })
-          .catch(err => { pageLoaderObj.el.classList.toggle('is-active'); console.log(err); })
+          .then(() => pageLoaderObj.el.classList.toggle('is-active'))
+          .then(() => toastMsg('Tx submitted'))
+          .catch(err => {
+              pageLoaderObj.el.classList.toggle('is-active');
+              toastErr(err)
+              console.log(err);
+          })
   }
 
 
@@ -67,7 +79,7 @@
       // console.log("Got TX_:", tx_.to_json())
       // console.log("Got TX cborhex:", tx.cborhex)
       const txHash = wasm.hash_transaction(tx_.body()).to_hex()
-      const payer_vkey_hex = tx_.witness_set().vkeys().get(0).to_hex()
+      const payer_vkey_hex = tx_.witness_set().vkeys().get(0).vkey().public_key().hash().to_hex()
       tx_.free()
 
       const txId = new TxId()
@@ -79,10 +91,17 @@
   const getSignedTxWithWitnessSet = (tx_hex, payer_vkey_hex, delegator_vkey_hex, tracker_vkey_hex) => {
       if (tracker_vkey_hex === "") {
           const witset = assembleWitnessSet(wasm, payer_vkey_hex, delegator_vkey_hex)
-          return getSignedTx(wasm, tx_hex, witset)
+          return getSignedTx(wasm, tx_hex, witset).catch(err => {
+              pageLoaderObj.el.classList.toggle('is-active')
+              toastErr(err)
+          })
+
       } else {
           const witset = assembleWitnessSet(wasm, payer_vkey_hex, delegator_vkey_hex, tracker_vkey_hex)
-          return getSignedTx(wasm, tx_hex, witset)
+          return getSignedTx(wasm, tx_hex, witset).catch(err => {
+              pageLoaderObj.el.classList.toggle('is-active')
+              toastErr(err)
+          })
       }
   }
 
@@ -90,7 +109,9 @@
       let {api, wasm} = $cardanoWallet
       pageLoaderObj.el.classList.toggle('is-active')
       if ($cardanoWallet.stakeAddr === "" || $topPool.poolidbech32 === "") {
+          pageLoaderObj.el.classList.toggle('is-active')
           console.log("Error delegation data incomplete", $cardanoWallet, $topPool)
+          toastErr(new Error("delegation data incomplete"))
           return
       }
       let deleg = new Delegation()
@@ -106,11 +127,12 @@
 
       let tx = await new Promise((resolve, reject) => {
           $serviceClients.Control.buildDelegationTx(deleg, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
-      }).then(tx => tx.toObject()).catch(console.log)
-      if (!tx) {
+      }).then(tx => tx.toObject()).catch(err => {
+          console.log(err)
           pageLoaderObj.el.classList.toggle('is-active')
-          return
-      }
+          toastErr(err)
+      })
+      if (!tx) return
 
       const {txId, payer_vkey_hex} = getTxIdAndPayerVKey(tx)
       let witset
@@ -124,39 +146,33 @@
           console.log("Error or cancelled", e)
           $serviceClients.Control.canceledTx(txId)
           pageLoaderObj.el.classList.toggle('is-active')
+          toastErr(e)
           return
       }
 
       let tracker_vkey_hex = ""
       const tws = wasm.TransactionWitnessSet.from_bytes(Buffer.from(witset, 'hex'))
-      const delegator_vkey_hex = tws.vkeys().get(0).to_hex()
+      const delegator_vkey_hex = tws.vkeys().get(0).vkey().public_key().hash().to_hex()
       if (useHintToKeepTxTrack && tws.vkeys().len() === 2) {
-          tracker_vkey_hex = tws.vkeys().get(1).to_hex()
+          tracker_vkey_hex = tws.vkeys().get(1).vkey().public_key().hash().to_hex()
       }
       tws.free()
 
       let signedTx = getSignedTxWithWitnessSet(tx.cborhex, payer_vkey_hex, delegator_vkey_hex, tracker_vkey_hex)
-
-      if (signedTx) {
-          // {
-          //     const tx_ = wasm.Transaction.from_bytes(Buffer.from(signedTx, 'hex'))
-          //     console.log("Got signed TX:", tx_.to_json())
-          //     tx_.free()
-          // }
-
-          if (avoidSubmitConfirmation) {
-              try {
-                  let txid = await api.submitTx(signedTx)
-                  console.log("Tx submitted", txId.toObject(), txid)
-                  $serviceClients.Control.submittedTx(txId)
-              } catch (e) {
-                  console.log("Tx submit err", e)
-                  $serviceClients.Control.canceledTx(txId)
-              }
-          } else {
-              // going to open the TX submit confirmation modal just setting the watched variable
-              signedTxCborHex = signedTx
+      if (!signedTx) return;
+      if (avoidSubmitConfirmation) {
+          try {
+              let txid = await api.submitTx(signedTx)
+              console.log("Tx submitted", txId.toObject(), txid)
+              $serviceClients.Control.submittedTx(txId)
+          } catch (e) {
+              console.log("Tx submit err", e)
+              toastErr(e)
+              $serviceClients.Control.canceledTx(txId)
           }
+      } else {
+          // going to open the TX submit confirmation modal just setting the watched variable
+          signedTxCborHex = signedTx
       }
       pageLoaderObj.el.classList.toggle('is-active')
   }

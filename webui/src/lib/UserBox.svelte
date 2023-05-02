@@ -5,7 +5,7 @@
 </script>
 
 {#if user !== undefined}
-<div class="user box is-hidden-mobile">
+<div class="user box is-hidden-touch">
 {#if user.type === User.Type.VISITOR}
   <p>Hello <span class="text truncate">{user.stakeaddress}</span> !</p>
   <p>Thanks to visit this site, and if you did not do yet, please join our community.</p>

@@ -7,11 +7,14 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/safanaj/cardano-go"
-
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/hako/durafmt"
+
+	"github.com/safanaj/cardano-go"
+	"github.com/safanaj/cardano-go/cose"
+	"github.com/safanaj/cardano-go/crypto"
 
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/txbuilder"
@@ -28,9 +31,10 @@ type ControlServiceRefresher interface {
 type controlServiceServer struct {
 	UnimplementedControlMsgServiceServer
 
-	ctrl        f2lb_gsheet.Controller
-	refreshCh   chan string
-	uuid2stream map[string]ControlMsgService_ControlServer
+	ctrl               f2lb_gsheet.Controller
+	refreshCh          chan string
+	uuid2stream        map[string]ControlMsgService_ControlServer
+	uuid2verifiedAuthn map[string]bool
 
 	adminPools map[string]any
 
@@ -162,18 +166,23 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 		return nil, fmt.Errorf("Bad Request: Empty stake address")
 	}
 
+	user := &User{}
+	if ruuid, isOk := ctx.Value(webserver.IdCtxKey).(string); isOk {
+		user.IsVerified = s.uuid2verifiedAuthn[ruuid]
+	}
+
 	if sp := s.ctrl.GetStakePoolSet().Get(saddr_); sp != nil && sp.Ticker() != "" {
 		// check admin permission
 		_, isAdmin := s.adminPools[sp.Ticker()]
+
 		// found just return this
-		return &User{
-			Type:          User_SPO,
-			StakeKey:      sp.StakeKeys()[0],
-			StakeAddress:  sp.MainStakeAddress(),
-			Member:        newMemeberFromStakePool(sp),
-			IsAdmin:       isAdmin,
-			DelegatedPool: sp.DelegatedPool(),
-		}, nil
+		user.Type = User_SPO
+		user.StakeKey = sp.StakeKeys()[0]
+		user.StakeAddress = sp.MainStakeAddress()
+		user.Member = newMemeberFromStakePool(sp)
+		user.IsAdmin = isAdmin
+		user.DelegatedPool = sp.DelegatedPool()
+		return user, nil
 	}
 
 	delegPool, _, _ := s.ctrl.GetKoiosClient().GetStakeAddressInfo(saddr_)
@@ -192,19 +201,18 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 	}
 	if supporter != nil {
 		// found just return this
-		return &User{
-			Type:          User_SUPPORTER,
-			StakeKey:      supporter.StakeKeys[0],
-			StakeAddress:  supporter.StakeAddrs[0],
-			Supporter:     &Supporter{DiscordId: supporter.DiscordName},
-			DelegatedPool: delegPool,
-		}, nil
+		user.Type = User_SUPPORTER
+		user.StakeKey = supporter.StakeKeys[0]
+		user.StakeAddress = supporter.StakeAddrs[0]
+		user.Supporter = &Supporter{DiscordId: supporter.DiscordName}
+		user.DelegatedPool = delegPool
+		return user, nil
 	}
-	return &User{
-		Type:          User_VISITOR,
-		StakeAddress:  saddr_,
-		DelegatedPool: delegPool,
-	}, nil
+
+	user.Type = User_VISITOR
+	user.StakeAddress = saddr_
+	user.DelegatedPool = delegPool
+	return user, nil
 }
 
 func (s *controlServiceServer) BuildDelegationTx(ctx context.Context, deleg *Delegation) (*PartiallySignedTx, error) {
@@ -243,4 +251,56 @@ func (s *controlServiceServer) SubmittedTx(ctx context.Context, txid *TxId) (*em
 	}
 	s.payer.SubmittedTx(txid.GetHash())
 	return &emptypb.Empty{}, nil
+}
+
+func (s *controlServiceServer) Authn(ctx context.Context, asig *AuthnSignature) (*wrapperspb.BoolValue, error) {
+	ruuid, isOk := ctx.Value(webserver.IdCtxKey).(string)
+	if !isOk {
+		return wrapperspb.Bool(false), nil
+	}
+	if s.uuid2verifiedAuthn == nil {
+		s.uuid2verifiedAuthn = make(map[string]bool)
+	}
+
+	msgToVerify, err := cose.NewCOSESign1MessageFromCBORHex(asig.GetSignature())
+	if err != nil {
+		return wrapperspb.Bool(false), fmt.Errorf("error parsing cose sign1 message: %v", err)
+	}
+
+	key, err := cose.NewCOSEKeyFromCBORHex(asig.GetKey())
+	if err != nil {
+		return wrapperspb.Bool(false), fmt.Errorf("error parsing cose key: %v", err)
+	}
+
+	verifier, err := cose.NewVerifierFromCOSEKey(key)
+	if err != nil {
+		return wrapperspb.Bool(false), fmt.Errorf("error creating verifier: %v", err)
+	}
+
+	pkh, err := crypto.PubKey(key.Key.Bytes()).Hash()
+	if err != nil {
+		return wrapperspb.Bool(false), fmt.Errorf("error checking public key: %v", err)
+	}
+
+	sc, err := cardano.NewKeyCredentialFromHash(pkh)
+	if err != nil {
+		return wrapperspb.Bool(false), fmt.Errorf("error checking public key hash for stake credential: %v", err)
+	}
+	stakeAddr, err := cardano.NewStakeAddress(cardano.Mainnet, sc)
+	if err != nil {
+		return wrapperspb.Bool(false), fmt.Errorf("error checking stake address: %v", err)
+	}
+	if stakeAddr.Bech32() != asig.GetStakeAddress() {
+		err := fmt.Errorf("computed stake address: %s differ from passed one: %s",
+			stakeAddr.Bech32(), asig.GetStakeAddress())
+		return wrapperspb.Bool(false), err
+	}
+
+	if err := msgToVerify.Verify(nil, verifier); err != nil {
+		return wrapperspb.Bool(false), err
+	}
+
+	s.uuid2verifiedAuthn[ruuid] = true
+	s.refreshCh <- ruuid
+	return wrapperspb.Bool(true), nil
 }

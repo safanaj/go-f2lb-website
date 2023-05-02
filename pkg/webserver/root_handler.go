@@ -3,6 +3,7 @@ package webserver
 import (
 	"context"
 	"fmt"
+
 	// "log"
 	"net/http"
 
@@ -49,6 +50,8 @@ func (h *rootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if err == http.ErrNoCookie {
 		idCookie = &http.Cookie{Name: IdKey, Value: fmt.Sprintf("%s", uuid.New())}
 	}
+	// reset Cookie Path to avoid waste storage for duplicated cookie
+	idCookie.Path = "/"
 	http.SetCookie(w, idCookie)
 	rctx := context.WithValue(req.Context(), IdCtxKey, idCookie.Value)
 	if h.grpcwebHandler.IsGrpcWebRequest(req) ||

@@ -25929,6 +25929,7 @@ export const useCardanoMultiPlatformLib = async () => {
     WithdrawalBuilderResult,
     Withdrawals,
 
+    Buffer,
   }
 }
 
@@ -25979,10 +25980,11 @@ const getTxBuilder = (wasm) => {
   //   "maxTxSize": 16384,
   //   "utxoCostPerWord": 34482
   // }
+
   // $ date ; cardano-cli query protocol-parameters --mainnet \
-  //      | jq '{txFeeFixed, txFeePerByte, stakePoolDeposit, stakeAddressDeposit, \
-  //             maxValueSize, maxTxSize, utxoCostPerWord, utxoCostPerByte, executionUnitPrices}'
-  // lun 24 apr 2023, 18:48:33, CEST
+  //   | jq '{txFeeFixed, txFeePerByte, stakePoolDeposit, stakeAddressDeposit, maxValueSize, maxTxSize, \
+  //          utxoCostPerWord, utxoCostPerByte, executionUnitPrices, collateralPercentage}'
+  // lun 24 apr 2023, 21:19:33, CEST
   // {
   //   "txFeeFixed": 155381,
   //   "txFeePerByte": 44,
@@ -25995,16 +25997,14 @@ const getTxBuilder = (wasm) => {
   //   "executionUnitPrices": {
   //     "priceMemory": 0.0577,
   //     "priceSteps": 7.21e-05
-  //   }
+  //   },
+  //   "collateralPercentage": 150
+  //   "maxCollateralInputs": 3
   // }
 
-
-  const ex_unit_prices = wasm.ExUnitPrices.from_json({
-    executionUnitPrices: {
-      priceMemory: 0.0577,
-      priceSteps: 7.21e-05
-    }
-  })
+  const ex_unit_prices = wasm.ExUnitPrices.new(
+    wasm.UnitInterval.new(wasm.BigNum.from_str('577'), wasm.BigNum.from_str('10000')),
+    wasm.UnitInterval.new(wasm.BigNum.zero('721'), wasm.BigNum.from_str('10000000')))
   const txBuilderCfgBuilder =
     wasm.TransactionBuilderConfigBuilder.new()
         .fee_algo(wasm.LinearFee.new(
@@ -26016,7 +26016,10 @@ const getTxBuilder = (wasm) => {
         .max_value_size(5000)
         .max_tx_size(16384)
         .coins_per_utxo_byte(wasm.BigNum.from_str('4310'))
-        .ex_unit_prices(ex_unit_prices);
+        .ex_unit_prices(ex_unit_prices)
+        .collateral_percentage(150)
+        .max_collateral_inputs(3)
+        .prefer_pure_change(true);
   const txBuilderCfg = txBuilderCfgBuilder.build();
   txBuilderCfgBuilder.free()
   const txBuilder = wasm.TransactionBuilder.new(txBuilderCfg);
@@ -26025,11 +26028,12 @@ const getTxBuilder = (wasm) => {
 }
 
 const getCerts = (wasm, addr_bech32, pool_bech32) => {
-  const certs = wasm.Certificates.new()
   const cert = getStakeDelegationCertificate(wasm, addr_bech32, pool_bech32)
-  certs.add(cert)
+  const scb = wasm.SingleCertificateBuilder.new(cert)
   cert.free()
-  return certs
+  const cbr = scb.payment_key()
+  scb.free()
+  return cbr
 }
 
 const getUtxos = async (api, wasm) => {
@@ -26079,24 +26083,39 @@ const getUtxosAndChangeAddr = async (api, wasm) => {
   ]).then(r => { return {utxos: r[0], changeAddr: r[1]}})
 }
 
-const getDelegationTx = async (api, wasm, addr_bech32, pool_bech32) => {
+function asHexAndFree(obj) {
+  try {
+    return Buffer.from(obj.to_bytes().buffer).toString('hex')
+  } finally {
+    obj.free()
+  }
+}
+
+const getDelegationTx = async (api, wasm, addr_bech32, pool_bech32, console) => {
   const certs = getCerts(wasm, addr_bech32, pool_bech32)
   const {utxos, changeAddr} = await getUtxosAndChangeAddr(api, wasm)
   const txBuilder = getTxBuilder(wasm)
-  txBuilder.set_certs(certs)
+  txBuilder.add_cert(certs)
   certs.free()
-  txBuilder.add_inputs_from(utxos, wasm.CoinSelectionStrategyCIP2.RandomImprove)
+
+  for (let i = 0; i < utxos.len(); i++) {
+    const utxo = utxos.get(i)
+    const sib = wasm.SingleInputBuilder.new(utxo.input(), utxo.output())
+    const ibr = sib.payment_key()
+    utxo.free()
+    sib.free()
+    txBuilder.add_utxo(ibr)
+    ibr.free()
+  }
   utxos.free()
-  txBuilder.add_change_if_needed(changeAddr)
-  changeAddr.free()
 
-  const _tx = txBuilder.build_tx()
+  txBuilder.select_utxos(wasm.CoinSelectionStrategyCIP2.RandomImprove)
+  const stb = txBuilder.build(wasm.ChangeSelectionAlgo.Default, changeAddr)
   txBuilder.free()
-
-  const tx = Buffer.from(_tx.to_bytes().buffer).toString('hex')
-  _tx.free()
-
-  return tx
+  changeAddr.free()
+  const _tx = stb.build_unchecked()
+  stb.free()
+  return asHexAndFree(_tx)
 }
 
 export const getSignedTx = (wasm, tx_, witset_) => {
@@ -26107,34 +26126,44 @@ export const getSignedTx = (wasm, tx_, witset_) => {
   const auxData = _tx.auxiliary_data()
   _tx.free()
   const _signedTx = wasm.Transaction.new(txBody, tws, auxData)
-  //auxData.free() // don't free this, it is already a nulled ptr
+  if (auxData !== undefined) {
+    //auxData.free() // don't free this, it is already a nulled ptr
+    auxData.free()
+  }
   txBody.free()
   tws.free()
-  const signedTx = Buffer.from(_signedTx.to_bytes().buffer).toString('hex')
-  _signedTx.free()
-  return signedTx
+  return asHexAndFree(_signedTx)
 }
 
-export const getDelegationSignedTx = async (api, wasm, addr_bech32, pool_bech32) => {
-  const tx_ = await getDelegationTx(api, wasm, addr_bech32, pool_bech32)
+export const getDelegationSignedTx = async (api, wasm, addr_bech32, pool_bech32, console) => {
+  const tx_ = await getDelegationTx(api, wasm, addr_bech32, pool_bech32, console)
   const witset_ = await api.signTx(tx_)
   if (witset_ === undefined) {
     throw new Error("ooops !!! This should not happen in getDelegationSignedTx")
   }
-  return getSignedTx(wasm, tx_, witset_)
+  const tws = wasm.TransactionWitnessSet.from_bytes(Buffer.from(witset_, 'hex'))
+  const twsb = wasm.TransactionWitnessSetBuilder.new()
+  twsb.add_existing(tws)
+  tws.free()
+  const tx = wasm.Transaction.from_bytes(Buffer.from(tx_, 'hex'))
+  const stb = wasm.SignedTxBuilder.new_with_data(tx.body(), twsb, true, tx.auxiliary_data())
+  tx.free()
+  twsb.free()
+  signedTx = stb.build()
+  stb.free()
+  return asHexAndFree(signedTx)
 }
 
 export const assembleWitnessSet = (wasm, ...witset_vkey_hexes) => {
-  const vkeys = wasm.Vkeywitnesses.new()
+  const twsb = wasm.TransactionWitnessSetBuilder.new()
   for (let vkey_hex of witset_vkey_hexes) {
-    vkeys.add(wasm.Vkeywitness.from_hex(vkey_hex))
+    const vkey = wasm.Vkeywitness.from_hex(vkey_hex)
+    twsb.add(vkey)
+    vkey.free()
   }
-  const witset_ = wasm.TransactionWitnessSet.new()
-  witset_.set_vkeys(vkeys)
-  vkeys.free()
-  const witset = Buffer.from(witset_.to_bytes().buffer).toString('hex')
-  witset_.free()
-  return witset
+  witset = twsb.build()
+  twsb.free()
+  return asHexAndFree(witset)
 }
 
 export const getUtxoHint = async (api, wasm, allowMultiAsset) => {
