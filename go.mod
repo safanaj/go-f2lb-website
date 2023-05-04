@@ -12,9 +12,9 @@ require (
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/iand/logfmtr v0.2.1
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/safanaj/cardano-go v0.1.19
+	github.com/safanaj/cardano-go v0.1.20
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503
 	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
 	google.golang.org/api v0.88.0
 	google.golang.org/grpc v1.47.0
@@ -58,7 +58,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -66,5 +66,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )
-
-replace github.com/safanaj/cardano-go => /home/marco/src/Mine/cardano-go

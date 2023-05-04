@@ -43,6 +43,9 @@ var (
 	pcPoolInfosToGet  = 50
 	pcRefreshInterval = time.Duration(30 * time.Minute)
 	pcWorkersInterval = time.Duration(1 * time.Minute)
+
+	// koios tip refresh interal
+	koiosTipRefreshInterval = time.Duration(3 * time.Minute)
 )
 
 type Controller interface {
@@ -680,8 +683,7 @@ func (c *controller) Start() error {
 		if _, block, _, err := c.kc.GetTip(); err == nil {
 			c.koiosTipBlockHeightCached = block
 		}
-		// TODO: fixed interval should be an option
-		t := time.NewTicker(3 * time.Minute)
+		t := time.NewTicker(koiosTipRefreshInterval)
 		for {
 			select {
 			case <-cctx.Done():

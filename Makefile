@@ -48,15 +48,24 @@ proto/.built: $(PROTO_SRCS)
 	$(MAKE) build-proto
 	touch $@
 
+PROTOC_GEN_JS_SUPPORT_IMPORT_STYLE_ES6 = 0
+PROTOC_GEN_JS_IMPORT_STYLE_OPT = commonjs
+ifeq ($(shell protoc-gen-js --has-es6-import-style-support 2>/dev/null && echo 1 || echo 0), 1)
+	PROTOC_GEN_JS_SUPPORT_IMPORT_STYLE_ES6 = 1
+	PROTOC_GEN_JS_IMPORT_STYLE_OPT = es6
+endif
+
 build-proto:
 	mkdir -p $(CURDIR)/webui/src/lib/pb
 	cd $(CURDIR)/proto ; protoc *.proto -I. -I/usr/include \
 		--go_out=paths=source_relative:$(CURDIR)/pkg/pb \
 		--go-grpc_out=paths=source_relative:$(CURDIR)/pkg/pb \
-		--js_out=import_style=commonjs,binary:$(CURDIR)/webui/src/lib/pb \
+		--js_out=import_style=$(PROTOC_GEN_JS_IMPORT_STYLE_OPT),binary:$(CURDIR)/webui/src/lib/pb \
 		--ts_out=service=grpc-web,import_style=es6:$(CURDIR)/webui/src/lib/pb
 
+	test $(PROTOC_GEN_JS_SUPPORT_IMPORT_STYLE_ES6) -eq 1 || \
 	for f in $(CURDIR)/webui/src/lib/pb/*_pb.js; do cat $${f} | ./scripts/fix-js-for-es6.py | sponge $${f} ; done
+
 
 webui/node_modules:
 	cd webui ; yarn install

@@ -25,6 +25,10 @@ func AddFlags(fs *flag.FlagSet) {
 	pcFlagSet.IntVar(&pcCacheSyncers, "pool-cache-syncers", pcCacheSyncers, "")
 	pcFlagSet.IntVar(&pcPoolInfosToGet, "pool-info-to-get-in-chunk", pcPoolInfosToGet, "")
 
+	koiosFlagSet := flag.NewFlagSet("koios cache", flag.ExitOnError)
+	koiosFlagSet.DurationVar(&koiosTipRefreshInterval, "koios-tip-refresh-interval", koiosTipRefreshInterval, "")
+
 	fs.AddFlagSet(acFlagSet)
 	fs.AddFlagSet(pcFlagSet)
+	fs.AddFlagSet(koiosFlagSet)
 }

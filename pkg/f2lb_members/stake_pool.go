@@ -222,7 +222,7 @@ func (s *stakePoolSet) Del(key string) StakePool {
 	sp, ok := s.getLocked(key)
 	if ok {
 		delete(s.tickersMap, sp.Ticker())
-		delete(s.tickersMap, sp.MainStakeAddress())
+		delete(s.saddrsMap, sp.MainStakeAddress())
 	}
 	return sp
 }

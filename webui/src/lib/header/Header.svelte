@@ -20,9 +20,27 @@
       return ($cardanoWallet.user||{}).isverified
   }
 
+  const isMemberSPO = () => {
+      return ($cardanoWallet.user||{}).member !== undefined && $cardanoWallet.stakeAddr === (($cardanoWallet.user||{}).member||{}).stakeaddr
+  }
+
   const doRefresh = () => {
       return new Promise((resolve, reject) => {
           $serviceClients.Control.refresh(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(tick)
+  }
+
+  const doRefreshMember = () => {
+      return new Promise((resolve, reject) => {
+          let sa = new StakeAddr()
+          sa.setStakeaddress($cardanoWallet.stakeAddr)
+          $serviceClients.Control.refreshMember(sa, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(tick)
+  }
+
+  const doRefreshAllMembers = () => {
+      return new Promise((resolve, reject) => {
+          $serviceClients.Control.refreshAllMembers(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
       }).then(tick)
   }
 
@@ -32,12 +50,6 @@
           $cardanoWallet.api.signData($cardanoWallet.stakeAddr, Buffer.from($cardanoWallet.stakeAddr).toString('hex'))
               .then(sig => {
                   let asig = new AuthnSignature()
-                  // if (sig.signature.slice(0, 2) !== 'd2') {
-                  //     // on the backend using go-cose, this have to be a tagged cbor
-                  //     asig.setSignature("d2" + sig.signature)
-                  // } else {
-                  //     asig.setSignature(sig.signature)
-                  // }
                   asig.setSignature(sig.signature)
                   asig.setKey(sig.key)
                   asig.setStakeaddress($cardanoWallet.stakeAddr)
@@ -99,7 +111,31 @@
         </li>
         <li>
           {#if isVerified()}
-            <span class="icon is-medium mt-2 mr-1 ml-1"><FaUserCheck /></span>
+            {#if isMemberSPO() || isAdmin()}
+              <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                  <span class="icon is-medium mt-2 mr-1 ml-1" aria-haspopup="true" aria-controls="dropdown-user-check">
+                    <FaUserCheck />
+                  </span>
+                </div>
+                <div class="dropdown-menu" id="dropdown-user-check" role="menu">
+                  <div class="dropdown-content">
+                    {#if isMemberSPO()}
+                      <a href="#" class="dropdown-item" on:click={doRefreshMember}>
+                        Refresh Member
+                      </a>
+                    {/if}
+                    {#if isAdmin()}
+                      <a href="#" class="dropdown-item" on:click={doRefreshAllMembers}>
+                        Refresh All Members
+                      </a>
+                    {/if}
+                  </div>
+                </div>
+              </div>
+            {:else}
+              <span class="icon is-medium mt-2 mr-1 ml-1"><FaUserCheck /></span>
+            {/if}
           {:else if $cardanoWallet.user !== undefined}
             <button class="button" on:click={doAuthnSign}><FaSignature /></button>
           {/if}

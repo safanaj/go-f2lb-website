@@ -31,8 +31,9 @@ type ControlServiceRefresher interface {
 type controlServiceServer struct {
 	UnimplementedControlMsgServiceServer
 
-	ctrl               f2lb_gsheet.Controller
-	refreshCh          chan string
+	ctrl      f2lb_gsheet.Controller
+	refreshCh chan string
+
 	uuid2stream        map[string]ControlMsgService_ControlServer
 	uuid2verifiedAuthn map[string]bool
 
@@ -67,6 +68,24 @@ func (c *controlServiceServer) Refresh(ctx context.Context, unused *emptypb.Empt
 	return unused, nil
 }
 
+func (s *controlServiceServer) RefreshMember(ctx context.Context, member *StakeAddr) (*emptypb.Empty, error) {
+	if sp := s.ctrl.GetStakePoolSet().Get(member.GetStakeAddress()); sp != nil {
+		s.ctrl.GetAccountCache().Add(sp.MainStakeAddress())
+		s.ctrl.GetPoolCache().Add(sp.PoolIdBech32())
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *controlServiceServer) RefreshAllMembers(ctx context.Context, unused *emptypb.Empty) (*emptypb.Empty, error) {
+	for _, sp := range s.ctrl.GetStakePoolSet().StakePools() {
+		go func(saddr, poolid string) {
+			s.ctrl.GetAccountCache().Add(saddr)
+			s.ctrl.GetPoolCache().Add(poolid)
+		}(sp.MainStakeAddress(), sp.PoolIdBech32())
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (s *controlServiceServer) StartRefresher(ctx context.Context) {
 	s.uuid2stream = make(map[string]ControlMsgService_ControlServer)
 	ticker := time.NewTicker(120 * time.Second)
@@ -85,7 +104,7 @@ func (s *controlServiceServer) StartRefresher(ctx context.Context) {
 				if ruuid == "ALL" {
 					s.sendControlMsgToAll(time.Now(), ControlMsg_REFRESH)
 				} else if stream, ok := s.uuid2stream[ruuid]; ok {
-					if err := s.sendControlMsg(stream, time.Now(), ControlMsg_NONE); err != nil {
+					if err := s.sendControlMsg(stream, time.Now(), ControlMsg_NONE, nil); err != nil {
 						delete(s.uuid2stream, ruuid)
 					}
 				} else {
@@ -96,7 +115,7 @@ func (s *controlServiceServer) StartRefresher(ctx context.Context) {
 	}()
 }
 
-func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlServer, t time.Time, cmsgType ControlMsg_Type) error {
+func (s *controlServiceServer) getDataBytesForControlMsg(t time.Time) []byte {
 	tips := map[string]uint32{}
 	for _, sp := range s.ctrl.GetStakePoolSet().StakePools() {
 		if sp.BlockHeight() == 0 {
@@ -122,31 +141,42 @@ func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlSe
 		},
 		"tips": tips,
 	})
+	return dataBytes
+}
+
+func (s *controlServiceServer) sendControlMsg(stream ControlMsgService_ControlServer, t time.Time, cmsgType ControlMsg_Type, data []byte) error {
+	if data == nil {
+		data = s.getDataBytesForControlMsg(t)
+	}
 
 	cmsg := &ControlMsg{
 		Date:  t.Format(time.RFC850),
 		Epoch: fmt.Sprintf("%d", utils.TimeToEpoch(t)),
 		Slot:  fmt.Sprintf("%d", utils.TimeToSlot(t)),
 		Type:  cmsgType,
-		Data:  string(dataBytes),
+		Data:  string(data),
 	}
 	return stream.Send(cmsg)
 }
 
 func (s *controlServiceServer) sendControlMsgToAll(t time.Time, cmsgType ControlMsg_Type) {
 	toDel := []string{}
+	dataBytes := s.getDataBytesForControlMsg(t)
 	for ruuid, stream := range s.uuid2stream {
-		if err := s.sendControlMsg(stream, t, cmsgType); err != nil {
+		if err := s.sendControlMsg(stream, t, cmsgType, dataBytes); err != nil {
 			toDel = append(toDel, ruuid)
 		}
 	}
 	for _, x := range toDel {
 		delete(s.uuid2stream, x)
+		// missing these delete are mem leaks
+		// delete(s.uuid2verifiedAuthn, x)
+		// delete(s.uuid2member, x)
 	}
 }
 
 func (s *controlServiceServer) Control(stream ControlMsgService_ControlServer) error {
-	s.sendControlMsg(stream, time.Now(), ControlMsg_REFRESH)
+	s.sendControlMsg(stream, time.Now(), ControlMsg_REFRESH, nil)
 	ruuid, isOk := stream.Context().Value(webserver.IdCtxKey).(string)
 	if isOk {
 		s.uuid2stream[ruuid] = stream

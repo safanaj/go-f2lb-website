@@ -12,6 +12,8 @@ option go_package = "go-f2lb/pb";
 service ControlMsgService {
   rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
   rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc RefreshMember(StakeAddr) returns (google.protobuf.Empty) {}
+  rpc RefreshAllMembers(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Auth(StakeAddr) returns (User) {}
   rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {}
   rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
