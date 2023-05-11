@@ -26157,7 +26157,7 @@ export const getDelegationSignedTx = async (api, wasm, addr_bech32, pool_bech32,
 export const assembleWitnessSet = (wasm, ...witset_vkey_hexes) => {
   const twsb = wasm.TransactionWitnessSetBuilder.new()
   for (let vkey_hex of witset_vkey_hexes) {
-    const vkey = wasm.Vkeywitness.from_hex(vkey_hex)
+    const vkey = wasm.Vkeywitness.from_bytes(Buffer.from(vkey_hex, 'hex'))
     twsb.add(vkey)
     vkey.free()
   }
