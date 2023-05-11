@@ -26083,7 +26083,7 @@ const getUtxosAndChangeAddr = async (api, wasm) => {
   ]).then(r => { return {utxos: r[0], changeAddr: r[1]}})
 }
 
-function asHexAndFree(obj) {
+export const asHexAndFree = (obj) => {
   try {
     return Buffer.from(obj.to_bytes().buffer).toString('hex')
   } finally {
@@ -26128,7 +26128,6 @@ export const getSignedTx = (wasm, tx_, witset_) => {
   const _signedTx = wasm.Transaction.new(txBody, tws, auxData)
   if (auxData !== undefined) {
     //auxData.free() // don't free this, it is already a nulled ptr
-    auxData.free()
   }
   txBody.free()
   tws.free()
@@ -26158,10 +26157,10 @@ export const assembleWitnessSet = (wasm, ...witset_vkey_hexes) => {
   const twsb = wasm.TransactionWitnessSetBuilder.new()
   for (let vkey_hex of witset_vkey_hexes) {
     const vkey = wasm.Vkeywitness.from_bytes(Buffer.from(vkey_hex, 'hex'))
-    twsb.add(vkey)
+    twsb.add_vkey(vkey)
     vkey.free()
   }
-  witset = twsb.build()
+  const witset = twsb.build()
   twsb.free()
   return asHexAndFree(witset)
 }

@@ -5,6 +5,7 @@
       getSignedTx,
       assembleWitnessSet,
       getUtxoHint,
+      asHexAndFree,
   } from '$lib/cardano/cml.js'
 
   import { Buffer } from 'buffer';
@@ -79,7 +80,7 @@
       // console.log("Got TX_:", tx_.to_json())
       // console.log("Got TX cborhex:", tx.cborhex)
       const txHash = wasm.hash_transaction(tx_.body()).to_hex()
-      const payer_vkey_hex = tx_.witness_set().vkeys().get(0).vkey().public_key().hash().to_hex()
+      const payer_vkey_hex = asHexAndFree(tx_.witness_set().vkeys().get(0))
       tx_.free()
 
       const txId = new TxId()
@@ -91,17 +92,21 @@
   const getSignedTxWithWitnessSet = (tx_hex, payer_vkey_hex, delegator_vkey_hex, tracker_vkey_hex) => {
       if (tracker_vkey_hex === "") {
           const witset = assembleWitnessSet(wasm, payer_vkey_hex, delegator_vkey_hex)
-          return getSignedTx(wasm, tx_hex, witset).catch(err => {
+          try {
+              return getSignedTx(wasm, tx_hex, witset)
+          } catch (err) {
               pageLoaderObj.el.classList.toggle('is-active')
               toastErr(err)
-          })
+          }
 
       } else {
           const witset = assembleWitnessSet(wasm, payer_vkey_hex, delegator_vkey_hex, tracker_vkey_hex)
-          return getSignedTx(wasm, tx_hex, witset).catch(err => {
+          try {
+              return getSignedTx(wasm, tx_hex, witset)
+          } catch(err) {
               pageLoaderObj.el.classList.toggle('is-active')
               toastErr(err)
-          })
+          }
       }
   }
 
@@ -152,9 +157,9 @@
 
       let tracker_vkey_hex = ""
       const tws = wasm.TransactionWitnessSet.from_bytes(Buffer.from(witset, 'hex'))
-      const delegator_vkey_hex = tws.vkeys().get(0).vkey().public_key().hash().to_hex()
+      const delegator_vkey_hex = asHexAndFree(tws.vkeys().get(0))
       if (useHintToKeepTxTrack && tws.vkeys().len() === 2) {
-          tracker_vkey_hex = tws.vkeys().get(1).vkey().public_key().hash().to_hex()
+          tracker_vkey_hex = asHexAndFree(tws.vkeys().get(1))
       }
       tws.free()
 
