@@ -1,4 +1,4 @@
-VERSION ?= 0.4.3-pre.1
+VERSION ?= 0.4.3-pre.2
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = \
@@ -6,7 +6,8 @@ ENVVAR = \
 	CGO_CFLAGS=-I$(CURDIR)/pkg/libsodium/_c_libsodium_built/include \
 	CGO_LDFLAGS=-L$(CURDIR)/pkg/libsodium/_c_libsodium_built
 
-GOOS ?= $(shell go env GOOS) #linux
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
 GO ?= go
 LDFLAGS ?= -s -w
 
@@ -92,7 +93,7 @@ build-go: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built/libso
 
 build-static-go: proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
 	@echo "--> Compiling the static binary"
-	$(ENVVAR) GOARCH=amd64 GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
+	$(ENVVAR) GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
 		-gcflags "-e" \
 		-ldflags "$(LDFLAGS) -extldflags=-static -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
 		-v -o $(COMPONENT) $(SRCS)
@@ -104,6 +105,13 @@ build-go-nomod: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built
 		-v -o $(COMPONENT) $(SRCS)
 
 build: proto/.built build-webui build-go-nomod
+
+static-release: proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
+	@echo "--> Compiling the static binary for release"
+	$(ENVVAR) GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
+		-gcflags "-e" \
+		-ldflags "$(LDFLAGS) -extldflags=-static -X main.version=$(VERSION) -X main.progname=$(COMPONENT)" \
+		-v -o $(COMPONENT)_$(GOOS)_$(GOARCH)_$(VERSION) $(SRCS)
 
 start: build
 	./$(COMPONENT)

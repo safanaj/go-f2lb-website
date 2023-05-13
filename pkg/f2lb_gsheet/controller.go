@@ -18,6 +18,7 @@ import (
 	"github.com/safanaj/go-f2lb/pkg/caches/poolcache"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_members"
 	"github.com/safanaj/go-f2lb/pkg/logging"
+	"github.com/safanaj/go-f2lb/pkg/pinger"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 )
 
@@ -83,6 +84,11 @@ type Controller interface {
 	GetValuesInBatch() ([]*ValueRange, error)
 
 	GetKoiosTipBlockHeight() int
+	GetKoiosTipSlot() int
+
+	GetPinger() pinger.Pinger
+	SetPinger(pinger.Pinger)
+	GetContext() context.Context
 }
 
 type controller struct {
@@ -111,6 +117,9 @@ type controller struct {
 	lastRefreshTime time.Time
 
 	koiosTipBlockHeightCached int
+	koiosTipSlotCached        int
+
+	pinger pinger.Pinger
 }
 
 var _ Controller = &controller{}
@@ -652,6 +661,11 @@ func (c *controller) GetKoiosClient() *koiosutils.KoiosClient { return c.kc }
 func (c *controller) GetLastRefreshTime() time.Time { return c.lastRefreshTime }
 
 func (c *controller) GetKoiosTipBlockHeight() int { return c.koiosTipBlockHeightCached }
+func (c *controller) GetKoiosTipSlot() int        { return c.koiosTipSlotCached }
+
+func (c *controller) GetPinger() pinger.Pinger    { return c.pinger }
+func (c *controller) SetPinger(p pinger.Pinger)   { c.pinger = p }
+func (c *controller) GetContext() context.Context { return c.ctx }
 
 func (c *controller) IsRunning() bool { return c.tick != nil }
 func (c *controller) Start() error {
@@ -680,8 +694,9 @@ func (c *controller) Start() error {
 	octxCancel := c.ctxCancel
 	c.ctxCancel = func() { cctxCancel(); octxCancel() }
 	go func() {
-		if _, block, _, err := c.kc.GetTip(); err == nil {
+		if _, block, slot, err := c.kc.GetTip(); err == nil {
 			c.koiosTipBlockHeightCached = block
+			c.koiosTipSlotCached = slot
 		}
 		t := time.NewTicker(koiosTipRefreshInterval)
 		for {
@@ -689,13 +704,17 @@ func (c *controller) Start() error {
 			case <-cctx.Done():
 				return
 			case <-t.C:
-				if _, block, _, err := c.kc.GetTip(); err == nil {
+				if _, block, slot, err := c.kc.GetTip(); err == nil {
 					c.koiosTipBlockHeightCached = block
+					c.koiosTipSlotCached = slot
 				}
 			}
 		}
 	}()
 
+	if c.pinger != nil && !c.pinger.IsRunning() {
+		c.pinger.Start(c.ctx)
+	}
 	return nil
 }
 
@@ -705,6 +724,9 @@ func (c *controller) Stop() error {
 	c.tick = nil
 	c.accountCache.Stop()
 	c.poolCache.Stop()
+	if c.pinger != nil {
+		c.pinger.Stop()
+	}
 	c.ctxCancel()
 	c.V(2).Info("Controller stopped")
 	return nil

@@ -3,6 +3,7 @@ module github.com/safanaj/go-f2lb
 go 1.18
 
 require (
+	github.com/blinklabs-io/gouroboros v0.38.4
 	github.com/blockfrost/blockfrost-go v0.1.0
 	github.com/cardano-community/koios-go-client/v3 v3.1.2
 	github.com/gin-contrib/gzip v0.0.6
@@ -14,7 +15,7 @@ require (
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/safanaj/cardano-go v0.1.20
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/crypto v0.0.0-20220824171710-5757bc0c5503
+	golang.org/x/crypto v0.8.0
 	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
 	google.golang.org/api v0.88.0
 	google.golang.org/grpc v1.47.0
@@ -42,6 +43,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
+	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.12.3 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
@@ -57,12 +59,14 @@ require (
 	github.com/veraison/go-cose v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.1.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220624142145-8cd45d7dbd1f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )
+
+replace github.com/blinklabs-io/gouroboros v0.38.4 => github.com/safanaj/gouroboros v0.0.0-20230513104126-364f41fb05dd

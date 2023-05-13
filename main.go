@@ -18,6 +18,7 @@ import (
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 	"github.com/safanaj/go-f2lb/pkg/pb"
+	"github.com/safanaj/go-f2lb/pkg/pinger"
 	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 	"github.com/safanaj/go-f2lb/pkg/webserver"
@@ -36,10 +37,12 @@ func addFlags() {
 	ccli.AddFlags(flag.CommandLine)
 	blockfrostutils.AddFlags(flag.CommandLine)
 	txbuilder.AddFlags(flag.CommandLine)
+	pinger.AddFlags(flag.CommandLine)
 }
 
 func main() {
 	showVersion := flag.Bool("version", false, "show version and exit")
+	pingerDisabled := flag.Bool("disable-pinger", false, "")
 	flag.StringVar(&adminPoolsStr, "admin-pools", adminPoolsStr, "Comma separated pools with admin permission")
 	flag.StringVar(&listenAddr, "listen", listenAddr, "IP:PORT or :PORT to listen on all interfaces")
 	addFlags()
@@ -56,6 +59,9 @@ func main() {
 	f2lbCtrl := f2lb_gsheet.NewController(childCtx, log.WithName("f2lbController"))
 	payer, err := txbuilder.NewPayer(childCtx, log.WithName("payer"))
 	utils.CheckErr(err)
+	if !*pingerDisabled {
+		pinger.NewPinger(log.WithName("pinger")).SetController(f2lbCtrl)
+	}
 
 	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl, strings.Split(adminPoolsStr, ","), payer)
 	mainQueueServiceServer := pb.NewMainQueueServiceServer(f2lbCtrl.GetMainQueue(), f2lbCtrl.GetStakePoolSet())

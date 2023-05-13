@@ -128,4 +128,36 @@ func RegisterApiV0(rg *gin.RouterGroup, ctrl f2lb_gsheet.Controller) {
 
 	// block height, check signature and store reported block height by members
 	rg.POST("/report/tip", getReportTipHandler(ctrl))
+
+	rg.GET("/dump.pinger", func(c *gin.Context) {
+		pinger := ctrl.GetPinger()
+		if pinger == nil {
+			c.String(http.StatusNotFound, "pinger unavailable\n")
+			return
+		}
+		c.IndentedJSON(http.StatusOK, pinger.DumpResults())
+	})
+
+	rg.GET("pool/:id/stats", func(c *gin.Context) {
+		pinger := ctrl.GetPinger()
+		spSet := ctrl.GetStakePoolSet()
+
+		uri := struct {
+			PoolId string `uri:"id"`
+		}{}
+		if err := c.BindUri(&uri); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+		sp := spSet.Get(uri.PoolId)
+		if sp == nil {
+			c.String(http.StatusNotFound, "%s unknown pool\n", uri.PoolId)
+			return
+		}
+		if pinger == nil {
+			c.String(http.StatusNotFound, "pinger unavailable\n")
+			return
+		}
+		c.IndentedJSON(http.StatusOK, pinger.GetPoolStats(sp))
+	})
 }
