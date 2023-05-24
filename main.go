@@ -110,7 +110,7 @@ func main() {
 		drg := webSrv.GetGinEngine().Group("/debug")
 		drg.Use(func(c *gin.Context) {
 			if c.Request.Header.Get("SSL-Client-Verify") != "SUCCESS" {
-				c.Status(http.StatusForbidden)
+				c.AbortWithStatus(http.StatusForbidden)
 				return
 			}
 			c.Next()
