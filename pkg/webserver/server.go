@@ -17,14 +17,16 @@ type WebServer interface {
 	GetGrpcServer() *grpc.Server
 	GetGinEngine() *gin.Engine
 	SetPathsForPages(paths, pages []string)
+	GetSessionManager() SessionManager
 }
 
 type webServer struct {
-	srv *http.Server
+	srv    *http.Server
+	smStop context.CancelFunc
 }
 
-func New(addr string, engine *gin.Engine) WebServer {
-	rootHandler := NewRootHandler(engine)
+func New(addr string, engine *gin.Engine, sessionsStoreDir string) WebServer {
+	rootHandler := NewRootHandler(engine, NewSessionManager(sessionsStoreDir))
 	rootHandler.ginHandler.Use(gzip.Gzip(gzip.DefaultCompression))
 	return &webServer{srv: &http.Server{Addr: addr, Handler: rootHandler}}
 }
@@ -33,14 +35,20 @@ func (ws *webServer) Start(setStaticFSForApp bool) error {
 	if setStaticFSForApp {
 		ws.GetGinEngine().StaticFS("/_app", http.FS(appFS))
 	}
+	smCtx, smStop := context.WithCancel(context.Background())
+	ws.smStop = smStop
+	ws.GetSessionManager().Start(smCtx)
 	return ws.srv.ListenAndServe()
 }
 func (ws *webServer) Stop(ctx context.Context) error {
+	ws.smStop()
+	<-ws.GetSessionManager().Done()
 	return ws.srv.Shutdown(ctx)
 }
-func (ws *webServer) getRootHandler() *rootHandler { return ws.srv.Handler.(*rootHandler) }
-func (ws *webServer) GetGrpcServer() *grpc.Server  { return ws.getRootHandler().grpcServer }
-func (ws *webServer) GetGinEngine() *gin.Engine    { return ws.getRootHandler().ginHandler }
+func (ws *webServer) getRootHandler() *rootHandler      { return ws.srv.Handler.(*rootHandler) }
+func (ws *webServer) GetGrpcServer() *grpc.Server       { return ws.getRootHandler().grpcServer }
+func (ws *webServer) GetGinEngine() *gin.Engine         { return ws.getRootHandler().ginHandler }
+func (ws *webServer) GetSessionManager() SessionManager { return ws.getRootHandler().sm }
 func (ws *webServer) SetPathsForPages(paths, pages []string) {
 	contentType := "text/html; charset=utf-8"
 	gh := ws.GetGinEngine() // ws.getRootHandler().ginHandler

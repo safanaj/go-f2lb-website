@@ -13,6 +13,8 @@
   import pooltoolioLogo from '$lib/assets/pooltool_io_logo_blue.svg';
   import rawcardanoappLogo from '$lib/assets/rawcardano_app_logo.png';
 
+  import { serviceClients } from '$lib/stores'
+
   export let member;
   export let shortinfo;
   export let addonqueue;

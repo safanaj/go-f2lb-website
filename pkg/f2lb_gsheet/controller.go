@@ -89,6 +89,8 @@ type Controller interface {
 	GetPinger() pinger.Pinger
 	SetPinger(pinger.Pinger)
 	GetContext() context.Context
+
+	GetCachesStoreDirPath() string
 }
 
 type controller struct {
@@ -663,9 +665,10 @@ func (c *controller) GetLastRefreshTime() time.Time { return c.lastRefreshTime }
 func (c *controller) GetKoiosTipBlockHeight() int { return c.koiosTipBlockHeightCached }
 func (c *controller) GetKoiosTipSlot() int        { return c.koiosTipSlotCached }
 
-func (c *controller) GetPinger() pinger.Pinger    { return c.pinger }
-func (c *controller) SetPinger(p pinger.Pinger)   { c.pinger = p }
-func (c *controller) GetContext() context.Context { return c.ctx }
+func (c *controller) GetPinger() pinger.Pinger      { return c.pinger }
+func (c *controller) SetPinger(p pinger.Pinger)     { c.pinger = p }
+func (c *controller) GetContext() context.Context   { return c.ctx }
+func (c *controller) GetCachesStoreDirPath() string { return cachesStoreDirPath }
 
 func (c *controller) IsRunning() bool { return c.tick != nil }
 func (c *controller) Start() error {

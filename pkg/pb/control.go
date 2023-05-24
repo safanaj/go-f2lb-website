@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	sync "sync"
 	"time"
 
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -17,6 +19,7 @@ import (
 	"github.com/safanaj/cardano-go/crypto"
 
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
+	"github.com/safanaj/go-f2lb/pkg/f2lb_members"
 	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 	"github.com/safanaj/go-f2lb/pkg/webserver"
@@ -34,19 +37,24 @@ type controlServiceServer struct {
 	ctrl      f2lb_gsheet.Controller
 	refreshCh chan string
 
-	uuid2stream        map[string]ControlMsgService_ControlServer
-	uuid2verifiedAuthn map[string]bool
+	uuid2stream map[string]ControlMsgService_ControlServer
+	// uuid2verifiedAuthn map[string]bool
 
 	adminPools map[string]any
 
 	payer *txbuilder.Payer
+
+	sm webserver.SessionManager
 }
 
 var _ ControlMsgServiceServer = &controlServiceServer{}
 var _ ControlServiceRefresher = &controlServiceServer{}
 
-func NewControlServiceServer(c f2lb_gsheet.Controller, adminPools []string, payer *txbuilder.Payer) ControlMsgServiceServer {
-	cs := &controlServiceServer{ctrl: c, adminPools: make(map[string]any), payer: payer}
+func NewControlServiceServer(
+	c f2lb_gsheet.Controller, adminPools []string,
+	payer *txbuilder.Payer, sm webserver.SessionManager,
+) ControlMsgServiceServer {
+	cs := &controlServiceServer{ctrl: c, adminPools: make(map[string]any), payer: payer, sm: sm}
 	for _, p := range adminPools {
 		cs.adminPools[strings.TrimSpace(p)] = struct{}{}
 	}
@@ -61,6 +69,7 @@ func (c *controlServiceServer) GetRefresherChannel() chan string {
 }
 
 func (c *controlServiceServer) Refresh(ctx context.Context, unused *emptypb.Empty) (*emptypb.Empty, error) {
+	c.sm.UpdateExpirationByContext(ctx)
 	c.ctrl.Refresh()
 	if c.payer != nil {
 		c.payer.Refresh()
@@ -69,6 +78,7 @@ func (c *controlServiceServer) Refresh(ctx context.Context, unused *emptypb.Empt
 }
 
 func (s *controlServiceServer) RefreshMember(ctx context.Context, member *StakeAddr) (*emptypb.Empty, error) {
+	s.sm.UpdateExpirationByContext(ctx)
 	if sp := s.ctrl.GetStakePoolSet().Get(member.GetStakeAddress()); sp != nil {
 		s.ctrl.GetAccountCache().Add(sp.MainStakeAddress())
 		s.ctrl.GetPoolCache().Add(sp.PoolIdBech32())
@@ -77,6 +87,7 @@ func (s *controlServiceServer) RefreshMember(ctx context.Context, member *StakeA
 }
 
 func (s *controlServiceServer) RefreshAllMembers(ctx context.Context, unused *emptypb.Empty) (*emptypb.Empty, error) {
+	s.sm.UpdateExpirationByContext(ctx)
 	for _, sp := range s.ctrl.GetStakePoolSet().StakePools() {
 		go func(saddr, poolid string) {
 			s.ctrl.GetAccountCache().Add(saddr)
@@ -197,8 +208,15 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 	}
 
 	user := &User{}
-	if ruuid, isOk := ctx.Value(webserver.IdCtxKey).(string); isOk {
-		user.IsVerified = s.uuid2verifiedAuthn[ruuid]
+	ruuid, isOk := ctx.Value(webserver.IdCtxKey).(string)
+	if isOk {
+		s.sm.UpdateExpiration(ruuid)
+		s.sm.UpdateConnectedWallet(ruuid, saddr_)
+		sd, ok := s.sm.Get(ruuid)
+		// fmt.Printf("Auth: sd: %+v - ok: %t\n", sd, ok)
+		if ok {
+			user.IsVerified = sd.VerifiedAccount != ""
+		}
 	}
 
 	if sp := s.ctrl.GetStakePoolSet().Get(saddr_); sp != nil && sp.Ticker() != "" {
@@ -209,6 +227,7 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 		user.Type = User_SPO
 		user.StakeKey = sp.StakeKeys()[0]
 		user.StakeAddress = sp.MainStakeAddress()
+		s.sm.UpdateMemberAccount(ruuid, user.StakeAddress)
 		user.Member = newMemeberFromStakePool(sp)
 		user.IsAdmin = isAdmin
 		user.DelegatedPool = sp.DelegatedPool()
@@ -246,6 +265,7 @@ func (s *controlServiceServer) Auth(ctx context.Context, saddr *StakeAddr) (*Use
 }
 
 func (s *controlServiceServer) BuildDelegationTx(ctx context.Context, deleg *Delegation) (*PartiallySignedTx, error) {
+	s.sm.UpdateExpirationByContext(ctx)
 	if s.payer == nil {
 		return nil, fmt.Errorf("Payer not available")
 	}
@@ -268,6 +288,7 @@ func (s *controlServiceServer) BuildDelegationTx(ctx context.Context, deleg *Del
 }
 
 func (s *controlServiceServer) CanceledTx(ctx context.Context, txid *TxId) (*emptypb.Empty, error) {
+	s.sm.UpdateExpirationByContext(ctx)
 	if s.payer == nil {
 		return nil, fmt.Errorf("Payer not available")
 	}
@@ -276,6 +297,7 @@ func (s *controlServiceServer) CanceledTx(ctx context.Context, txid *TxId) (*emp
 }
 
 func (s *controlServiceServer) SubmittedTx(ctx context.Context, txid *TxId) (*emptypb.Empty, error) {
+	s.sm.UpdateExpirationByContext(ctx)
 	if s.payer == nil {
 		return nil, fmt.Errorf("Payer not available")
 	}
@@ -288,9 +310,9 @@ func (s *controlServiceServer) Authn(ctx context.Context, asig *AuthnSignature) 
 	if !isOk {
 		return wrapperspb.Bool(false), nil
 	}
-	if s.uuid2verifiedAuthn == nil {
-		s.uuid2verifiedAuthn = make(map[string]bool)
-	}
+	// if s.uuid2verifiedAuthn == nil {
+	// 	s.uuid2verifiedAuthn = make(map[string]bool)
+	// }
 
 	msgToVerify, err := cose.NewCOSESign1MessageFromCBORHex(asig.GetSignature())
 	if err != nil {
@@ -329,8 +351,102 @@ func (s *controlServiceServer) Authn(ctx context.Context, asig *AuthnSignature) 
 	if err := msgToVerify.Verify(nil, verifier); err != nil {
 		return wrapperspb.Bool(false), err
 	}
+	s.sm.UpdateExpiration(ruuid)
+	s.sm.UpdateVerifiedAccount(ruuid, stakeAddr.Bech32())
+	// s.uuid2verifiedAuthn[ruuid] = true
 
-	s.uuid2verifiedAuthn[ruuid] = true
+	// {
+	// 	sd, ok := s.sm.Get(ruuid)
+	// 	fmt.Printf("Authn done: sd: %+v - ok: %t\n", sd, ok)
+	// }
+
 	s.refreshCh <- ruuid
 	return wrapperspb.Bool(true), nil
+}
+
+func (s *controlServiceServer) Logout(ctx context.Context, unused *emptypb.Empty) (*emptypb.Empty, error) {
+	s.sm.DeleteByContext(ctx)
+	return unused, nil
+}
+
+func (s *controlServiceServer) CheckAllPools(ctx context.Context, unused *emptypb.Empty) (*emptypb.Empty, error) {
+	sd, ok := s.sm.GetByContext(ctx)
+	if !ok {
+		return unused, fmt.Errorf("No session")
+	}
+	s.sm.UpdateExpirationByContext(ctx)
+	if sd.VerifiedAccount == "" {
+		return unused, fmt.Errorf("Not verified")
+	}
+
+	if sp := s.ctrl.GetStakePoolSet().Get(sd.VerifiedAccount); sp != nil && sp.Ticker() != "" {
+		if _, isAdmin := s.adminPools[sp.Ticker()]; !isAdmin {
+			return unused, fmt.Errorf("Not an admin, not allowed")
+		}
+	} else {
+		return unused, fmt.Errorf("Not a member, not allowed")
+	}
+
+	p := s.ctrl.GetPinger()
+	wg := &sync.WaitGroup{}
+	for _, sp := range s.ctrl.GetStakePoolSet().StakePools() {
+		wg.Add(1)
+		go func(sp f2lb_members.StakePool) {
+			defer wg.Done()
+			p.CheckPool(sp)
+		}(sp)
+	}
+	wg.Wait()
+
+	return unused, nil
+}
+
+func (s *controlServiceServer) CheckPool(ctx context.Context, pid *PoolBech32Id) (*PoolStats, error) {
+	sd, ok := s.sm.GetByContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("No session")
+	}
+	s.sm.UpdateExpirationByContext(ctx)
+	if sd.VerifiedAccount == "" {
+		return nil, fmt.Errorf("Not verified")
+	}
+	if sd.MemberAccount == "" {
+		return nil, fmt.Errorf("Not connected")
+	}
+	if pid.GetId() == "" {
+		return nil, fmt.Errorf("Invalid Pool Id")
+	}
+
+	sp := s.ctrl.GetStakePoolSet().Get(sd.MemberAccount)
+	if sp == nil || sp.PoolIdBech32() != pid.GetId() {
+		return nil, fmt.Errorf("Not the member owner of the pool, not allowed")
+	}
+
+	ps := s.ctrl.GetPinger().CheckPool(sp)
+
+	poolStats := &PoolStats{
+		HasErrors: ps.HasErrors(),
+		Up:        ps.UpAndResponsive(),
+		InSync:    ps.InSync().String(),
+	}
+
+	for _, e := range ps.Errors() {
+		poolStats.Errors = append(poolStats.Errors, e.Error())
+	}
+
+	for tgt, stats := range ps.RelayStats() {
+		rs := &RelayStats{
+			Target:       tgt,
+			ResponseTime: durationpb.New(stats.ResponseTime()),
+			Status:       stats.Status().String(),
+			Tip:          uint32(stats.Tip()),
+			InSync:       stats.InSync().String(),
+		}
+		if stats.Error() != nil {
+			rs.Error = stats.Error().Error()
+		}
+		poolStats.Relays = append(poolStats.Relays, rs)
+	}
+
+	return poolStats, nil
 }

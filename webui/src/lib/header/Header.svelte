@@ -3,8 +3,10 @@
   import { page } from '$app/stores';
   import f2lbLogo from '$lib/assets/f2lb_small.png';
   import {Empty} from "google-protobuf/google/protobuf/empty_pb";
+  import { toast } from 'bulma-toast'
+  import { Buffer } from 'buffer';
 
-  import {AuthnSignature,StakeAddr} from '$lib/pb/control_pb.js'
+  import {AuthnSignature,StakeAddr,PoolBech32Id} from '$lib/pb/control_pb.js'
   import { serviceClients, cardanoWallet, theme } from '$lib/stores'
   import CardanoConnect from '$lib/cardano/CardanoConnect.svelte';
 
@@ -22,6 +24,14 @@
 
   const isMemberSPO = () => {
       return ($cardanoWallet.user||{}).member !== undefined && $cardanoWallet.stakeAddr === (($cardanoWallet.user||{}).member||{}).stakeaddr
+  }
+
+  const refreshUser = () => {
+      let sa = new StakeAddr()
+      sa.setStakeaddress($cardanoWallet.stakeAddr)
+      new Promise((resolve, reject) => {
+          $serviceClients.Control.auth(sa, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(u => u.toObject()).then(user => cardanoWallet.set({...$cardanoWallet, user}))
   }
 
   const doRefresh = () => {
@@ -44,6 +54,53 @@
       }).then(tick)
   }
 
+  const doCheckPool = () => {
+      return new Promise((resolve, reject) => {
+          let pool = new PoolBech32Id()
+          pool.setId($cardanoWallet.user.member.poolidbech32)
+          $serviceClients.Control.checkPool(pool, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(r => {
+          console.log("PoolStats", r.toObject())
+          toast({
+              message: `pool ${$cardanoWallet.user.member.ticker} checked`,
+              position: "top-center",
+              duration: 5000,
+              dismissible: true,
+              type: 'is-success',
+          })
+      }).then(tick).catch(err => toast({
+          message: err.toString(),
+          position: "top-center",
+          duration: 5000,
+          dismissible: true,
+          type: 'is-danger',
+      }))
+  }
+
+  const doCheckAllPools = () => {
+      return new Promise((resolve, reject) => {
+          $serviceClients.Control.checkAllPools(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(toast({
+          message: `All pools checked`,
+          position: "top-center",
+          duration: 5000,
+          dismissible: true,
+          type: 'is-success',
+      })).then(tick).catch(err => toast({
+          message: err.toString(),
+          position: "top-center",
+          duration: 5000,
+          dismissible: true,
+          type: 'is-danger',
+      }))
+  }
+
+  const doLogout = () => {
+      return new Promise((resolve, reject) => {
+          $serviceClients.Control.logout(new Empty(), (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+      }).then(refreshUser).then(tick)
+  }
+
   let authnVerified = isVerified()
   const doAuthnSign = () => {
       return new Promise((resolve, reject) => {
@@ -55,16 +112,7 @@
                   asig.setStakeaddress($cardanoWallet.stakeAddr)
                   $serviceClients.Control.authn(asig, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
               })
-      }).then(res => res.toObject().value).then(verified => {
-          if (verified) {
-              let sa = new StakeAddr()
-              sa.setStakeaddress($cardanoWallet.stakeAddr)
-              new Promise((resolve, reject) => {
-                  $serviceClients.Control.auth(sa, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
-              }).then(u => u.toObject()).then(user => cardanoWallet.set({...$cardanoWallet, user})).then(() => authnVerified = isVerified())
-          }
-          return verified
-      }).then(tick).catch(console.log)
+      }).then(refreshUser).then(tick).catch(console.log)
   }
 
   const switchTheme = () => {
@@ -111,7 +159,7 @@
         </li>
         <li>
           {#if isVerified()}
-            {#if isMemberSPO() || isAdmin()}
+            <!-- {#if isMemberSPO() || isAdmin()} -->
               <div class="dropdown is-hoverable">
                 <div class="dropdown-trigger">
                   <span class="icon is-medium mt-2 mr-1 ml-1" aria-haspopup="true" aria-controls="dropdown-user-check">
@@ -124,18 +172,28 @@
                       <a href="#" class="dropdown-item" on:click={doRefreshMember}>
                         Refresh Member
                       </a>
+                      <a href="#" class="dropdown-item" on:click={doCheckPool}>
+                        Check Pool {$cardanoWallet.user.member.ticker}
+                      </a>
                     {/if}
                     {#if isAdmin()}
                       <a href="#" class="dropdown-item" on:click={doRefreshAllMembers}>
                         Refresh All Members
                       </a>
+                      <a href="#" class="dropdown-item" on:click={doCheckAllPools}>
+                        Check All Pools
+                      </a>
                     {/if}
+                    <hr />
+                    <a href="#" class="dropdown-item" on:click={doLogout}>
+                      Logout
+                    </a>
                   </div>
                 </div>
               </div>
-            {:else}
-              <span class="icon is-medium mt-2 mr-1 ml-1"><FaUserCheck /></span>
-            {/if}
+            <!-- {:else} -->
+            <!--   <span class="icon is-medium mt-2 mr-1 ml-1"><FaUserCheck /></span> -->
+            <!-- {/if} -->
           {:else if $cardanoWallet.user !== undefined}
             <button class="button" on:click={doAuthnSign}><FaSignature /></button>
           {/if}
@@ -264,6 +322,11 @@
         text-decoration: none;
         transition: color 0.2s linear;
     }
+
+    nav div.dropdown-content a {
+        text-transform: none;
+    }
+
 
     a:hover {
         color: var(--accent-color);

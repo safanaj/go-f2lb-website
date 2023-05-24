@@ -362,7 +362,7 @@ func (p *pinger) checkTarget(target string) RelayStat {
 	// ctx, ctxDone := context.WithTimeout(p.ctx, time.Minute)
 	// defer ctxDone()
 
-	conn, err := (&net.Dialer{Timeout: time.Second}).DialContext(p.ctx, "tcp", target)
+	conn, err := (&net.Dialer{Timeout: p.connectTimeout}).DialContext(p.ctx, "tcp", target)
 	if err != nil {
 		return RelayStat{Error: err}
 	}
@@ -376,7 +376,7 @@ func (p *pinger) checkTarget(target string) RelayStat {
 		ouroboros.WithKeepAlive(true),
 		ouroboros.WithKeepAliveConfig(
 			keepalive.NewConfig(
-				keepalive.WithTimeout(time.Second),
+				keepalive.WithTimeout(p.keepaliveTimeout),
 				keepalive.WithPeriod(maxDuration),
 				keepalive.WithKeepAliveResponseFunc(func(c uint16) error {
 					if c != cookie {
@@ -445,6 +445,8 @@ func (p *pinger) checkTarget(target string) RelayStat {
 	}
 	if counting > 0 {
 		stats.meanT = sumT / time.Duration(counting)
+	} else {
+		stats.meanT = sumT
 	}
 
 	st := RelayDown
@@ -456,8 +458,8 @@ func (p *pinger) checkTarget(target string) RelayStat {
 		}
 	}
 
-	rs := RelayStat{Status: st}
-	p.V(5).Info("checkTarget", "target", target, "msg", "after pings", "stats", rs, "alsoTip", p.checkAlsoTip)
+	rs := RelayStat{ResponseTime: stats.meanT, Status: st}
+	p.V(5).Info("checkTarget", "target", target, "msg", "after pings", "relaystat", rs, "alsoTip", p.checkAlsoTip, "stats", stats)
 
 	if p.checkAlsoTip {
 		tip, err := o.ChainSync().Client.GetCurrentTip()

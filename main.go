@@ -68,7 +68,9 @@ func main() {
 		pinger.NewPinger(log.WithName("pinger")).SetController(f2lbCtrl)
 	}
 
-	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl, strings.Split(adminPoolsStr, ","), payer)
+	webSrv := webserver.New(listenAddr, nil, f2lbCtrl.GetCachesStoreDirPath())
+
+	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl, strings.Split(adminPoolsStr, ","), payer, webSrv.GetSessionManager())
 	mainQueueServiceServer := pb.NewMainQueueServiceServer(f2lbCtrl.GetMainQueue(), f2lbCtrl.GetStakePoolSet())
 	addonQueueServiceServer := pb.NewAddonQueueServiceServer(f2lbCtrl.GetAddonQueue(), f2lbCtrl.GetStakePoolSet())
 	supportersServiceServer := pb.NewSupporterServiceServer(f2lbCtrl.GetSupporters())
@@ -85,7 +87,6 @@ func main() {
 	}
 	log.V(1).Info("Controller started", "in", time.Since(startControllerAt).String())
 
-	webSrv := webserver.New(listenAddr, nil)
 	webserver.SetRootFS(rootFS)
 
 	pb.RegisterControlMsgServiceServer(webSrv.GetGrpcServer(), controlServiceServer)

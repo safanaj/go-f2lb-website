@@ -4,6 +4,7 @@ package pb;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/duration.proto";
 import "members.proto";
 import "supporters.proto";
 
@@ -19,6 +20,9 @@ service ControlMsgService {
   rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
   rpc CanceledTx(TxId) returns (google.protobuf.Empty) {}
   rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
+  rpc CheckPool(PoolBech32Id) returns (PoolStats) {}
+  rpc CheckAllPools(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
 message ControlMsg {
@@ -75,4 +79,26 @@ message AuthnSignature {
   string stakeAddress = 1;
   string signature = 2;
   string key = 3;
+}
+
+// Pinger check
+message PoolBech32Id {
+  string id = 1;
+}
+
+message RelayStats {
+  string target = 1;
+  google.protobuf.Duration responseTime = 2;
+  string status = 3;
+  uint32 tip = 4;
+  string inSync = 5;
+  string error = 6;
+}
+
+message PoolStats {
+  repeated RelayStats relays = 1;
+  bool hasErrors = 2;
+  repeated string errors = 3;
+  bool up = 4;
+  string inSync = 5;
 }

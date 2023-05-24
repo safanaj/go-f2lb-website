@@ -3,6 +3,7 @@ package pinger
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 type (
@@ -49,10 +50,11 @@ func (x RelayInSyncStatus) String() string {
 type (
 	RelayStats []RelayStat
 	RelayStat  struct {
-		Status RelayStatus
-		Tip    int
-		InSync RelayInSyncStatus
-		Error  error
+		ResponseTime time.Duration
+		Status       RelayStatus
+		Tip          int
+		InSync       RelayInSyncStatus
+		Error        error
 	}
 
 	poolStats struct {
@@ -65,9 +67,22 @@ var (
 	_ PoolStats = &poolStats{}
 )
 
-func (rs RelayStats) last() RelayStat  { return rs[len(rs)-1] }
+func (rs RelayStats) last() RelayStat { return rs[len(rs)-1] }
+func (rs RelayStats) lastOrEmpty() RelayStat {
+	if len(rs) > 0 {
+		return rs[len(rs)-1]
+	} else {
+		return RelayStat{}
+	}
+}
 func (rs RelayStats) first() RelayStat { return rs[0] }
 func (rs RelayStats) empty() bool      { return len(rs) == 0 }
+
+func (rs RelayStats) ResponseTime() time.Duration { return rs.lastOrEmpty().ResponseTime }
+func (rs RelayStats) Status() RelayStatus         { return rs.lastOrEmpty().Status }
+func (rs RelayStats) Tip() int                    { return rs.lastOrEmpty().Tip }
+func (rs RelayStats) InSync() RelayInSyncStatus   { return rs.lastOrEmpty().InSync }
+func (rs RelayStats) Error() error                { return rs.lastOrEmpty().Error }
 
 func (rs RelayStats) MarshalJSON() ([]byte, error) {
 	if rs.empty() {
@@ -79,10 +94,12 @@ func (rs RelayStats) MarshalJSON() ([]byte, error) {
 		}{Error: rs.last().Error.Error()})
 	}
 	return json.Marshal(struct {
-		Status          string `json:"status"`
-		UpAndResponsive bool   `json:"up_and_responsive"`
-		InSync          string `json:"in_sync"`
+		ResponseTime    time.Duration `json:"response_time_ns"`
+		Status          string        `json:"status"`
+		UpAndResponsive bool          `json:"up_and_responsive"`
+		InSync          string        `json:"in_sync"`
 	}{
+		ResponseTime:    rs.last().ResponseTime,
 		Status:          rs.last().Status.String(),
 		UpAndResponsive: rs.last().Status == RelayUp,
 		InSync:          rs.last().InSync.String(),
