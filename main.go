@@ -7,6 +7,11 @@ import (
 
 	flag "github.com/spf13/pflag"
 
+	"net/http"
+	"net/http/pprof"
+
+	"github.com/gin-gonic/gin"
+
 	// "net/http"
 	"os"
 	"strings"
@@ -100,18 +105,47 @@ func main() {
 	//webSrv.SetPathsForPages(append(paths, "/favicon.svg"), append(pages, "favicon.svg"))
 	webSrv.SetPathsForPages(paths, pages)
 
+	{
+		drg := webSrv.GetGinEngine().Group("/debug")
+		drg.Use(func(c *gin.Context) {
+			if c.Request.Header.Get("SSL-Client-Verify") != "SUCCESS" {
+				c.Status(http.StatusForbidden)
+				return
+			}
+			c.Next()
+		})
+		drg.GET("/", gin.WrapF(pprof.Index))
+		drg.GET("/cmdline", gin.WrapF(pprof.Cmdline))
+		drg.GET("/profile", gin.WrapF(pprof.Profile))
+		drg.POST("/symbol", gin.WrapF(pprof.Symbol))
+		drg.GET("/symbol", gin.WrapF(pprof.Symbol))
+		drg.GET("/trace", gin.WrapF(pprof.Trace))
+		drg.GET("/allocs", gin.WrapH(pprof.Handler("allocs")))
+		drg.GET("/block", gin.WrapH(pprof.Handler("block")))
+		drg.GET("/goroutine", gin.WrapH(pprof.Handler("goroutine")))
+		drg.GET("/heap", gin.WrapH(pprof.Handler("heap")))
+		drg.GET("/mutex", gin.WrapH(pprof.Handler("mutex")))
+		drg.GET("/threadcreate", gin.WrapH(pprof.Handler("threadcreate")))
+	}
+
 	log.Info("Starting Web Server", "in", time.Since(startControllerAt).String())
 	go func() {
-		if err := webSrv.Start(true); err != nil {
+		if err := webSrv.Start(true); err != nil && err != http.ErrServerClosed {
 			log.Error(err, "webserver")
-			os.Exit(1)
+			// os.Exit(1)
 		}
 	}()
 
 	go func() {
 		<-webCtx.Done()
 		f2lbCtrl.Stop()
-		webSrv.Stop(childCtx)
+		stopWebCtx, stopWebCtxDone := context.WithTimeout(childCtx, 5*time.Second)
+		defer stopWebCtxDone()
+		go func() {
+			webSrv.Stop(stopWebCtx)
+			stopWebCtxDone()
+		}()
+		<-stopWebCtx.Done()
 		log.V(2).Info("Server shutdown done, going to close ...")
 		childCtxCancel()
 		time.Sleep(1 * time.Second)
