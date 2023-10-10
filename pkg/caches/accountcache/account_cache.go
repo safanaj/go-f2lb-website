@@ -40,6 +40,7 @@ type (
 		Ready() bool
 		WaitReady(time.Duration) bool
 		IsRunning() bool
+		RefreshMember(string) error
 		Refresh()
 		Start()
 		Stop()
@@ -69,6 +70,7 @@ type accountInfo struct {
 	status                string
 	// deprecated on koios v2
 	//lastDelegationTime    time.Time
+	storeDone chan struct{}
 }
 
 var (
@@ -170,12 +172,21 @@ func (ac *accountCache) cacheSyncer() {
 			}
 			maybeNotifyWaiter(ac)
 		case *accountInfo:
+			storeDone := v.storeDone
+			v.storeDone = nil
 			// add to cache
 			if _, loaded := ac.cache.LoadOrStore(v.stakeAddress, v); loaded {
 				ac.cache.Store(v.stakeAddress, v)
 			} else {
 				atomic.AddUint32(&ac.nitems, uint32(1))
 				ac.V(2).Info("cache syncer added", "item", v.stakeAddress, "now len", ac.Len())
+			}
+			if storeDone != nil {
+				select {
+				case <-storeDone:
+				default:
+					close(storeDone)
+				}
 			}
 			maybeNotifyWaiter(ac)
 		}
@@ -320,6 +331,32 @@ func (c *accountCache) accountsInfosGetter(end context.Context) {
 			}
 		}
 	}()
+}
+
+func (ac *accountCache) RefreshMember(saddr string) error {
+	ac.V(3).Info("GetStakeAddressesInfos: Processing stake addresses", "saddr", saddr)
+	sa2ai, err := ac.kc.GetStakeAddressesInfos(saddr)
+	if err != nil {
+		return err
+	}
+	ac.V(3).Info("GetStakeAddressesInfos: Got sa2ai", "len", len(sa2ai), "saddr", saddr)
+	if len(sa2ai) == 0 {
+		return fmt.Errorf("RefreshMember: member %q not found", saddr)
+	}
+	for _, ai := range sa2ai {
+		ac.V(4).Info("GetStakeAddressesInfos (sa2ai): Forwarding accountInfo",
+			"stakeAddress", ai.Bech32, "delegated pool", ai.DelegatedPool, "amount", ai.TotalAda, "status", ai.Status)
+		aInfo := &accountInfo{
+			stakeAddress:          ai.Bech32,
+			delegatedPoolIdBech32: ai.DelegatedPool,
+			adaAmount:             uint64(ai.TotalAda),
+			status:                ai.Status,
+			storeDone:             make(chan struct{}),
+		}
+		ac.infoCh <- aInfo
+		<-aInfo.storeDone
+	}
+	return nil
 }
 
 // deprecated on koios v2

@@ -77,13 +77,19 @@ func (c *controlServiceServer) Refresh(ctx context.Context, unused *emptypb.Empt
 	return unused, nil
 }
 
-func (s *controlServiceServer) RefreshMember(ctx context.Context, member *StakeAddr) (*emptypb.Empty, error) {
+func (s *controlServiceServer) RefreshMember(ctx context.Context, member *StakeAddr) (*MemberOrEmpty, error) {
 	s.sm.UpdateExpirationByContext(ctx)
 	if sp := s.ctrl.GetStakePoolSet().Get(member.GetStakeAddress()); sp != nil {
 		s.ctrl.GetAccountCache().Add(sp.MainStakeAddress())
 		s.ctrl.GetPoolCache().Add(sp.PoolIdBech32())
+
+		if err := s.ctrl.GetAccountCache().RefreshMember(sp.MainStakeAddress()); err != nil {
+			return nil, err
+		}
+		sp = s.ctrl.GetStakePoolSet().Get(member.GetStakeAddress())
+		return &MemberOrEmpty{MemberOrEmpty: &MemberOrEmpty_Member{Member: newMemeberFromStakePool(sp)}}, nil
 	}
-	return &emptypb.Empty{}, nil
+	return &MemberOrEmpty{MemberOrEmpty: &MemberOrEmpty_Empty{}}, nil
 }
 
 func (s *controlServiceServer) RefreshAllMembers(ctx context.Context, unused *emptypb.Empty) (*emptypb.Empty, error) {

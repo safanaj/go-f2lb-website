@@ -7,7 +7,7 @@
   import { Buffer } from 'buffer';
 
   import {AuthnSignature,StakeAddr,PoolBech32Id} from '$lib/pb/control_pb.js'
-  import { serviceClients, cardanoWallet, theme } from '$lib/stores'
+  import { serviceClients, cardanoWallet, theme, mainQueueMembers, addonQueueMembers } from '$lib/stores'
   import CardanoConnect from '$lib/cardano/CardanoConnect.svelte';
 
   // import FaMoon from 'svelte-icons/fa/FaMoon.svelte'
@@ -45,7 +45,51 @@
           let sa = new StakeAddr()
           sa.setStakeaddress($cardanoWallet.stakeAddr)
           $serviceClients.Control.refreshMember(sa, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
-      }).then(tick)
+      }).then(r => {
+          if (r.hasEmpty()) {
+              console.log("refresh member: stake address not found")
+              toast({
+                  message: "Unexpected Error: member not found",
+                  position: "top-center",
+                  duration: 5000,
+                  dismissible: true,
+                  type: 'is-danger',
+              })
+          } else {
+              console.log(`refresh member: going to store updated info for ${r.getMember().getTicker()}`)
+              let member = r.getMember()
+              let foundInMQ = false
+              let foundInAQ = false
+              // let newMainQMembers, newAddonQMembers = [], [];
+              $mainQueueMembers.forEach((m, i, a) => {
+                  if (m.ticker == member.getTicker()) {
+                      foundInMQ = true
+                      a[i] = member.toObject()
+                  }
+              })
+              if (foundInMQ) {
+                  mainQueueMembers.set($mainQueueMembers)
+              }
+              $addonQueueMembers.forEach((m, i) => {
+                  if (m.ticker == member.getTicker()) {
+                      foundInAQ = true
+                      this[i] = member.toObject()
+                  }
+              }, $addonQueueMembers)
+              if (foundInAQ) {
+                  addonQueueMembers.set($addonQueueMembers)
+              }
+              if (foundInAQ || foundInMQ) {
+                  toast({
+                      message: `pool ${member.getTicker()} refreshed`,
+                      position: "top-center",
+                      duration: 5000,
+                      dismissible: true,
+                      type: 'is-success',
+                  })
+              }
+          }
+      }).then(tick).catch(console.log)
   }
 
   const doRefreshAllMembers = () => {

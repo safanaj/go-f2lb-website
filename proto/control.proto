@@ -13,7 +13,7 @@ option go_package = "go-f2lb/pb";
 service ControlMsgService {
   rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
   rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-  rpc RefreshMember(StakeAddr) returns (google.protobuf.Empty) {}
+  rpc RefreshMember(StakeAddr) returns (MemberOrEmpty) {}
   rpc RefreshAllMembers(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Auth(StakeAddr) returns (User) {}
   rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {}
@@ -101,4 +101,12 @@ message PoolStats {
   repeated string errors = 3;
   bool up = 4;
   string inSync = 5;
+}
+
+// on-demand refresh member
+message MemberOrEmpty {
+  oneof member_or_empty {
+    Member member = 1;
+    google.protobuf.Empty empty = 2;
+  }
 }
