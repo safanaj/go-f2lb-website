@@ -144,6 +144,7 @@
   <span class="is-pulled-right"><a href="https://github.com/safanaj/go-f2lb-website.git">source code</span>
   <!-- svelte-ignore missing-declaration -->
   <span class="is-pulled-left">version: {__APP_VERSION__}</span>
+  <p><a href="/swagger/index.html">swagger</a></p>
 </footer>
 
 <style>

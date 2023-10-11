@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package pb;
 
+import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/duration.proto";
@@ -13,14 +14,23 @@ option go_package = "go-f2lb/pb";
 service ControlMsgService {
   rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
   rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-  rpc RefreshMember(StakeAddr) returns (MemberOrEmpty) {}
+  rpc RefreshMember(StakeAddr) returns (MemberOrEmpty) {
+    // option (google.api.http) = {
+    //   post: "/api/v1/refresh-member"
+    //   body: "stakeAddress"
+    // };
+  }
   rpc RefreshAllMembers(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Auth(StakeAddr) returns (User) {}
   rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {}
   rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
   rpc CanceledTx(TxId) returns (google.protobuf.Empty) {}
   rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
-  rpc CheckPool(PoolBech32Id) returns (PoolStats) {}
+  rpc CheckPool(PoolBech32Id) returns (PoolStats) {
+    // option (google.api.http) = {
+    //   get: "/api/v1/pool/{id}/stats"
+    // };
+  }
   rpc CheckAllPools(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }

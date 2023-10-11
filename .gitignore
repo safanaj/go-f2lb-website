@@ -3,6 +3,9 @@ go-f2lb-website
 vendor
 proto/.built
 pkg/pb/*.pb.go
+pkg/pb/*.pb.gw.go
+pkg/pb/google
+pkg/pb/openapiv2
 
 webui/node_modules
 webui/.svelte-kit

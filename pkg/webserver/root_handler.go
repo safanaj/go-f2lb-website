@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	gwruntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"google.golang.org/grpc"
 
@@ -17,6 +18,7 @@ type rootHandler struct {
 	ginHandler     *gin.Engine
 	grpcwebHandler *grpcweb.WrappedGrpcServer
 	grpcServer     *grpc.Server
+	grpcGw         *gwruntime.ServeMux
 	sm             SessionManager
 }
 
@@ -27,50 +29,78 @@ const IdKey = "ruuid"
 var IdCtxKey = &ctxKey{name: "id"}
 var log logging.Logger
 
+func sessionInHeaderAndCookieMiddleware(sm SessionManager) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		var (
+			sid string
+			sd  SessionData
+		)
+		req := c.Request
+		w := c.Writer
+		ruuid := c.GetHeader("x-session-ruuid")
+		idCookie, err := req.Cookie(IdKey)
+		if ruuid != "" {
+			if sdata, ok := sm.Get(ruuid); ok {
+				sid = ruuid
+				sd = sdata
+			}
+		}
+		if sid == "" {
+			if err == http.ErrNoCookie {
+				sid, sd = sm.Session()
+			} else if sdata, ok := sm.Get(idCookie.Value); ok {
+				sid = idCookie.Value
+				sd = sdata
+				idCookie.Expires = sd.Expires
+			} else {
+				// the cookie is there but is not a valid session, clear it on the client
+				idCookie.MaxAge = -1
+			}
+		}
+
+		if sid != "" {
+			idCookie = &http.Cookie{Name: IdKey, Value: sid, Expires: sd.Expires}
+			c.Header("x-session-ruuid", sid)
+		}
+		// reset Cookie Path to avoid waste storage for duplicated cookie
+		idCookie.Path = "/"
+		idCookie.Secure = true
+		http.SetCookie(w, idCookie)
+
+		c.Request = req.WithContext(context.WithValue(req.Context(), IdCtxKey, idCookie.Value))
+		c.Next()
+	}
+}
+
 func NewRootHandler(engine *gin.Engine, sm SessionManager) *rootHandler {
 	log = logging.GetLogger()
 	grpcServer := grpc.NewServer()
+	grpcGw := gwruntime.NewServeMux()
 	wrappedServer := grpcweb.WrapServer(grpcServer, grpcweb.WithWebsockets(true))
 	if engine == nil {
 		engine = gin.Default()
 	}
+	engine.Use(sessionInHeaderAndCookieMiddleware(sm))
+
 	return &rootHandler{
 		ginHandler:     engine,
 		grpcwebHandler: wrappedServer,
 		grpcServer:     grpcServer,
+		grpcGw:         grpcGw,
 		sm:             sm,
 	}
 }
 
 func (h *rootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	contentType := req.Header.Get("Content-Type")
-	upgrade := req.Header.Get("Upgrade")
-	wsProtocol := req.Header.Get("Sec-Websocket-Protocol")
-	idCookie, err := req.Cookie(IdKey)
-	if err == http.ErrNoCookie {
-		sid, sd := h.sm.Session()
-		idCookie = &http.Cookie{Name: IdKey, Value: sid, Expires: sd.Expires}
-	} else if sd, ok := h.sm.Get(idCookie.Value); ok {
-		idCookie.Expires = sd.Expires
-	} else {
-		// the cookie is there but is not a valid session, clear it on the client
-		idCookie.MaxAge = -1
-	}
-	// reset Cookie Path to avoid waste storage for duplicated cookie
-	idCookie.Path = "/"
-	idCookie.Secure = true
-	http.SetCookie(w, idCookie)
-	rctx := context.WithValue(req.Context(), IdCtxKey, idCookie.Value)
 	if h.grpcwebHandler.IsGrpcWebRequest(req) ||
 		h.grpcwebHandler.IsAcceptableGrpcCorsRequest(req) ||
-		contentType == "application/grpc-web+proto" ||
-		(upgrade == "websocket" && wsProtocol == "grpc-websockets") {
+		h.grpcwebHandler.IsGrpcWebSocketRequest(req) ||
+		contentType == "application/grpc-web+proto" {
 		log.Info("A content for GRPC-Web", "proto", req.Proto, "method", req.Method, "path", req.URL.Path)
-		h.grpcwebHandler.ServeHTTP(w, req.WithContext(rctx))
+		h.grpcwebHandler.ServeHTTP(w, req)
 		return
 	}
-	// log.Printf("A content for Gin: %s %s %s", req.Proto, req.Method, req.URL.Path)
-	h.ginHandler.ServeHTTP(w, req.WithContext(rctx))
+	// log.Info("A content for Gin", "proto", req.Proto, "method", req.Method, "urlpath", req.URL.Path, "ct", contentType)
+	h.ginHandler.ServeHTTP(w, req)
 }
-
-func (h *rootHandler) GetGrpcServer() *grpc.Server { return h.grpcServer }

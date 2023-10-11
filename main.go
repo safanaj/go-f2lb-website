@@ -11,8 +11,10 @@ import (
 	"net/http/pprof"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/swag"
 
-	// "net/http"
 	"os"
 	"strings"
 	"time"
@@ -35,6 +37,13 @@ var adminPoolsStr string = "BRNS,STPZ1"
 
 //go:embed all:webui/build
 var rootFS embed.FS
+
+type swaggerSpecBytes []byte
+
+func (ssb swaggerSpecBytes) ReadDoc() string { return string(ssb) }
+
+//go:embed proto/openapiv2/apidocs.swagger.json
+var swaggerSpec swaggerSpecBytes
 
 func addFlags() {
 	f2lb_gsheet.AddFlags(flag.CommandLine)
@@ -95,7 +104,20 @@ func main() {
 	pb.RegisterSupporterServiceServer(webSrv.GetGrpcServer(), supportersServiceServer)
 	pb.RegisterMemberServiceServer(webSrv.GetGrpcServer(), memberServiceServer)
 
+	pb.RegisterMainQueueServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), mainQueueServiceServer)
+	// pb.RegisterControlMsgServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), controlServiceServer)
+	pb.RegisterAddonQueueServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), addonQueueServiceServer)
+	pb.RegisterSupporterServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), supportersServiceServer)
+	pb.RegisterMemberServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), memberServiceServer)
+
 	api.RegisterApiV0(webSrv.GetGinEngine().Group("/api/v0"), f2lbCtrl)
+	webSrv.GetGinEngine().Group("/api/v1/*grpcgw").GET("", gin.WrapH(webSrv.GetGrpcGw()))
+
+	swagName := "f2lbApi"
+	swag.Register(swagName, swaggerSpec)
+	webSrv.GetGinEngine().GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler,
+		// ginSwagger.URL("http://localhost:8080/swagger/doc.json"),
+		ginSwagger.InstanceName(swagName)))
 
 	pages, paths := webserver.GetPagesAndPaths()
 	for i := range pages {
@@ -103,6 +125,7 @@ func main() {
 			paths[i] = "/"
 		}
 	}
+
 	//webSrv.SetPathsForPages(append(paths, "/favicon.svg"), append(pages, "favicon.svg"))
 	webSrv.SetPathsForPages(paths, pages)
 

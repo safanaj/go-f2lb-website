@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package pb;
 
+import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "members.proto";
 
@@ -9,7 +10,15 @@ option go_package = "go-f2lb/pb";
 
 service MainQueueService {
   rpc Records(google.protobuf.Empty) returns (Members) {}
-  rpc ListQueue(google.protobuf.Empty) returns (Members) {}
-  rpc Served(google.protobuf.Empty) returns (Member) {}
+  rpc ListQueue(google.protobuf.Empty) returns (Members) {
+    option (google.api.http) = {
+      get: "/api/v1/main-queue"
+    };
+  }
+  rpc Served(google.protobuf.Empty) returns (Member) {
+    option (google.api.http) = {
+      get: "/api/v1/main-queue/served"
+    };
+  }
   // rpc Refresh(google.protobuf.Empty)
 }

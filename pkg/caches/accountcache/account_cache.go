@@ -154,7 +154,14 @@ func (ac *accountCache) cacheSyncer() {
 			case <-ch:
 			default:
 				if ac.Ready() {
-					close(ch)
+					select {
+					case <-ch:
+					default:
+						ch := *((*chan any)(atomic.SwapPointer(&chp, nil)))
+						if ch != nil {
+							close(ch)
+						}
+					}
 				}
 			}
 		}
@@ -584,7 +591,11 @@ func (ac *accountCache) WaitReady(d time.Duration) bool {
 	case <-time.After(d):
 		chp := unsafe.Pointer(&ac.readyWaiterCh)
 		ch := *((*chan any)(atomic.SwapPointer(&chp, nil)))
-		close(ch)
+		select {
+		case <-ch:
+		default:
+			close(ch)
+		}
 	}
 	return ac.Ready()
 }

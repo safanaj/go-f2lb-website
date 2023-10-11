@@ -3,26 +3,31 @@ package webserver
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	gwruntime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 )
 
 type WebServer interface {
 	Start(bool) error
 	Stop(context.Context) error
+	StartGrpcServer() error
 	GetGrpcServer() *grpc.Server
+	GetGrpcGw() *gwruntime.ServeMux
 	GetGinEngine() *gin.Engine
 	SetPathsForPages(paths, pages []string)
 	GetSessionManager() SessionManager
 }
 
 type webServer struct {
-	srv    *http.Server
-	smStop context.CancelFunc
+	srv            *http.Server
+	grpcSrvStarted bool
+	smStop         context.CancelFunc
 }
 
 func New(addr string, engine *gin.Engine, sessionsStoreDir string) WebServer {
@@ -31,10 +36,25 @@ func New(addr string, engine *gin.Engine, sessionsStoreDir string) WebServer {
 	return &webServer{srv: &http.Server{Addr: addr, Handler: rootHandler}}
 }
 
+func (ws *webServer) StartGrpcServer() error {
+	lis, err := net.Listen("tcp", "localhost:8082")
+	if err != nil {
+		return err
+	}
+	go ws.GetGrpcServer().Serve(lis)
+	ws.grpcSrvStarted = true
+	return nil
+}
+
 func (ws *webServer) Start(setStaticFSForApp bool) error {
 	if setStaticFSForApp {
 		ws.GetGinEngine().StaticFS("/_app", http.FS(appFS))
 	}
+	// if !ws.grpcSrvStarted {
+	// 	if err := ws.StartGrpcServer(); err != nil {
+	// 		return err
+	// 	}
+	// }
 	smCtx, smStop := context.WithCancel(context.Background())
 	ws.smStop = smStop
 	ws.GetSessionManager().Start(smCtx)
@@ -43,10 +63,14 @@ func (ws *webServer) Start(setStaticFSForApp bool) error {
 func (ws *webServer) Stop(ctx context.Context) error {
 	ws.smStop()
 	<-ws.GetSessionManager().Done()
+	if ws.grpcSrvStarted {
+		ws.GetGrpcServer().Stop()
+	}
 	return ws.srv.Shutdown(ctx)
 }
 func (ws *webServer) getRootHandler() *rootHandler      { return ws.srv.Handler.(*rootHandler) }
 func (ws *webServer) GetGrpcServer() *grpc.Server       { return ws.getRootHandler().grpcServer }
+func (ws *webServer) GetGrpcGw() *gwruntime.ServeMux    { return ws.getRootHandler().grpcGw }
 func (ws *webServer) GetGinEngine() *gin.Engine         { return ws.getRootHandler().ginHandler }
 func (ws *webServer) GetSessionManager() SessionManager { return ws.getRootHandler().sm }
 func (ws *webServer) SetPathsForPages(paths, pages []string) {
