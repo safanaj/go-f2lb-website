@@ -126,7 +126,7 @@ build-go-nomod: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built
 
 build: proto/.built build-webui build-go-nomod
 
-static-release: proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
+static-release: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
 	@echo "--> Compiling the static binary for release"
 	$(ENVVAR) GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
 		-gcflags "-e" \

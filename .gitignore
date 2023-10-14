@@ -2,10 +2,11 @@ go-f2lb-website
 
 vendor
 proto/.built
+proto/google
+proto/openapiv2
+proto/all.protoset
 pkg/pb/*.pb.go
 pkg/pb/*.pb.gw.go
-pkg/pb/google
-pkg/pb/openapiv2
 
 webui/node_modules
 webui/.svelte-kit
