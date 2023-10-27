@@ -316,9 +316,6 @@ func (s *controlServiceServer) Authn(ctx context.Context, asig *AuthnSignature) 
 	if !isOk {
 		return wrapperspb.Bool(false), nil
 	}
-	// if s.uuid2verifiedAuthn == nil {
-	// 	s.uuid2verifiedAuthn = make(map[string]bool)
-	// }
 
 	msgToVerify, err := cose.NewCOSESign1MessageFromCBORHex(asig.GetSignature())
 	if err != nil {
@@ -354,17 +351,19 @@ func (s *controlServiceServer) Authn(ctx context.Context, asig *AuthnSignature) 
 		return wrapperspb.Bool(false), err
 	}
 
+	switch string(msgToVerify.Payload) {
+	case ruuid, stakeAddr.Bech32():
+	default:
+		err := fmt.Errorf("unexpected signed payload: it is not ruuid: %q neither stake address %q",
+			ruuid, stakeAddr.Bech32())
+		return wrapperspb.Bool(false), err
+	}
+
 	if err := msgToVerify.Verify(nil, verifier); err != nil {
 		return wrapperspb.Bool(false), err
 	}
 	s.sm.UpdateExpiration(ruuid)
 	s.sm.UpdateVerifiedAccount(ruuid, stakeAddr.Bech32())
-	// s.uuid2verifiedAuthn[ruuid] = true
-
-	// {
-	// 	sd, ok := s.sm.Get(ruuid)
-	// 	fmt.Printf("Authn done: sd: %+v - ok: %t\n", sd, ok)
-	// }
 
 	s.refreshCh <- ruuid
 	return wrapperspb.Bool(true), nil

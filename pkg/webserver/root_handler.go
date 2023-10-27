@@ -29,47 +29,42 @@ const IdKey = "ruuid"
 var IdCtxKey = &ctxKey{name: "id"}
 var log logging.Logger
 
-func sessionInHeaderAndCookieMiddleware(sm SessionManager) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		var (
-			sid string
-			sd  SessionData
-		)
-		req := c.Request
-		w := c.Writer
-		ruuid := c.GetHeader("x-session-ruuid")
-		idCookie, err := req.Cookie(IdKey)
-		if ruuid != "" {
-			if sdata, ok := sm.Get(ruuid); ok {
-				sid = ruuid
-				sd = sdata
-			}
+func injectSessionInHeaderAndCookie(w http.ResponseWriter, reqp **http.Request, sm SessionManager) {
+	var (
+		sid string
+		sd  SessionData
+	)
+	req := *reqp
+	ruuid := req.Header.Get("x-session-ruuid")
+	idCookie, err := req.Cookie(IdKey)
+	if ruuid != "" {
+		if sdata, ok := sm.Get(ruuid); ok {
+			sid = ruuid
+			sd = sdata
 		}
-		if sid == "" {
-			if err == http.ErrNoCookie {
-				sid, sd = sm.Session()
-			} else if sdata, ok := sm.Get(idCookie.Value); ok {
-				sid = idCookie.Value
-				sd = sdata
-				idCookie.Expires = sd.Expires
-			} else {
-				// the cookie is there but is not a valid session, clear it on the client
-				idCookie.MaxAge = -1
-			}
-		}
-
-		if sid != "" {
-			idCookie = &http.Cookie{Name: IdKey, Value: sid, Expires: sd.Expires}
-			c.Header("x-session-ruuid", sid)
-		}
-		// reset Cookie Path to avoid waste storage for duplicated cookie
-		idCookie.Path = "/"
-		idCookie.Secure = true
-		http.SetCookie(w, idCookie)
-
-		c.Request = req.WithContext(context.WithValue(req.Context(), IdCtxKey, idCookie.Value))
-		c.Next()
 	}
+	if sid == "" {
+		if err == http.ErrNoCookie {
+			sid, sd = sm.Session()
+		} else if sdata, ok := sm.Get(idCookie.Value); ok {
+			sid = idCookie.Value
+			sd = sdata
+			idCookie.Expires = sd.Expires
+		} else {
+			// the cookie is there but is not a valid session, clear it on the client
+			idCookie.MaxAge = -1
+		}
+	}
+
+	if sid != "" {
+		idCookie = &http.Cookie{Name: IdKey, Value: sid, Expires: sd.Expires}
+		w.Header().Set("x-session-ruuid", sid)
+	}
+	// reset Cookie Path to avoid waste storage for duplicated cookie
+	idCookie.Path = "/"
+	idCookie.Secure = true
+	http.SetCookie(w, idCookie)
+	*reqp = req.WithContext(context.WithValue(req.Context(), IdCtxKey, idCookie.Value))
 }
 
 func NewRootHandler(engine *gin.Engine, sm SessionManager) *rootHandler {
@@ -80,7 +75,6 @@ func NewRootHandler(engine *gin.Engine, sm SessionManager) *rootHandler {
 	if engine == nil {
 		engine = gin.Default()
 	}
-	engine.Use(sessionInHeaderAndCookieMiddleware(sm))
 
 	return &rootHandler{
 		ginHandler:     engine,
@@ -92,6 +86,7 @@ func NewRootHandler(engine *gin.Engine, sm SessionManager) *rootHandler {
 }
 
 func (h *rootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	injectSessionInHeaderAndCookie(w, &req, h.sm)
 	contentType := req.Header.Get("Content-Type")
 	if h.grpcwebHandler.IsGrpcWebRequest(req) ||
 		h.grpcwebHandler.IsAcceptableGrpcCorsRequest(req) ||

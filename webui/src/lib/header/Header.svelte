@@ -148,14 +148,19 @@
   let authnVerified = isVerified()
   const doAuthnSign = () => {
       return new Promise((resolve, reject) => {
-          $cardanoWallet.api.signData($cardanoWallet.stakeAddr, Buffer.from($cardanoWallet.stakeAddr).toString('hex'))
-              .then(sig => {
-                  let asig = new AuthnSignature()
-                  asig.setSignature(sig.signature)
-                  asig.setKey(sig.key)
-                  asig.setStakeaddress($cardanoWallet.stakeAddr)
-                  $serviceClients.Control.authn(asig, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
-              })
+          window.cookieStore.get("ruuid").then(c => c.value).catch(() => "").then(sid => {
+              if (sid === "") {
+                  sid = $cardanoWallet.stakeAddr
+              }
+              $cardanoWallet.api.signData($cardanoWallet.stakeAddr, Buffer.from(sid).toString('hex'))
+                  .then(sig => {
+                      let asig = new AuthnSignature()
+                      asig.setSignature(sig.signature)
+                      asig.setKey(sig.key)
+                      asig.setStakeaddress($cardanoWallet.stakeAddr)
+                      $serviceClients.Control.authn(asig, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
+                  })
+          })
       }).then(refreshUser).then(tick).catch(console.log)
   }
 
