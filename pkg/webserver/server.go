@@ -22,22 +22,40 @@ type WebServer interface {
 	GetGinEngine() *gin.Engine
 	SetPathsForPages(paths, pages []string)
 	GetSessionManager() SessionManager
+	ListGRPCResources() []string
 }
 
 type webServer struct {
 	srv            *http.Server
+	grpcAddr       string
 	grpcSrvStarted bool
 	smStop         context.CancelFunc
+	rh             *rootHandler
 }
 
-func New(addr string, engine *gin.Engine, sessionsStoreDir string) WebServer {
-	rootHandler := NewRootHandler(engine, NewSessionManager(sessionsStoreDir))
-	rootHandler.ginHandler.Use(gzip.Gzip(gzip.DefaultCompression))
-	return &webServer{srv: &http.Server{Addr: addr, Handler: rootHandler}}
+func New(addr string, engine *gin.Engine, sessionsStoreDir string, useGinAsRootHandler bool, grpcAddr string) WebServer {
+	sm := NewSessionManager(sessionsStoreDir)
+	rootHandler := NewRootHandler(engine, sm)
+	if useGinAsRootHandler {
+		rootHandler.ginHandler.Use(
+			SessionInHeaderAndCookieMiddleware(sm),
+			rootHandler.AsMiddleware(),
+			gzip.Gzip(gzip.DefaultCompression))
+
+		return &webServer{srv: &http.Server{Addr: addr, Handler: rootHandler.ginHandler}, rh: rootHandler, grpcAddr: grpcAddr}
+	} else {
+		rootHandler.ginHandler.Use(gzip.Gzip(gzip.DefaultCompression))
+		return &webServer{srv: &http.Server{Addr: addr, Handler: rootHandler}, rh: rootHandler, grpcAddr: grpcAddr}
+	}
 }
+
+func (ws *webServer) ListGRPCResources() []string { return ws.rh.ListGRPCResources() }
 
 func (ws *webServer) StartGrpcServer() error {
-	lis, err := net.Listen("tcp", "localhost:8082")
+	if ws.grpcAddr == "" {
+		return nil
+	}
+	lis, err := net.Listen("tcp", ws.grpcAddr)
 	if err != nil {
 		return err
 	}
@@ -50,11 +68,11 @@ func (ws *webServer) Start(setStaticFSForApp bool) error {
 	if setStaticFSForApp {
 		ws.GetGinEngine().StaticFS("/_app", http.FS(appFS))
 	}
-	// if !ws.grpcSrvStarted {
-	// 	if err := ws.StartGrpcServer(); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if !ws.grpcSrvStarted && ws.grpcAddr != "" {
+		if err := ws.StartGrpcServer(); err != nil {
+			return err
+		}
+	}
 	smCtx, smStop := context.WithCancel(context.Background())
 	ws.smStop = smStop
 	ws.GetSessionManager().Start(smCtx)
@@ -68,15 +86,14 @@ func (ws *webServer) Stop(ctx context.Context) error {
 	}
 	return ws.srv.Shutdown(ctx)
 }
-func (ws *webServer) getRootHandler() *rootHandler      { return ws.srv.Handler.(*rootHandler) }
+func (ws *webServer) getRootHandler() *rootHandler      { return ws.rh }
 func (ws *webServer) GetGrpcServer() *grpc.Server       { return ws.getRootHandler().grpcServer }
 func (ws *webServer) GetGrpcGw() *gwruntime.ServeMux    { return ws.getRootHandler().grpcGw }
 func (ws *webServer) GetGinEngine() *gin.Engine         { return ws.getRootHandler().ginHandler }
 func (ws *webServer) GetSessionManager() SessionManager { return ws.getRootHandler().sm }
 func (ws *webServer) SetPathsForPages(paths, pages []string) {
 	contentType := "text/html; charset=utf-8"
-	gh := ws.GetGinEngine() // ws.getRootHandler().ginHandler
-	// gh.StaticFileFS("/favicon.svg", "/favicon.svg", http.FS(webFS))
+	gh := ws.GetGinEngine()
 	gh.StaticFileFS("/favicon.png", "/favicon.png", http.FS(webFS))
 	for i, p := range paths {
 		var size int64

@@ -15,24 +15,42 @@ service ControlMsgService {
   rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
   rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc RefreshMember(StakeAddr) returns (MemberOrEmpty) {
-    // option (google.api.http) = {
-    //   post: "/api/v1/refresh-member"
-    //   body: "stakeAddress"
-    // };
+    option (google.api.http) = {
+      post: "/api/v1/refresh-member/{stakeAddress}"
+    };
   }
   rpc RefreshAllMembers(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-  rpc Auth(StakeAddr) returns (User) {}
-  rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {}
+  rpc Auth(StakeAddr) returns (User) {
+    option (google.api.http) = {
+      post: "/api/v1/auth"
+      body: "stakeAddress"
+    };
+  }
+  rpc WhoAmI(google.protobuf.Empty) returns (User) {
+    option (google.api.http) = {
+      get: "/api/v1/who-am-i"
+    };
+  }
+  rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {
+    option (google.api.http) = {
+      post: "/api/v1/authn"
+      body: "*"
+    };
+  }
   rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
   rpc CanceledTx(TxId) returns (google.protobuf.Empty) {}
   rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
   rpc CheckPool(PoolBech32Id) returns (PoolStats) {
-    // option (google.api.http) = {
-    //   get: "/api/v1/pool/{id}/stats"
-    // };
+    option (google.api.http) = {
+      get: "/api/v1/pool/{id}/stats"
+    };
   }
   rpc CheckAllPools(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/logout"
+    };
+  }
 }
 
 message ControlMsg {

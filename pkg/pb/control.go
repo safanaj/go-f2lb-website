@@ -455,3 +455,29 @@ func (s *controlServiceServer) CheckPool(ctx context.Context, pid *PoolBech32Id)
 
 	return poolStats, nil
 }
+
+func (s *controlServiceServer) WhoAmI(ctx context.Context, unused *emptypb.Empty) (*User, error) {
+	user := &User{}
+	ruuid, isOk := ctx.Value(webserver.IdCtxKey).(string)
+	if isOk {
+		s.sm.UpdateExpiration(ruuid)
+		sd, ok := s.sm.Get(ruuid)
+		if ok {
+			user.IsVerified = sd.VerifiedAccount != ""
+			if sd.MemberAccount == "" {
+				return user, nil
+			}
+			if sp := s.ctrl.GetStakePoolSet().Get(sd.MemberAccount); sp != nil && sp.Ticker() != "" {
+				// check admin permission
+				_, isAdmin := s.adminPools[sp.Ticker()]
+				user.Type = User_SPO
+				user.StakeKey = sp.StakeKeys()[0]
+				user.StakeAddress = sp.MainStakeAddress()
+				user.Member = newMemeberFromStakePool(sp)
+				user.IsAdmin = isAdmin
+				user.DelegatedPool = sp.DelegatedPool()
+			}
+		}
+	}
+	return user, nil
+}

@@ -85,17 +85,46 @@ func NewRootHandler(engine *gin.Engine, sm SessionManager) *rootHandler {
 	}
 }
 
-func (h *rootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	injectSessionInHeaderAndCookie(w, &req, h.sm)
+func (h *rootHandler) maybeGoForGrpcWebWrappedServer(w http.ResponseWriter, req *http.Request) bool {
 	contentType := req.Header.Get("Content-Type")
 	if h.grpcwebHandler.IsGrpcWebRequest(req) ||
 		h.grpcwebHandler.IsAcceptableGrpcCorsRequest(req) ||
 		h.grpcwebHandler.IsGrpcWebSocketRequest(req) ||
 		contentType == "application/grpc-web+proto" {
-		log.Info("A content for GRPC-Web", "proto", req.Proto, "method", req.Method, "path", req.URL.Path)
+		log.V(4).Info("A content for GRPC-Web", "proto", req.Proto, "method", req.Method, "path", req.URL.Path)
 		h.grpcwebHandler.ServeHTTP(w, req)
+		return true
+	}
+	return false
+}
+
+func (h *rootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	injectSessionInHeaderAndCookie(w, &req, h.sm)
+	if h.maybeGoForGrpcWebWrappedServer(w, req) {
 		return
 	}
-	// log.Info("A content for Gin", "proto", req.Proto, "method", req.Method, "urlpath", req.URL.Path, "ct", contentType)
+	log.V(4).Info("A content for Gin", "proto", req.Proto, "method", req.Method, "urlpath", req.URL.Path, "ct", req.Header.Get("Content-Type"))
 	h.ginHandler.ServeHTTP(w, req)
+}
+
+func SessionInHeaderAndCookieMiddleware(sm SessionManager) func(*gin.Context) {
+	return func(c *gin.Context) {
+		injectSessionInHeaderAndCookie(c.Writer, &c.Request, sm)
+		c.Next()
+	}
+}
+
+func (h *rootHandler) AsMiddleware() func(*gin.Context) {
+	return func(c *gin.Context) {
+		if h.maybeGoForGrpcWebWrappedServer(c.Writer, c.Request) {
+			c.Abort()
+			log.V(4).Info("Gone for GrpcWebWrappedServer", "responseWritten", c.Writer.Written(), "isAborted", c.IsAborted())
+			return
+		}
+		c.Next()
+	}
+}
+
+func (h *rootHandler) ListGRPCResources() []string {
+	return grpcweb.ListGRPCResources(h.grpcServer)
 }

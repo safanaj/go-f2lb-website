@@ -33,7 +33,9 @@ import (
 
 var progname, version string
 var listenAddr string = ":8080"
+var listenGrpcAddr string = ":8082"
 var adminPoolsStr string = "BRNS,STPZ1"
+var useGinAsRootHandler bool = true
 
 //go:embed all:webui/build
 var rootFS embed.FS
@@ -59,11 +61,18 @@ func main() {
 	pingerDisabled := flag.Bool("disable-pinger", false, "")
 	flag.StringVar(&adminPoolsStr, "admin-pools", adminPoolsStr, "Comma separated pools with admin permission")
 	flag.StringVar(&listenAddr, "listen", listenAddr, "IP:PORT or :PORT to listen on all interfaces")
+	exposeGrpc := flag.Bool("expose-grpc", false, "")
+	flag.StringVar(&listenGrpcAddr, "listen-grpc", listenGrpcAddr, "IP:PORT or :PORT to listen on all interfaces")
+	flag.BoolVar(&useGinAsRootHandler, "use-gin-as-root-handler", useGinAsRootHandler, "")
 	addFlags()
 	flag.Parse()
 	if *showVersion {
 		fmt.Printf("%s %s\n", progname, version)
 		os.Exit(0)
+	}
+
+	if !(*exposeGrpc) {
+		listenGrpcAddr = ""
 	}
 
 	log := logging.GetLogger().WithName(progname)
@@ -77,7 +86,7 @@ func main() {
 		pinger.NewPinger(log.WithName("pinger")).SetController(f2lbCtrl)
 	}
 
-	webSrv := webserver.New(listenAddr, nil, f2lbCtrl.GetCachesStoreDirPath())
+	webSrv := webserver.New(listenAddr, nil, f2lbCtrl.GetCachesStoreDirPath(), useGinAsRootHandler, listenGrpcAddr)
 
 	controlServiceServer := pb.NewControlServiceServer(f2lbCtrl, strings.Split(adminPoolsStr, ","), payer, webSrv.GetSessionManager())
 	mainQueueServiceServer := pb.NewMainQueueServiceServer(f2lbCtrl.GetMainQueue(), f2lbCtrl.GetStakePoolSet())
@@ -96,37 +105,45 @@ func main() {
 	}
 	log.V(1).Info("Controller started", "in", time.Since(startControllerAt).String())
 
-	webserver.SetRootFS(rootFS)
-
 	pb.RegisterControlMsgServiceServer(webSrv.GetGrpcServer(), controlServiceServer)
 	pb.RegisterAddonQueueServiceServer(webSrv.GetGrpcServer(), addonQueueServiceServer)
 	pb.RegisterMainQueueServiceServer(webSrv.GetGrpcServer(), mainQueueServiceServer)
 	pb.RegisterSupporterServiceServer(webSrv.GetGrpcServer(), supportersServiceServer)
 	pb.RegisterMemberServiceServer(webSrv.GetGrpcServer(), memberServiceServer)
 
+	if useGinAsRootHandler {
+		// this is an ugly solution to use Gin as root handler, and just middlweare to manager GrpcWeb stuff,
+		// if we reach this handler means that the middleware did not aborted the the handlers chain,
+		// so it means something is wrong with the request
+		ginNoOpHandler := func(c *gin.Context) {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Wrong method or proto or content-type"))
+		}
+		for _, path := range webSrv.ListGRPCResources() {
+			webSrv.GetGinEngine().POST(path, ginNoOpHandler)
+		}
+	}
+
+	api.RegisterApiV0(webSrv.GetGinEngine().Group("/api/v0"), f2lbCtrl)
+
 	pb.RegisterMainQueueServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), mainQueueServiceServer)
-	// pb.RegisterControlMsgServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), controlServiceServer)
+	pb.RegisterControlMsgServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), controlServiceServer)
 	pb.RegisterAddonQueueServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), addonQueueServiceServer)
 	pb.RegisterSupporterServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), supportersServiceServer)
 	pb.RegisterMemberServiceHandlerServer(webCtx, webSrv.GetGrpcGw(), memberServiceServer)
-
-	api.RegisterApiV0(webSrv.GetGinEngine().Group("/api/v0"), f2lbCtrl)
-	webSrv.GetGinEngine().Group("/api/v1/*grpcgw").GET("", gin.WrapH(webSrv.GetGrpcGw()))
+	webSrv.GetGinEngine().Group("/api/v1/*grpcgw").Match([]string{"GET", "POST"}, "", gin.WrapH(webSrv.GetGrpcGw()))
 
 	swagName := "f2lbApi"
 	swag.Register(swagName, swaggerSpec)
-	webSrv.GetGinEngine().GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler,
-		// ginSwagger.URL("http://localhost:8080/swagger/doc.json"),
-		ginSwagger.InstanceName(swagName)))
+	ginSwaggerHandler := ginSwagger.WrapHandler(swaggerfiles.Handler, ginSwagger.InstanceName(swagName))
+	webSrv.GetGinEngine().GET("/swagger/*any", ginSwaggerHandler)
 
+	webserver.SetRootFS(rootFS)
 	pages, paths := webserver.GetPagesAndPaths()
 	for i := range pages {
 		if paths[i] == "/index" {
 			paths[i] = "/"
 		}
 	}
-
-	//webSrv.SetPathsForPages(append(paths, "/favicon.svg"), append(pages, "favicon.svg"))
 	webSrv.SetPathsForPages(paths, pages)
 
 	{
@@ -141,8 +158,7 @@ func main() {
 		drg.GET("/", gin.WrapF(pprof.Index))
 		drg.GET("/cmdline", gin.WrapF(pprof.Cmdline))
 		drg.GET("/profile", gin.WrapF(pprof.Profile))
-		drg.POST("/symbol", gin.WrapF(pprof.Symbol))
-		drg.GET("/symbol", gin.WrapF(pprof.Symbol))
+		drg.Match([]string{"GET", "POST"}, "/symbol", gin.WrapF(pprof.Symbol))
 		drg.GET("/trace", gin.WrapF(pprof.Trace))
 		drg.GET("/allocs", gin.WrapH(pprof.Handler("allocs")))
 		drg.GET("/block", gin.WrapH(pprof.Handler("block")))
@@ -156,7 +172,6 @@ func main() {
 	go func() {
 		if err := webSrv.Start(true); err != nil && err != http.ErrServerClosed {
 			log.Error(err, "webserver")
-			// os.Exit(1)
 		}
 	}()
 
