@@ -1,4 +1,4 @@
-VERSION ?= 0.4.5
+VERSION ?= 0.4.6
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = \
