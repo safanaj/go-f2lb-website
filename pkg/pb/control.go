@@ -2,22 +2,27 @@ package pb
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
 	sync "sync"
 	"time"
 
+	"golang.org/x/crypto/blake2b"
 	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/hako/durafmt"
 
+	koios "github.com/cardano-community/koios-go-client/v3"
+
 	"github.com/safanaj/cardano-go"
 	"github.com/safanaj/cardano-go/cose"
 	"github.com/safanaj/cardano-go/crypto"
 
+	"github.com/safanaj/go-f2lb/pkg/ccli"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_members"
 	"github.com/safanaj/go-f2lb/pkg/txbuilder"
@@ -406,7 +411,41 @@ func (s *controlServiceServer) CheckAllPools(ctx context.Context, unused *emptyp
 	return unused, nil
 }
 
-func (s *controlServiceServer) CheckPool(ctx context.Context, pid *PoolBech32Id) (*PoolStats, error) {
+func (s *controlServiceServer) GetPoolStats(ctx context.Context, pt *PoolTicker) (*PoolStats, error) {
+	s.sm.UpdateExpirationByContext(ctx)
+	sp := s.ctrl.GetStakePoolSet().Get(pt.GetTicker())
+	if sp == nil {
+		return nil, fmt.Errorf("Unknown pool")
+	}
+	ps := s.ctrl.GetPinger().GetPoolStats(sp)
+	poolStats := &PoolStats{
+		HasErrors: ps.HasErrors(),
+		Up:        ps.UpAndResponsive(),
+		InSync:    ps.InSync().String(),
+	}
+
+	for _, e := range ps.Errors() {
+		poolStats.Errors = append(poolStats.Errors, e.Error())
+	}
+
+	for tgt, stats := range ps.RelayStats() {
+		rs := &RelayStats{
+			Target:       tgt,
+			ResponseTime: durationpb.New(stats.ResponseTime()),
+			Status:       stats.Status().String(),
+			Tip:          uint32(stats.Tip()),
+			InSync:       stats.InSync().String(),
+		}
+		if stats.Error() != nil {
+			rs.Error = stats.Error().Error()
+		}
+		poolStats.Relays = append(poolStats.Relays, rs)
+	}
+
+	return poolStats, nil
+}
+
+func (s *controlServiceServer) CheckPool(ctx context.Context, pid *PoolBech32IdOrHexIdOrTicker) (*PoolStats, error) {
 	sd, ok := s.sm.GetByContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("No session")
@@ -418,12 +457,28 @@ func (s *controlServiceServer) CheckPool(ctx context.Context, pid *PoolBech32Id)
 	if sd.MemberAccount == "" {
 		return nil, fmt.Errorf("Not connected")
 	}
-	if pid.GetId() == "" {
+	if pid.GetIdOrTicker() == "" {
 		return nil, fmt.Errorf("Invalid Pool Id")
 	}
 
 	sp := s.ctrl.GetStakePoolSet().Get(sd.MemberAccount)
-	if sp == nil || sp.PoolIdBech32() != pid.GetId() {
+	if sp == nil {
+		return nil, fmt.Errorf("Unknown member")
+	}
+	isMatching := false
+	pidOrTicker := pid.GetIdOrTicker()
+	if pidOrTicker[:5] == "pool" {
+		// bech32
+		isMatching = sp.PoolIdBech32() != pidOrTicker
+	} else if len(pidOrTicker) > 6 {
+		// hex
+		isMatching = sp.PoolIdHex() != pidOrTicker
+	} else {
+		//ticker
+		isMatching = sp.Ticker() != pidOrTicker
+	}
+
+	if !isMatching {
 		return nil, fmt.Errorf("Not the member owner of the pool, not allowed")
 	}
 
@@ -480,4 +535,65 @@ func (s *controlServiceServer) WhoAmI(ctx context.Context, unused *emptypb.Empty
 		}
 	}
 	return user, nil
+}
+
+func getNonce(ctx context.Context, kc *koios.Client, delta int) (string, error) {
+	epoch := koios.EpochNo(int(utils.CurrentEpoch()) - 1)
+	opts := kc.NewRequestOptions()
+	opts.QuerySet("select", "nonce")
+	r, err := kc.GetEpochParams(ctx, &epoch, opts)
+	if err != nil {
+		return "", fmt.Errorf("Error getting info from koios: %w\n", err)
+	}
+	return r.Data[0].Nonce, nil
+}
+
+func (s *controlServiceServer) NoncePrev(ctx context.Context, unused *emptypb.Empty) (*wrapperspb.StringValue, error) {
+	nonce, err := getNonce(ctx, s.ctrl.GetKoiosClient().GetKoiosClient(), -1)
+	if err != nil {
+		return nil, err
+	}
+	return wrapperspb.String(nonce), nil
+}
+
+func (s *controlServiceServer) NonceCurrent(ctx context.Context, unused *emptypb.Empty) (*wrapperspb.StringValue, error) {
+	nonce, err := getNonce(ctx, s.ctrl.GetKoiosClient().GetKoiosClient(), 0)
+	if err != nil {
+		return nil, err
+	}
+	return wrapperspb.String(nonce), nil
+}
+
+const slotInEpochForNextNonce = 302400
+
+func (s *controlServiceServer) NonceNext(ctx context.Context, unused *emptypb.Empty) (*wrapperspb.StringValue, error) {
+	curSlotInEpoch := int(utils.CurrentSlotInEpoch())
+	if curSlotInEpoch < slotInEpochForNextNonce {
+		return nil, fmt.Errorf("New epoch nonce not yet computable, will be available in %v",
+			time.Duration(time.Second*time.Duration(slotInEpochForNextNonce-curSlotInEpoch)))
+	}
+	out, err := ccli.DoCommand(ctx, "query protocol-state --mainnet")
+	if err != nil {
+		return nil, fmt.Errorf("Error getting info from cardano-node: %w", err)
+	}
+	res := map[string]any{}
+	err = json.Unmarshal([]byte(out), &res)
+	if err != nil {
+		return nil, fmt.Errorf("Error decoding info from cardano-node: %w", err)
+	}
+	cn := res["candidateNonce"].(map[string]any)["contents"].(string)
+	lebn := res["lastEpochBlockNonce"].(map[string]any)["contents"].(string)
+	eta0_, err := hex.DecodeString(cn + lebn)
+	if err != nil {
+		return nil, fmt.Errorf("Error decoding info from cardano-node: %w", err)
+	}
+	hash, err := blake2b.New(32, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Error computing next nonce: %w", err)
+	}
+	_, err = hash.Write(eta0_)
+	if err != nil {
+		return nil, fmt.Errorf("Error computing next nonce: %w", err)
+	}
+	return wrapperspb.String(hex.EncodeToString(hash.Sum(nil))), nil
 }

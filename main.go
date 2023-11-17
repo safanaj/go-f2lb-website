@@ -112,7 +112,7 @@ func main() {
 	pb.RegisterMemberServiceServer(webSrv.GetGrpcServer(), memberServiceServer)
 
 	if useGinAsRootHandler {
-		// this is an ugly solution to use Gin as root handler, and just middlweare to manager GrpcWeb stuff,
+		// this is an ugly solution to use Gin as root handler, and just middlweare to manage GrpcWeb stuff,
 		// if we reach this handler means that the middleware did not aborted the the handlers chain,
 		// so it means something is wrong with the request
 		ginNoOpHandler := func(c *gin.Context) {

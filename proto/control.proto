@@ -40,15 +40,36 @@ service ControlMsgService {
   rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
   rpc CanceledTx(TxId) returns (google.protobuf.Empty) {}
   rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
-  rpc CheckPool(PoolBech32Id) returns (PoolStats) {
+  rpc GetPoolStats(PoolTicker) returns (PoolStats) {
     option (google.api.http) = {
-      get: "/api/v1/pool/{id}/stats"
+      get: "/api/v1/pool/{ticker}/stats"
+    };
+  }
+  rpc CheckPool(PoolBech32IdOrHexIdOrTicker) returns (PoolStats) {
+    option (google.api.http) = {
+      post: "/api/v1/pool/{idOrTicker}/stats"
     };
   }
   rpc CheckAllPools(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/api/v1/logout"
+    };
+  }
+
+  rpc NoncePrev(google.protobuf.Empty) returns (google.protobuf.StringValue) {
+    option (google.api.http) = {
+      get: "/api/v1/nonce.prev"
+    };
+  }
+  rpc NonceCurrent(google.protobuf.Empty) returns (google.protobuf.StringValue) {
+    option (google.api.http) = {
+      get: "/api/v1/nonce.current"
+    };
+  }
+  rpc NonceNext(google.protobuf.Empty) returns (google.protobuf.StringValue) {
+    option (google.api.http) = {
+      get: "/api/v1/nonce.next"
     };
   }
 }
@@ -110,8 +131,16 @@ message AuthnSignature {
 }
 
 // Pinger check
-message PoolBech32Id {
+message PoolBech32 {
   string id = 1;
+}
+
+message PoolBech32IdOrHexIdOrTicker {
+  string idOrTicker = 1;
+}
+
+message PoolTicker {
+  string ticker = 1;
 }
 
 message RelayStats {
@@ -130,6 +159,8 @@ message PoolStats {
   bool up = 4;
   string inSync = 5;
 }
+
+
 
 // on-demand refresh member
 message MemberOrEmpty {

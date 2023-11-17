@@ -6,7 +6,7 @@
   import { toast } from 'bulma-toast'
   import { Buffer } from 'buffer';
 
-  import {AuthnSignature,StakeAddr,PoolBech32Id} from '$lib/pb/control_pb.js'
+  import {AuthnSignature,StakeAddr,PoolBech32IdOrHexIdOrTicker} from '$lib/pb/control_pb.js'
   import { serviceClients, cardanoWallet, theme, mainQueueMembers, addonQueueMembers } from '$lib/stores'
   import CardanoConnect from '$lib/cardano/CardanoConnect.svelte';
 
@@ -100,8 +100,8 @@
 
   const doCheckPool = () => {
       return new Promise((resolve, reject) => {
-          let pool = new PoolBech32Id()
-          pool.setId($cardanoWallet.user.member.poolidbech32)
+          let pool = new PoolBech32IdOrHexIdOrTicker()
+          pool.setIdorticker($cardanoWallet.user.member.poolidbech32)
           $serviceClients.Control.checkPool(pool, (err, res) => { if (err) { reject(err) } else { resolve(res) } })
       }).then(r => {
           console.log("PoolStats", r.toObject())
