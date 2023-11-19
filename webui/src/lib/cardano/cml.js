@@ -26145,10 +26145,18 @@ export const getDelegationSignedTx = async (api, wasm, addr_bech32, pool_bech32,
   twsb.add_existing(tws)
   tws.free()
   const tx = wasm.Transaction.from_bytes(Buffer.from(tx_, 'hex'))
-  const stb = wasm.SignedTxBuilder.new_with_data(tx.body(), twsb, true, tx.auxiliary_data())
+  //const stb = wasm.SignedTxBuilder.new_with_data(tx.body(), twsb, true, tx.auxiliary_data())
+  console.log("in getDelegationSignedTx aux data: ", tx.auxiliary_data())
+  console.log("in getDelegationSignedTx aux data ptr: ", (tx.auxiliary_data()||{}).ptr)
+  let stb;
+  if (tx.auxiliary_data() !== undefined && tx.auxiliary_data().ptr !== null) {
+    stb = wasm.SignedTxBuilder.new_with_data(tx.body(), twsb, true, tx.auxiliary_data())
+  } else {
+    stb = wasm.SignedTxBuilder.new_without_data(tx.body(), twsb, true)
+  }
   tx.free()
   twsb.free()
-  signedTx = stb.build()
+  const signedTx = stb.build_checked()
   stb.free()
   return asHexAndFree(signedTx)
 }

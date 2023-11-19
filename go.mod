@@ -14,7 +14,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/iand/logfmtr v0.2.2
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/safanaj/cardano-go v0.1.22
+	github.com/safanaj/cardano-go v0.1.23
 	github.com/spf13/pflag v1.0.5
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
