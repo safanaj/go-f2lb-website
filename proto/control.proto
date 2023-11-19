@@ -6,6 +6,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
 import "members.proto";
 import "supporters.proto";
 
@@ -70,6 +71,13 @@ service ControlMsgService {
   rpc NonceNext(google.protobuf.Empty) returns (google.protobuf.StringValue) {
     option (google.api.http) = {
       get: "/api/v1/nonce.next"
+    };
+  }
+
+  rpc ReportTip(TipPayload) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/report/tip"
+      body: "*"
     };
   }
 }
@@ -168,4 +176,13 @@ message MemberOrEmpty {
     Member member = 1;
     google.protobuf.Empty empty = 2;
   }
+}
+
+// report tip
+message TipPayload {
+  string type = 1;
+  string pool = 2;
+  string signature = 3;
+  string publicKey = 4;
+  google.protobuf.Struct data = 5;
 }

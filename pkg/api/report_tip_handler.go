@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,7 @@ import (
 	// "github.com/safanaj/cardano-go"
 	// "github.com/safanaj/cardano-go/crypto"
 	"github.com/safanaj/cardano-go/bech32/prefixes"
+	"github.com/safanaj/cardano-go/cose"
 
 	"github.com/safanaj/cardano-go"
 	"github.com/safanaj/cardano-go/crypto"
@@ -90,7 +92,7 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 		}
 
 		switch payload.Type {
-		case minimalSigType, minimalCip22SigType:
+		case minimalSigType, minimalCip22SigType, cip30SigType:
 			// this is ok
 		case plainSigType, cip22SigType:
 			// we need also slotNo and blockHash
@@ -102,7 +104,7 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 				c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "missing blockHash"})
 				return
 			}
-		case cip8SigType, cip30SigType:
+		case cip8SigType:
 			c.IndentedJSON(http.StatusNotImplemented, map[string]string{"sorry": fmt.Sprintf("we don't support yet %s signature", payload.Type)})
 			return
 		default:
@@ -172,6 +174,15 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 				return
 			}
 			vKey = crypto.XPubKey(data).PubKey()[:]
+		} else if strings.HasPrefix(payload.PublicKey, "a42006215820") &&
+			strings.HasSuffix(payload.PublicKey, "01010327") &&
+			payload.Type == cip30SigType {
+			key, err := cose.NewCOSEKeyFromCBORHex(payload.PublicKey)
+			if err != nil {
+				c.IndentedJSON(http.StatusBadRequest, invalidPubKeyErr)
+				return
+			}
+			vKey = key.Key.Bytes()
 		} else if strings.HasPrefix(payload.PublicKey, prefixes.StakePublicKey) {
 			// public key has stake_vk prefix
 			pubKey, err := crypto.NewPubKey(payload.PublicKey)
@@ -272,14 +283,55 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 				c.IndentedJSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 				return
 			}
+
 			if payload.Type == minimalSigType {
 				data = []byte(blockNoAsString)
 			}
 
-			if !pubKey.Verify(data, sigBytes) {
-				c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid signture, verifiction failed",
-					"details data": string(data)})
-				return
+			if payload.Type == cip30SigType {
+				msgToVerify, err := cose.NewCOSESign1MessageFromCBORHex(payload.Signature)
+				if err != nil {
+					c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid COSE Sign1Message signature: " + err.Error()})
+					return
+				}
+
+				key, err := cose.NewCOSEKeyFromBytes(vKey)
+				if err != nil {
+					c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid pub key, failed to build COSE Key: " + err.Error()})
+					return
+				}
+
+				verifier, err := cose.NewVerifierFromCOSEKey(key)
+				if err != nil {
+					c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid pub key, failed to build Verifier from COSE Key: " + err.Error()})
+					return
+				}
+
+				if string(data) != string(msgToVerify.Payload) {
+					// just in this case we need to unmarshal the message payload
+					// and deeply check agains the data in the posted payload
+					mData := map[string]any{}
+					if err := json.Unmarshal(msgToVerify.Payload, &mData); err != nil {
+						c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid payload in message to verify: " + err.Error()})
+						return
+					}
+					if !reflect.DeepEqual(payload.Data, mData) {
+						c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "payload in message to verify is different from the posted one: " + err.Error()})
+						return
+					}
+				}
+
+				if err := msgToVerify.Verify(nil, verifier); err != nil {
+					c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid signture, verifiction failed",
+						"details data": string(data)})
+					return
+				}
+			} else {
+				if !pubKey.Verify(data, sigBytes) {
+					c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid signture, verifiction failed",
+						"details data": string(data)})
+					return
+				}
 			}
 		}
 
