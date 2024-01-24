@@ -91,3 +91,4 @@ require (
 )
 
 // replace github.com/blinklabs-io/gouroboros v0.38.4 => github.com/safanaj/gouroboros v0.0.0-20230513104126-364f41fb05dd
+replace github.com/cardano-community/koios-go-client/v3 v3.1.2 => github.com/safanaj/koios-go-client/v3 v3.0.0-20240124005647-9110de241894

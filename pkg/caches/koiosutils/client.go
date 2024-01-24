@@ -73,8 +73,9 @@ func (kc *KoiosClient) GetTickerToPoolIdMapFor(tickers ...string) (map[string]st
 		opts := kc.k.NewRequestOptions()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		pools, err := kc.k.GetPools(kc.ctx, opts)
-		if err != nil || len(pools.Data) == 0 {
+		pools, ierr := kc.k.GetPools(kc.ctx, opts)
+		if ierr != nil || len(pools.Data) == 0 {
+			err = ierr
 			break
 		}
 
@@ -138,8 +139,9 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		pools, err := kc.k.GetPoolInfos(kc.ctx, pids, opts)
-		if err != nil || len(pools.Data) == 0 {
+		pools, ierr := kc.k.GetPoolInfos(kc.ctx, pids, opts)
+		if ierr != nil || len(pools.Data) == 0 {
+			err = ierr
 			break
 		}
 
@@ -198,8 +200,9 @@ func (kc *KoiosClient) GetStakeAddressesInfos(stakeAddrs ...string) (map[string]
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		infos, err := kc.k.GetAccountsInfo(kc.ctx, saddrs, useKoiosCachedInfo, opts)
-		if err != nil || len(infos.Data) == 0 {
+		infos, ierr := kc.k.GetAccountsInfo(kc.ctx, saddrs, useKoiosCachedInfo, opts)
+		if ierr != nil || len(infos.Data) == 0 {
+			err = ierr
 			break
 		}
 
@@ -360,8 +363,9 @@ func (kc *KoiosClient) GetTxsMetadata(txs []string) (map[string]string, error) {
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		mds, err := kc.k.GetTxsMetadata(kc.ctx, txhs, opts)
-		if err != nil || len(mds.Data) == 0 {
+		mds, ierr := kc.k.GetTxsMetadata(kc.ctx, txhs, opts)
+		if ierr != nil || len(mds.Data) == 0 {
+			err = ierr
 			break
 		}
 
