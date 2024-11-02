@@ -13,12 +13,12 @@ import (
 const supportersSheet = "F2LB-Supporters"
 
 // the first row is the header
-const supportersRange = "A2:D"
+const supportersRange = "A3:M"
 
 type Supporter struct {
 	DiscordName string `json:"discord_name" yaml:"discord_name"`         // A
-	Ticker      string `json:"ticker,omitempty" yaml:"ticker,omitempty"` // A
-	// computed column C
+	Ticker      string `json:"ticker,omitempty" yaml:"ticker,omitempty"` // C
+
 	StakeKeys  []string `json:"stake_keys" yaml:"stake_keys"`
 	StakeAddrs []string `json:"stake_addresses" yaml:"stake_addresses"`
 
@@ -74,17 +74,17 @@ func (m *Supporters) Refresh(f2lb *F2LB, vr *ValueRange) error {
 	for _, v := range vr.Values {
 		sRec := &Supporter{
 			DiscordName: v[0].(string),
-			Ticker:      v[1].(string),
+			Ticker:      v[2].(string),
 		}
-		if len(v) > 3 {
-			sRec.discordID = v[3].(string)
+		if len(v) > 12 {
+			sRec.discordID = v[12].(string)
 		}
 
 		if sRec.Ticker == "-" {
 			sRec.Ticker = ""
 		}
 
-		for _, val := range regexp.MustCompile("[[:space:]]").Split(v[2].(string), -1) {
+		for _, val := range regexp.MustCompile("[[:space:]]").Split(v[8].(string), -1) {
 			if val == "" {
 				continue
 			}
