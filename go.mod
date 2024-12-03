@@ -1,11 +1,13 @@
 module github.com/safanaj/go-f2lb
 
-go 1.21
+go 1.22
+
+toolchain go1.22.7
 
 require (
 	github.com/blinklabs-io/gouroboros v0.62.0
 	github.com/blockfrost/blockfrost-go v0.1.1
-	github.com/cardano-community/koios-go-client/v3 v3.1.2
+	github.com/cardano-community/koios-go-client/v4 v4.0.0
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-logr/logr v1.3.0
@@ -55,6 +57,7 @@ require (
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
+	github.com/happy-sdk/happy/pkg/version v0.1.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.5 // indirect
@@ -78,11 +81,12 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/arch v0.6.0 // indirect
+	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/time v0.4.0 // indirect
+	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.15.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
@@ -91,4 +95,4 @@ require (
 )
 
 // replace github.com/blinklabs-io/gouroboros v0.38.4 => github.com/safanaj/gouroboros v0.0.0-20230513104126-364f41fb05dd
-replace github.com/cardano-community/koios-go-client/v3 v3.1.2 => github.com/safanaj/koios-go-client/v3 v3.0.0-20240124005647-9110de241894
+// replace github.com/cardano-community/koios-go-client/v3 v3.1.2 => github.com/safanaj/koios-go-client/v3 v3.0.0-20240124005647-9110de241894

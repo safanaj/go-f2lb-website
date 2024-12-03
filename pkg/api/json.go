@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	koios "github.com/cardano-community/koios-go-client/v3"
+	koios "github.com/cardano-community/koios-go-client/v4"
 	"github.com/gin-gonic/gin"
 
 	"github.com/safanaj/go-f2lb/pkg/ccli"
@@ -60,7 +60,7 @@ func RegisterApiV0(rg *gin.RouterGroup, ctrl f2lb_gsheet.Controller) {
 			epoch := koios.EpochNo(int(utils.CurrentEpoch()) + delta)
 			opts := kc.NewRequestOptions()
 			opts.QuerySet("select", "nonce")
-			r, err := kc.GetEpochParams(ctx, &epoch, opts)
+			r, err := kc.GetEpochParams(ctx, epoch, opts)
 			if err != nil {
 				c.String(http.StatusServiceUnavailable, "Error getting info from koios: %v\n", err)
 				return

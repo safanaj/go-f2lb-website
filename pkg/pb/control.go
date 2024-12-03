@@ -18,7 +18,7 @@ import (
 
 	"github.com/hako/durafmt"
 
-	koios "github.com/cardano-community/koios-go-client/v3"
+	koios "github.com/cardano-community/koios-go-client/v4"
 
 	"github.com/safanaj/cardano-go"
 	"github.com/safanaj/cardano-go/bech32/prefixes"
@@ -545,7 +545,7 @@ func getNonce(ctx context.Context, kc *koios.Client, delta int) (string, error) 
 	epoch := koios.EpochNo(int(utils.CurrentEpoch()) - 1)
 	opts := kc.NewRequestOptions()
 	opts.QuerySet("select", "nonce")
-	r, err := kc.GetEpochParams(ctx, &epoch, opts)
+	r, err := kc.GetEpochParams(ctx, epoch, opts)
 	if err != nil {
 		return "", fmt.Errorf("Error getting info from koios: %w\n", err)
 	}

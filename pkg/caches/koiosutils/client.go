@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	koios "github.com/cardano-community/koios-go-client/v3"
+	koios "github.com/cardano-community/koios-go-client/v4"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 )
 
@@ -73,21 +73,21 @@ func (kc *KoiosClient) GetTickerToPoolIdMapFor(tickers ...string) (map[string]st
 		opts := kc.k.NewRequestOptions()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		pools, ierr := kc.k.GetPools(kc.ctx, opts)
+		pools, ierr := kc.k.GetPoolList(kc.ctx, opts)
 		if ierr != nil || len(pools.Data) == 0 {
 			err = ierr
 			break
 		}
 
 		for _, p := range pools.Data {
-			if p.PoolID == "" || p.Ticker == "" {
+			if p.PoolIDBech32 == "" || p.Ticker == "" {
 				continue
 			}
 
 			if getAll {
-				r[p.Ticker] = string(p.PoolID)
+				r[p.Ticker] = string(p.PoolIDBech32)
 			} else if _, ok := m[p.Ticker]; ok {
-				r[p.Ticker] = string(p.PoolID)
+				r[p.Ticker] = string(p.PoolIDBech32)
 				delete(m, p.Ticker)
 				if len(m) == 0 {
 					break
@@ -146,11 +146,11 @@ func (kc *KoiosClient) GetPoolsInfos(bech32PoolIds ...string) (map[string]*PoolI
 		}
 
 		for _, p := range pools.Data {
-			if p.PoolID == "" || p.MetaJSON.Ticker == nil || (p.MetaJSON.Ticker != nil && *p.MetaJSON.Ticker == "") {
+			if p.PoolIDBech32 == "" || p.MetaJSON.Ticker == nil || (p.MetaJSON.Ticker != nil && *p.MetaJSON.Ticker == "") {
 				continue
 			}
 			pi := &PoolInfo{
-				Bech32:         string(p.PoolID),
+				Bech32:         string(p.PoolIDBech32),
 				Ticker:         *p.MetaJSON.Ticker,
 				ActiveStake:    uint32(p.ActiveStake.Shift(-6).IntPart()),
 				LiveStake:      uint32(p.LiveStake.Shift(-6).IntPart()),
@@ -200,7 +200,16 @@ func (kc *KoiosClient) GetStakeAddressesInfos(stakeAddrs ...string) (map[string]
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		infos, ierr := kc.k.GetAccountsInfo(kc.ctx, saddrs, useKoiosCachedInfo, opts)
+		var (
+			infos *koios.AccountsInfoResponse
+			ierr  error
+		)
+
+		if useKoiosCachedInfo {
+			infos, ierr = kc.k.GetAccountInfoCached(kc.ctx, saddrs, opts)
+		} else {
+			infos, ierr = kc.k.GetAccountInfo(kc.ctx, saddrs, opts)
+		}
 		if ierr != nil || len(infos.Data) == 0 {
 			err = ierr
 			break
@@ -232,15 +241,27 @@ func (kc *KoiosClient) GetStakeAddressesInfos(stakeAddrs ...string) (map[string]
 }
 
 func (kc *KoiosClient) GetStakeAddressInfo(stakeAddr string) (delegatedPool string, totalAda uint32, err error) {
-	var info *koios.AccountInfoResponse
+	var (
+		infos *koios.AccountsInfoResponse
+		info  koios.AccountInfo
+	)
 	opts := kc.k.NewRequestOptions()
 	opts.QuerySet("select", "delegated_pool,total_balance")
-	info, err = kc.k.GetAccountInfo(kc.ctx, koios.Address(stakeAddr), useKoiosCachedInfo, opts)
+	if useKoiosCachedInfo {
+		infos, err = kc.k.GetAccountInfoCached(kc.ctx, []koios.Address{koios.Address(stakeAddr)}, opts)
+	} else {
+		infos, err = kc.k.GetAccountInfo(kc.ctx, []koios.Address{koios.Address(stakeAddr)}, opts)
+	}
 	if err == nil {
-		if info.Data.DelegatedPool != nil && *info.Data.DelegatedPool != "" {
-			delegatedPool = string(*info.Data.DelegatedPool)
+		if len(infos.Data) != 1 {
+			err = fmt.Errorf("Account Info for %s is not one: len %d", stakeAddr, len(infos.Data))
+			return
 		}
-		totalAda = uint32(info.Data.TotalBalance.Shift(-6).IntPart())
+		info = infos.Data[0]
+		if info.DelegatedPool != nil && *info.DelegatedPool != "" {
+			delegatedPool = string(*info.DelegatedPool)
+		}
+		totalAda = uint32(info.TotalBalance.Shift(-6).IntPart())
 	}
 	return
 }
@@ -252,18 +273,21 @@ func (kc *KoiosClient) GetLastDelegationTx(stakeAddr string) (koios.TxHash, erro
 		opts := kc.k.NewRequestOptions()
 		opts.SetCurrentPage(page)
 		page++
-		res, err := kc.k.GetAccountUpdates(kc.ctx, koios.Address(stakeAddr), nil, opts)
+		res, err := kc.k.GetAccountUpdates(kc.ctx, []koios.Address{koios.Address(stakeAddr)}, opts)
 		if err != nil {
 			return koios.TxHash(""), err
 		}
-		if len(res.Data.Updates) == 0 {
+		if len(res.Data) != 1 {
+			return koios.TxHash(""), fmt.Errorf("Account Updates info for %s is not one: len %d", stakeAddr, len(res.Data))
+		}
+		if len(res.Data[0].Updates) == 0 {
 			break
 		}
-		for i := len(res.Data.Updates) - 1; i > 0; i-- {
-			if res.Data.Updates[i].ActionType != "delegation" {
+		for i := len(res.Data[0].Updates) - 1; i > 0; i-- {
+			if res.Data[0].Updates[i].ActionType != "delegation" {
 				continue
 			}
-			lastDelegTx = res.Data.Updates[i].TxHash
+			lastDelegTx = res.Data[0].Updates[i].TxHash
 			break
 		}
 		if IsResponseComplete(res.Response) {
@@ -282,7 +306,7 @@ func (kc *KoiosClient) GetTxsTimes(txs []koios.TxHash) (map[koios.TxHash]time.Ti
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
 		page++
-		res, err := kc.k.GetTxsInfo(kc.ctx, txs, opts)
+		res, err := kc.k.GetTxInfo(kc.ctx, txs, opts)
 		if err != nil || len(res.Data) == 0 {
 			return ret, err
 		}
@@ -309,18 +333,21 @@ func (kc *KoiosClient) GetLastDelegationTime(stakeAddr string) (time.Time, error
 		opts := kc.k.NewRequestOptions()
 		opts.SetCurrentPage(page)
 		page++
-		res, err := kc.k.GetAccountUpdates(kc.ctx, koios.Address(stakeAddr), nil, opts)
+		res, err := kc.k.GetAccountUpdates(kc.ctx, []koios.Address{koios.Address(stakeAddr)}, opts)
 		if err != nil {
 			return time.Time{}, err
 		}
-		if len(res.Data.Updates) == 0 {
+		if len(res.Data) != 1 {
+			return time.Time{}, fmt.Errorf("Account Updates info for %s is not one: len %d", stakeAddr, len(res.Data))
+		}
+		if len(res.Data[0].Updates) == 0 {
 			break
 		}
-		for i := len(res.Data.Updates) - 1; i > 0; i-- {
-			if res.Data.Updates[i].ActionType != "delegation" {
+		for i := len(res.Data[0].Updates) - 1; i > 0; i-- {
+			if res.Data[0].Updates[i].ActionType != "delegation" {
 				continue
 			}
-			lastDelegTx = res.Data.Updates[i].TxHash
+			lastDelegTx = res.Data[0].Updates[i].TxHash
 			break
 		}
 		if IsResponseComplete(res.Response) {
@@ -331,13 +358,16 @@ func (kc *KoiosClient) GetLastDelegationTime(stakeAddr string) (time.Time, error
 	if lastDelegTx != koios.TxHash("") {
 		opts := kc.k.NewRequestOptions()
 		opts.QuerySet("select", "tx_timestamp")
-		res, err := kc.k.GetTxInfo(kc.ctx, koios.TxHash(lastDelegTx), opts)
+		res, err := kc.k.GetTxInfo(kc.ctx, []koios.TxHash{koios.TxHash(lastDelegTx)}, opts)
 		if err != nil {
 			return time.Time{}, err
 		}
+		if len(res.Data) != 1 {
+			return time.Time{}, fmt.Errorf("TX Info for %s is not one: len %d", lastDelegTx, len(res.Data))
+		}
 		// return time.Parse(time.RFC3339, res.Data.TxTimestamp+"Z")
 		// return time.Unix(res.Data.TxTimestamp, 0), nil
-		return res.Data.TxInfo.TxTimestamp.Time, nil
+		return res.Data[0].TxInfo.TxTimestamp.Time, nil
 	}
 	return time.Time{}, fmt.Errorf("LastDelegationTxNotFound")
 }
@@ -363,7 +393,7 @@ func (kc *KoiosClient) GetTxsMetadata(txs []string) (map[string]string, error) {
 		opts := opts_.Clone()
 		opts.SetCurrentPage(page)
 		page = page + 1
-		mds, ierr := kc.k.GetTxsMetadata(kc.ctx, txhs, opts)
+		mds, ierr := kc.k.GetTxMetadata(kc.ctx, txhs, opts)
 		if ierr != nil || len(mds.Data) == 0 {
 			err = ierr
 			break

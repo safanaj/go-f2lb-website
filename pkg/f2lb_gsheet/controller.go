@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/api/sheets/v4"
 
-	koios "github.com/cardano-community/koios-go-client/v3"
+	koios "github.com/cardano-community/koios-go-client/v4"
 	"github.com/safanaj/go-f2lb/pkg/caches/accountcache"
 	"github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
 	"github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
