@@ -371,14 +371,14 @@ func (p *pinger) checkTarget(target string) RelayStat {
 
 	o, err := ouroboros.New(
 		ouroboros.WithConnection(conn),
-		ouroboros.WithNetwork(ouroboros.NetworkByName("mainnet")),
+		ouroboros.WithNetwork(ouroboros.NetworkMainnet),
 		ouroboros.WithNodeToNode(true),
 		ouroboros.WithKeepAlive(true),
 		ouroboros.WithKeepAliveConfig(
 			keepalive.NewConfig(
 				keepalive.WithTimeout(p.keepaliveTimeout),
 				keepalive.WithPeriod(maxDuration),
-				keepalive.WithKeepAliveResponseFunc(func(c uint16) error {
+				keepalive.WithKeepAliveResponseFunc(func(_ keepalive.CallbackContext, c uint16) error {
 					if c != cookie {
 						err := fmt.Errorf("KeepAliveFunc got wrong cookie: %d expected %d", c, cookie)
 						waitResponse <- pingResponse{t: time.Now(), e: err}
