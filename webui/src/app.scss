@@ -1,51 +1,66 @@
 /* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */ /* Import only what you need from Bulma */
-@import "bulma/sass/utilities/_all";
-@import "bulma/sass/base/_all";
-@import "bulma/sass/elements/_all";
-@import "bulma/sass/form/_all";
-@import "bulma/sass/components/_all";
-@import "bulma/sass/grid/_all";
-@import "bulma/sass/helpers/_all";
-@import "bulma/sass/layout/_all";
 
-// @import "@fortawesome/fontawesome-free/scss/fontawesome";
-// @import "@fortawesome/fontawesome-free/scss/solid";
+@forward "bulma/sass/utilities";
+@use "bulma/sass/base" with ( $body-overflow-y: auto );
+@use "bulma/sass/components" with ( $modal-content-width: 1280px );
+@forward "bulma/sass/elements";
+@forward "bulma/sass/form";
+@forward "bulma/sass/grid";
+@forward "bulma/sass/helpers";
+@forward "bulma/sass/layout";
+@forward "bulma/sass/themes";
 
-@import "@creativebulma/bulma-tooltip/src/sass/index";
-// @import "@creativebulma/bulma-tooltip/src/sass/_animation";
-// @import "@creativebulma/bulma-tooltip/src/sass/_position";
-// @import "@creativebulma/bulma-tooltip/src/sass/_variables";
-@import "@creativebulma/bulma-divider/src/sass/index";
+@use "./sass/bulma-divider";
+@use "./sass/bulma-pageloader/pageloader";
+@use "./sass/bulma-tooltip";
+@use "./sass/bulma-switch";
 
-@import "bulma-pageloader/dist/css/bulma-pageloader";
-@import "bulma-switch/src/sass/index";
-
-html.theme-s {
+html[data-theme=giaco] {
     background-color: #fad82f;
 }
 
-html.theme-s .box.themed {
+html[data-theme=giaco] .box.themed {
     background-color: #fad82f;
 }
 
-html.theme-s .box-out {
+html[data-theme=giaco] .box-out {
     background-color: #0b1d85;
 }
 
-html.theme-s .box-in {
+html[data-theme=giaco] .box-in {
     background-color: #bbcfff;
 }
 
-html.theme-s .box-user {
+html[data-theme=giaco] .box-user {
     color: lightcyan;
 }
 
-html.theme-s nav {
-	--background: rgba(255, 0, 0, .1);
+// html[data-theme=dark] nav {
+// 	--background: rgba(255, 0, 0, .1);
+// }
+
+html nav.head-nav {
+	--background: hsl(233, 100%, 63%);
 }
 
-html nav {
-	--background: rgba(255, 255, 255, .7);
+html nav.head-nav path {
+	--fill: hsl(233, 100%, 63%);
+}
+
+html[data-theme=dark] nav.head-nav {
+	--background: var(--bulma-black);
+}
+
+html[data-theme=dark] nav.head-nav path {
+	--fill: var(--bulma-black);
+}
+
+html[data-theme=light] nav {
+  --background: rgba(255, 255, 255, .7);
+}
+
+html[data-theme=light] nav path {
+  --fill: rgba(255, 255, 255, .7);
 }
 
 div.box.box-in.real-top {

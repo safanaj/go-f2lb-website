@@ -1,0 +1,140 @@
+@use 'sass:list';
+@use 'sass:color'
+
+@forward 'variables'
+@use 'variables' as v
+@forward 'position'
+@use 'position' as p
+@forward 'animation'
+@use 'animation' as a
+/* @forward 'responsiveness'
+/* @use 'responsiveness' as r
+
+=tooltip-arrow
+	&::after
+		box-sizing: border-box
+		color: v.$tooltip-color
+		display: inline-block
+		font-family: v.$tooltip-font-family
+		font-size: v.$tooltip-font-size
+		hyphens: auto
+		opacity: 0
+		overflow: hidden
+		pointer-events: none
+		position: absolute
+		visibility: hidden
+		z-index: v.$tooltip-z-index
+		content: ''
+		border-style: solid
+		border-width: v.$tooltip-arrow-size
+		border-color: rgba(v.$tooltip-background-color, v.$tooltip-background-opacity) transparent transparent transparent
+		margin-bottom: v.$tooltip-arrow-size * -1 + 1
+	+p.tooltip-arrow-top
+
+
+=tooltip-box
+	&::before
+		box-sizing: border-box
+		color: v.$tooltip-color
+		display: inline-block
+		font-family: v.$tooltip-font-family
+		font-size: v.$tooltip-font-size
+		hyphens: auto
+		opacity: 0
+		overflow: hidden
+		pointer-events: none
+		position: absolute
+		visibility: hidden
+		z-index: v.$tooltip-z-index
+		background: rgba(v.$tooltip-background-color, v.$tooltip-background-opacity)
+		border-radius: v.$tooltip-radius
+		content: attr(data-tooltip)
+		padding: v.$tooltip-padding
+		text-overflow: ellipsis
+		white-space: pre-line
+	+p.tooltip-box-top
+
+=tooltip-multiline
+	&::before
+		height: auto
+		width: v.$tooltip-max-width
+		max-width: v.$tooltip-max-width
+		text-overflow: clip
+		white-space: normal
+		word-break: keep-all
+
+[data-tooltip]
+	&:not(.is-loading),
+	&:not(.is-disabled),
+	&:not([disabled])
+		cursor: pointer
+		overflow: visible
+		position: relative
+
+		+tooltip-box
+		&.has-tooltip-arrow
+			+tooltip-arrow
+
+		&.has-tooltip-bottom
+			+p.tooltip-direction('bottom')
+
+		&.has-tooltip-left
+			+p.tooltip-direction('left')
+
+		&.has-tooltip-right
+			+p.tooltip-direction('right')
+
+		&.has-tooltip-multiline
+			+tooltip-multiline
+
+		&.has-tooltip-text-left
+			&::before
+				text-align: left
+		&.has-tooltip-text-centered
+			&::before
+				text-align: center
+		&.has-tooltip-text-right
+			&::before
+				text-align: right
+
+		@each $name, $pair in v.$tooltip-colors
+			$color: list.nth($pair, 1)
+			@if list.length($pair) >= 2
+				$color-invert: list.nth($pair, 2)
+				&.has-tooltip-#{$name}
+					&::after
+						border-color: rgba($color, v.$tooltip-background-opacity) transparent transparent transparent !important
+					&.has-tooltip-bottom
+						&::after
+							border-color: transparent transparent rgba($color, v.$tooltip-background-opacity) transparent !important
+					&.has-tooltip-left
+						&::after
+							border-color: transparent transparent transparent rgba($color, v.$tooltip-background-opacity) !important
+					&.has-tooltip-right
+						&::after
+							border-color: transparent rgba($color, v.$tooltip-background-opacity) transparent transparent !important
+					&:before
+						background-color: rgba($color, v.$tooltip-background-opacity)
+						color: $color-invert
+
+		+p.tooltip-hover
+			opacity: 1
+			visibility: visible
+
+		/* &.has-tooltip-fade
+		/* 	+r.tooltip-fade
+	
+span
+	&[data-tooltip]
+		border-bottom: 1px dashed v.$tooltip-grey-lighter
+		@each $name, $pair in v.$tooltip-colors
+			$color: list.nth($pair, 1)
+			@if list.length($pair) >= 2
+				$color-invert: list.nth($pair, 2)
+				&.has-tooltip-#{$name}
+					border-bottom-color: color.scale($color, $lightness: 5%)
+
+.control
+	span
+		&[data-tooltip]
+			border-bottom: none

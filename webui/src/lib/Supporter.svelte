@@ -1,7 +1,7 @@
 <script>
-  export let supporter;
+  let { supporter } = $props() ;
 </script>
 
 <div class="box box-in">
-  <p>DiscordName: {supporter.discordid}</p>
+  <p>DiscordName: {supporter.discordId}</p>
 </div>

@@ -1,16 +1,26 @@
 <svelte:head>
-<title>Addon Queue</title>
+  <title>Addon Queue</title>
 </svelte:head>
 
 <script>
-  import { addonQueueMembers, epochData } from '$lib/stores'
-  import Member from '$lib/Member.svelte'
-  // import { doCallInPromise } from '$lib/utils'
-  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
+ import { page } from '$app/state'
+ import { addonQueueMembersSet, epochDataInfo } from '$lib/state.svelte'
+ import Member from '$lib/Member.svelte'
+ import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
+ import { createClient } from "@connectrpc/connect";
+ import { createConnectTransport } from "@connectrpc/connect-web";
+ import { AddonQueueService } from "$lib/api/v2/addon_queue_pb.js";
 
-  // if ($addonQueueMembers.length == 0) {
-  //     // doCallInPromise($serviceClients, 'AddonQueue', 'listQueue', addonQueueMembers, 'membersList')
-  // }
+ const aqCli = createClient(AddonQueueService, createConnectTransport({baseUrl: page.url.origin}));
+ const epochData = $derived(epochDataInfo.data)
+
+ if (addonQueueMembersSet.size == 0) {
+   aqCli.listQueue().then(queue => {
+     for (const m of queue.members) { addonQueueMembersSet.add(m) }
+   })
+ }
+ // 
+ //  window.AddonQueue = addonQueueMembersSet
 </script>
 
 <section class="section has-text-centered">
@@ -25,8 +35,8 @@
 <section>
   <article>
     <div class="box box-out">
-      {#each $addonQueueMembers as m}
-        <Member member={m} addonqueue koiosTip={$epochData.koios_tip_block_height} />
+      {#each addonQueueMembersSet as m}
+        <Member member={m} addonqueue koiosTip={epochData.koios_tip_block_height} />
       {/each}
     </div>
   </article>

@@ -1,11 +1,24 @@
 <svelte:head>
-<title>F2LB Supporters</title>
+  <title>F2LB Supporters</title>
 </svelte:head>
 
 <script>
-  import { supportersList } from '$lib/stores'
-  import Supporter from '$lib/Supporter.svelte'
-  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
+ import { page } from '$app/state'
+ import { supportersSet } from '$lib/state.svelte'
+ import Supporter from '$lib/Supporter.svelte'
+ import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
+ import { createClient } from "@connectrpc/connect";
+ import { createConnectTransport } from "@connectrpc/connect-web";
+ import { SupporterService } from "$lib/api/v2/supporters_pb.js";
+
+ const supCli = createClient(SupporterService, createConnectTransport({baseUrl: page.url.origin}));
+
+ if (supportersSet.size == 0) {
+   supCli.list().then(list => {
+     for (const m of list.supporters) { supportersSet.add(m) }
+   })
+ }
+
 </script>
 
 <section class="section has-text-centered">
@@ -15,7 +28,7 @@
 <section>
   <article>
     <div class="box box-out">
-      {#each $supportersList as s}
+      {#each supportersSet as s}
         <Supporter supporter={s} />
       {/each}
     </div>
