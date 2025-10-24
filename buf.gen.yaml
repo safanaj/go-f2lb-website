@@ -1,0 +1,23 @@
+version: v2
+plugins:
+  - local: protoc-gen-go
+    out: pkg/api/v2
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: pkg/api/v2
+    opt:
+    - paths=source_relative
+    - package_suffix
+  - local: protoc-gen-connect-openapi
+    out: api/v2/oav3
+    opt:
+    - format=json
+    - path=apidocs.swagger.json
+
+  # This will invoke protoc-gen-es and write output to src/gen
+  - local: ./webui/node_modules/@bufbuild/protoc-gen-es/bin/protoc-gen-es
+    out: webui/src/lib/api/v2
+    # Also generate any imported dependencies
+    include_imports: true
+    # Add more plugin options here
+    opt: target=js

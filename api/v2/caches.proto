@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package v2;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "go-f2lb/api/v2";
+
+service Koios {
+  rpc GetTip(google.protobuf.Empty) returns (google.protobuf.Struct) {}
+  rpc GetPoolsInfos(google.protobuf.ListValue) returns (google.protobuf.Struct) {}
+  rpc GetStakeAddressesInfos(google.protobuf.ListValue) returns (google.protobuf.Struct) {}
+  rpc GetLastDelegationTx(google.protobuf.StringValue) returns (google.protobuf.StringValue) {}
+  rpc GetLastDelegationTime(google.protobuf.StringValue) returns (google.protobuf.Timestamp) {}
+  rpc GetTxsMetadata(google.protobuf.ListValue) returns (google.protobuf.Struct) {}
+}
+
+service PoolCache {
+  rpc Add(google.protobuf.StringValue) returns (google.protobuf.Empty) {}
+  rpc AddMany(google.protobuf.ListValue) returns (google.protobuf.Empty) {}
+  rpc Del(google.protobuf.StringValue) returns (google.protobuf.Empty) {}
+  rpc DelMany(google.protobuf.ListValue) returns (google.protobuf.Empty) {}
+  rpc Get(google.protobuf.StringValue) returns (google.protobuf.Struct) {}
+  // rpc GetAll(google.protobuf.Empty) returns (google.protobuf.ListValue) {}
+  rpc Len(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {}
+  rpc Pending(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {}
+  rpc AddedItems(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {}
+  rpc ResetCounts(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Ready(google.protobuf.Empty) returns (google.protobuf.BoolValue) {}
+  rpc IsTickerMissingFromKoiosPoolList(google.protobuf.StringValue) returns (google.protobuf.BoolValue) {}
+  rpc GetMissingPoolInfos(google.protobuf.Empty) returns (google.protobuf.ListValue) {}
+}
+
+service AccountCache {
+  rpc Add(google.protobuf.StringValue) returns (google.protobuf.Empty) {}
+  rpc AddMany(google.protobuf.ListValue) returns (google.protobuf.Empty) {}
+  rpc Del(google.protobuf.StringValue) returns (google.protobuf.Empty) {}
+  rpc DelMany(google.protobuf.ListValue) returns (google.protobuf.Empty) {}
+  rpc Get(google.protobuf.StringValue) returns (google.protobuf.Struct) {}
+  // rpc GetAll(google.protobuf.Empty) returns (google.protobuf.ListValue) {}
+  rpc Len(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {}
+  rpc Pending(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {}
+  rpc AddedItems(google.protobuf.Empty) returns (google.protobuf.UInt32Value) {}
+  rpc ResetCounts(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Ready(google.protobuf.Empty) returns (google.protobuf.BoolValue) {}
+  rpc RefreshMember(google.protobuf.StringValue) returns (google.protobuf.Empty) {}
+}

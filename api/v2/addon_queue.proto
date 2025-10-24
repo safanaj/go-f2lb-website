@@ -1,23 +1,23 @@
 syntax = "proto3";
 
-package pb;
+package v2;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "members.proto";
 
-option go_package = "go-f2lb/pb";
+option go_package = "go-f2lb/api/v2";
 
 service AddonQueueService {
   rpc Records(google.protobuf.Empty) returns (Members) {};
   rpc ListQueue(google.protobuf.Empty) returns (Members) {
     option (google.api.http) = {
-      get: "/api/v1/addon-queue"
+      get: "/api/v2/addon-queue"
     };
   };
   rpc Served(google.protobuf.Empty) returns (Member) {
     option (google.api.http) = {
-      get: "/api/v1/addon-queue/served"
+      get: "/api/v2/addon-queue/served"
     };
   };
 }

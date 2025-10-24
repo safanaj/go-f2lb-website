@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package v2;
+
+// import "protoc-gen-openapiv2/options/annotations.proto";
+import "gnostic/openapi/v3/annotations.proto";
+
+option go_package = "go-f2lb/api/v2";
+option (gnostic.openapi.v3.document) = {
+  openapi: "3.1.0",
+  info: {
+    title: "F2LB Unofficial WebSite";
+    version: "2.0";
+    contact: {
+      name: "Bardels for F2LB";
+      url: "https://f2lb.bardels.me";
+      email: "marco@bardels.me";
+    };
+    license: {
+      name: "GNU General Public License (v3)";
+      url: "https://www.gnu.org/licenses/gpl-3.0.en.html#license-text";
+    };
+  };
+};

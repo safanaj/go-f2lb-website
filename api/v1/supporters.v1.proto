@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "go-f2lb/api/v1";
+
+service SupporterService {
+  rpc List(google.protobuf.Empty) returns (Supporters) {
+    option (google.api.http) = {
+      get: "/api/v1/supporters"
+    };
+  }
+}
+
+message Supporters {
+  repeated Supporter supporters = 1;
+}
+
+message Supporter {
+  string discordId = 1;
+}

@@ -1,2 +1,2 @@
 // This package contains the RPC models implementation and is the generated protobuf files.
-package pb
+package v2

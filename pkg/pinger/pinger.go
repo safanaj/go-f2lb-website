@@ -9,6 +9,7 @@ import (
 	"time"
 
 	ouroboros "github.com/blinklabs-io/gouroboros"
+	"github.com/blinklabs-io/gouroboros/protocol"
 	"github.com/blinklabs-io/gouroboros/protocol/keepalive"
 
 	ku "github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
@@ -373,29 +374,43 @@ func (p *pinger) checkTarget(target string) RelayStat {
 		ouroboros.WithConnection(conn),
 		ouroboros.WithNetwork(ouroboros.NetworkMainnet),
 		ouroboros.WithNodeToNode(true),
-		ouroboros.WithKeepAlive(true),
-		ouroboros.WithKeepAliveConfig(
-			keepalive.NewConfig(
-				keepalive.WithTimeout(p.keepaliveTimeout),
-				keepalive.WithPeriod(maxDuration),
-				keepalive.WithKeepAliveResponseFunc(func(_ keepalive.CallbackContext, c uint16) error {
-					if c != cookie {
-						err := fmt.Errorf("KeepAliveFunc got wrong cookie: %d expected %d", c, cookie)
-						waitResponse <- pingResponse{t: time.Now(), e: err}
-						return err
-					}
-					waitResponse <- pingResponse{t: time.Now(), e: nil}
-					p.V(5).Info("checkTarget", "target", target, "cookie", cookie, "got c", c)
-					return nil
-				}),
-			)),
+		ouroboros.WithKeepAlive(false), // we gonna inject KeepAlive Client
 	)
 
 	if err != nil {
 		return RelayStat{Error: err}
 	}
 
-	// o.KeepAlive().Client.Start()
+	kaCliCfg := new(keepalive.Config)
+	*kaCliCfg = keepalive.NewConfig(
+		keepalive.WithTimeout(p.keepaliveTimeout),
+		keepalive.WithPeriod(maxDuration),
+		keepalive.WithKeepAliveResponseFunc(func(_ keepalive.CallbackContext, c uint16) error {
+			if c != cookie {
+				err := fmt.Errorf("KeepAliveFunc got wrong cookie: %d expected %d", c, cookie)
+				waitResponse <- pingResponse{t: time.Now(), e: err}
+				return err
+			}
+			waitResponse <- pingResponse{t: time.Now(), e: nil}
+			p.V(5).Info("checkTarget", "target", target, "cookie", cookie, "got c", c)
+			// update expected cookie
+			kaCliCfg.Cookie++
+			return nil
+		}),
+	)
+
+	kaCli := keepalive.NewClient(protocol.ProtocolOptions{
+		ConnectionId: o.Id(),
+		Muxer:        o.Muxer(),
+		Logger:       o.Handshake().Client.Protocol.Logger(),
+		ErrorChan:    o.ErrorChan(),
+		Mode:         protocol.ProtocolModeNodeToNode,
+	}, kaCliCfg)
+	if o.KeepAlive() != nil {
+		o.KeepAlive().Client = kaCli
+		o.KeepAlive().Client.Protocol.Start()
+	}
+
 	if p.checkAlsoTip {
 		o.ChainSync().Client.Start()
 	}

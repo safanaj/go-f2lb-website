@@ -42,6 +42,7 @@ type (
 		IsRunning() bool
 		RefreshMember(string) error
 		Refresh()
+		ResetCounts()
 		Start()
 		Stop()
 		WithOptions(
@@ -106,9 +107,10 @@ type accountCache struct {
 	refresherFinished  chan any
 	refresherCtxCancel func()
 
-	addeditems uint32
-	nitems     uint32
-	cache      *sync.Map
+	resetCountsMu sync.RWMutex
+	addeditems    uint32
+	nitems        uint32
+	cache         *sync.Map
 
 	cachesStoreDir string
 
@@ -170,6 +172,7 @@ func (ac *accountCache) cacheSyncer() {
 	defer ac.cacheSyncerWg.Done()
 	for ai := range ac.infoCh {
 		ac.V(3).Info("cache syncer", "got", ai)
+		ac.resetCountsMu.RLock()
 		switch v := ai.(type) {
 		case string:
 			// delete from cache
@@ -186,6 +189,9 @@ func (ac *accountCache) cacheSyncer() {
 				ac.cache.Store(v.stakeAddress, v)
 			} else {
 				atomic.AddUint32(&ac.nitems, uint32(1))
+				if ac.nitems > ac.addeditems {
+					atomic.StoreUint32(&ac.addeditems, ac.nitems)
+				}
 				ac.V(2).Info("cache syncer added", "item", v.stakeAddress, "now len", ac.Len())
 			}
 			if storeDone != nil {
@@ -197,6 +203,7 @@ func (ac *accountCache) cacheSyncer() {
 			}
 			maybeNotifyWaiter(ac)
 		}
+		ac.resetCountsMu.RUnlock()
 	}
 }
 
@@ -518,6 +525,8 @@ func (ac *accountCache) addMany(saddrs []string) {
 	if !ac.running {
 		return
 	}
+	ac.resetCountsMu.RLock()
+	defer ac.resetCountsMu.RUnlock()
 	// isEmpty := ac.Len() == 0
 	for _, saddr := range saddrs {
 		// if !isEmpty {
@@ -544,8 +553,10 @@ func (ac *accountCache) delMany(saddrs []string) {
 	if !ac.running {
 		return
 	}
+	ac.resetCountsMu.RLock()
+	defer ac.resetCountsMu.RUnlock()
 	for _, saddr := range saddrs {
-		if _, ok := ac.cache.Load(saddr); !ok {
+		if _, ok := ac.cache.Load(saddr); ok && ac.addeditems > 0 {
 			atomic.AddUint32(&ac.addeditems, ^uint32(0))
 		}
 		ac.infoCh <- saddr
@@ -572,6 +583,18 @@ func (ac *accountCache) Len() uint32        { return ac.nitems }
 func (ac *accountCache) Pending() uint32    { return ac.addeditems - ac.nitems }
 func (ac *accountCache) AddedItems() uint32 { return ac.addeditems }
 func (ac *accountCache) IsRunning() bool    { return ac.running }
+func (ac *accountCache) ResetCounts() {
+	ac.resetCountsMu.Lock()
+	defer ac.resetCountsMu.Unlock()
+	items := 0
+	ac.cache.Range(func(_, _ any) bool {
+		items++
+		return true
+	})
+	atomic.SwapUint32(&ac.addeditems, uint32(items))
+	atomic.SwapUint32(&ac.nitems, uint32(items))
+}
+
 func (ac *accountCache) Ready() bool {
 	ac.V(5).Info("AccountCache.Status",
 		"ready", ac.nitems == ac.addeditems, "nitems", ac.nitems, "addeditems", ac.addeditems, "pending", ac.Pending())
@@ -617,13 +640,13 @@ func (c *accountCache) maybeLoadFromDisk() {
 	fi, err := os.Stat(c.cachesStoreDir)
 	if err != nil {
 		return
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(c.cachesStoreDir, 0700); err != nil {
-				return
-			}
-		} else {
-			return
-		}
+		// if os.IsNotExist(err) {
+		// 	if err := os.MkdirAll(c.cachesStoreDir, 0700); err != nil {
+		// 		return
+		// 	}
+		// } else {
+		// 	return
+		// }
 	} else {
 		if !(fi.Mode().IsDir() && ((fi.Mode().Perm() & 0700) == 0700)) {
 			return
@@ -650,7 +673,6 @@ func (c *accountCache) maybeLoadFromDisk() {
 		f.Close()
 	}
 	c.V(2).Info("maybeLoadFromDisk", "addeditems", c.addeditems, "nitems", c.nitems)
-	return
 }
 
 func (c *accountCache) maybeStoreToDisk() {
@@ -685,7 +707,6 @@ func (c *accountCache) maybeStoreToDisk() {
 		}
 		f.Close()
 	}
-	return
 }
 
 func (ac *accountCache) Start() {

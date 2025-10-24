@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package v2;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "members.proto";
+
+option go_package = "go-f2lb/api/v2";
+
+service MainQueueService {
+  rpc Records(google.protobuf.Empty) returns (Members) {}
+  rpc ListQueue(google.protobuf.Empty) returns (Members) {
+    option (google.api.http) = {
+      get: "/api/v2/main-queue"
+    };
+    // option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc Served(google.protobuf.Empty) returns (Member) {
+    option (google.api.http) = {
+      get: "/api/v2/main-queue/served"
+      // response_body: "member"
+    };
+    // option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // rpc Refresh(google.protobuf.Empty)
+}

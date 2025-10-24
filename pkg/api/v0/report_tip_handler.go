@@ -1,4 +1,4 @@
-package api
+package v0
 
 import (
 	// "encoding/hex"
@@ -224,8 +224,10 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 			hash := blake2b.Sum256(vKey)
 			vkh := hex.EncodeToString(hash[:])
 			if vkh != pool.VrfKeyHash() {
-				c.IndentedJSON(http.StatusUnauthorized, map[string]string{"error": "provided public key is not matching pool VRF key hash",
-					"details": fmt.Sprintf("%s != %s (pool vrf key hash from koios)", vkh, pool.VrfKeyHash())})
+				c.IndentedJSON(http.StatusUnauthorized, map[string]string{
+					"error":   "provided public key is not matching pool VRF key hash",
+					"details": fmt.Sprintf("%s != %s (pool vrf key hash from koios)", vkh, pool.VrfKeyHash()),
+				})
 				return
 			}
 
@@ -259,8 +261,10 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 			dataHashBytes := blake2b.Sum256(seedData)
 			_, err = libsodium.CryptoVrfVerify(vKey, sigBytes, dataHashBytes[:])
 			if err != nil {
-				c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid signture, verifiction failed: " + err.Error(),
-					"details data": string(seedData)})
+				c.IndentedJSON(http.StatusBadRequest, map[string]string{
+					"error":        "invalid signture, verifiction failed: " + err.Error(),
+					"details data": string(seedData),
+				})
 				return
 			}
 		} else {
@@ -274,8 +278,10 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 			// we need this to verify stake key hash
 			sp := ctrl.GetStakePoolSet().Get(pool.Ticker())
 			if sp.MainStakeKey() != vkhHex {
-				c.IndentedJSON(http.StatusUnauthorized, map[string]string{"error": "provided public key is not matching member stake key",
-					"details": fmt.Sprintf("%s != %s (stake key hash)", vkhHex, sp.MainStakeKey())})
+				c.IndentedJSON(http.StatusUnauthorized, map[string]string{
+					"error":   "provided public key is not matching member stake key",
+					"details": fmt.Sprintf("%s != %s (stake key hash)", vkhHex, sp.MainStakeKey()),
+				})
 				return
 			}
 			data, err := json.Marshal(payload.Data)
@@ -322,14 +328,18 @@ func getReportTipHandler(ctrl f2lb_gsheet.Controller) func(*gin.Context) {
 				}
 
 				if err := msgToVerify.Verify(nil, verifier); err != nil {
-					c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid signture, verifiction failed",
-						"details data": string(data)})
+					c.IndentedJSON(http.StatusBadRequest, map[string]string{
+						"error":        "invalid signture, verifiction failed",
+						"details data": string(data),
+					})
 					return
 				}
 			} else {
 				if !pubKey.Verify(data, sigBytes) {
-					c.IndentedJSON(http.StatusBadRequest, map[string]string{"error": "invalid signture, verifiction failed",
-						"details data": string(data)})
+					c.IndentedJSON(http.StatusBadRequest, map[string]string{
+						"error":        "invalid signture, verifiction failed",
+						"details data": string(data),
+					})
 					return
 				}
 			}

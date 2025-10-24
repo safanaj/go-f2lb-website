@@ -1,16 +1,16 @@
 syntax = "proto3";
 
-package pb;
+package v2;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "go-f2lb/pb";
+option go_package = "go-f2lb/api/v2";
 
 service SupporterService {
   rpc List(google.protobuf.Empty) returns (Supporters) {
     option (google.api.http) = {
-      get: "/api/v1/supporters"
+      get: "/api/v2/supporters"
     };
   }
 }

@@ -2,10 +2,17 @@ package webserver
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/quic-go/quic-go/http3"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -27,25 +34,94 @@ type WebServer interface {
 
 type webServer struct {
 	srv            *http.Server
+	quicSrv        *http3.Server
 	grpcAddr       string
 	grpcSrvStarted bool
 	smStop         context.CancelFunc
 	rh             *rootHandler
 }
 
-func New(addr string, engine *gin.Engine, sessionsStoreDir string, useGinAsRootHandler bool, grpcAddr string) WebServer {
-	sm := NewSessionManager(sessionsStoreDir)
-	rootHandler := NewRootHandler(engine, sm)
-	if useGinAsRootHandler {
+type Options struct {
+	Addr                string
+	GinEngine           *gin.Engine
+	SessionsStoreDir    string
+	UseGinAsRootHandler bool
+	GrpcAddr            string
+	CACertPath          string
+	CertPath            string
+	KeyPath             string
+}
+
+func New(opts Options) WebServer {
+	sm := NewSessionManager(opts.SessionsStoreDir)
+	rootHandler := NewRootHandler(opts.GinEngine, sm)
+	httpSrv := &http.Server{Addr: opts.Addr}
+	quicSrv := &http3.Server{Addr: opts.Addr}
+
+	gzipOpts := gzip.WithExcludedPathsRegexs(
+		[]string{"^/v2\\..*/.*$", "^/api/v2/.*$"})
+
+	if opts.CertPath == "" || opts.KeyPath == "" {
+		rootHandler.ginHandler.UseH2C = true
+	} else {
+		loadCertOrDie := func() *tls.Certificate {
+			tlsCert, err := tls.LoadX509KeyPair(opts.CertPath, opts.KeyPath)
+			if err != nil {
+				panic(err)
+			}
+			if tlsCert.Leaf, err = x509.ParseCertificate(tlsCert.Certificate[0]); err != nil {
+				panic(err)
+			}
+			return &tlsCert
+		}
+		tlsCert := loadCertOrDie()
+		httpSrv.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS13,
+			GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+				if tlsCert.Leaf.NotAfter.After(time.Now()) {
+					tlsCert = loadCertOrDie()
+				}
+				return tlsCert, nil
+			},
+		}
+		quicSrv.TLSConfig = httpSrv.TLSConfig
+
+		// https server configuration is done on Start
+		//http2.ConfigureServer(httpSrv, &http2.Server{})
+		println("should have cert")
+	}
+
+	if opts.UseGinAsRootHandler {
 		rootHandler.ginHandler.Use(
 			SessionInHeaderAndCookieMiddleware(sm),
 			rootHandler.AsMiddleware(),
-			gzip.Gzip(gzip.DefaultCompression))
-
-		return &webServer{srv: &http.Server{Addr: addr, Handler: rootHandler.ginHandler}, rh: rootHandler, grpcAddr: grpcAddr}
+			gzip.Gzip(gzip.DefaultCompression, gzipOpts))
+		if quicSrv.TLSConfig != nil {
+			httpSrv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// quicSrv.SetQUICHeaders(w.Header())
+				rootHandler.ginHandler.ServeHTTP(w, r)
+			})
+			quicSrv.Handler = rootHandler.ginHandler
+		} else {
+			httpSrv.Handler = rootHandler.ginHandler
+		}
+		return &webServer{srv: httpSrv, quicSrv: quicSrv, rh: rootHandler, grpcAddr: opts.GrpcAddr}
 	} else {
-		rootHandler.ginHandler.Use(gzip.Gzip(gzip.DefaultCompression))
-		return &webServer{srv: &http.Server{Addr: addr, Handler: rootHandler}, rh: rootHandler, grpcAddr: grpcAddr}
+		rootHandler.ginHandler.Use(gzip.Gzip(gzip.DefaultCompression, gzipOpts))
+		if quicSrv.TLSConfig != nil {
+			httpSrv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// quicSrv.SetQUICHeaders(w.Header())
+				rootHandler.ServeHTTP(w, r)
+			})
+			quicSrv.Handler = rootHandler
+		} else {
+			httpSrv.Handler = rootHandler
+		}
+		if rootHandler.ginHandler.UseH2C {
+			// we are not running with TLS
+			httpSrv.Handler = h2c.NewHandler(rootHandler, &http2.Server{})
+		}
+		return &webServer{srv: httpSrv, quicSrv: quicSrv, rh: rootHandler, grpcAddr: opts.GrpcAddr}
 	}
 }
 
@@ -76,13 +152,55 @@ func (ws *webServer) Start(setStaticFSForApp bool) error {
 	smCtx, smStop := context.WithCancel(context.Background())
 	ws.smStop = smStop
 	ws.GetSessionManager().Start(smCtx)
-	return ws.srv.ListenAndServe()
+	if !ws.rh.ginHandler.UseH2C {
+		http2.ConfigureServer(ws.srv, nil)
+	}
+	if ws.srv.TLSConfig == nil || ws.srv.TLSConfig.GetCertificate == nil {
+		return ws.srv.ListenAndServe()
+	}
+
+	if ws.quicSrv.TLSConfig == nil {
+		return ws.srv.ListenAndServeTLS("", "")
+	}
+
+	udpAddr, err := net.ResolveUDPAddr("udp", ws.quicSrv.Addr)
+	if err != nil {
+		return err
+	}
+	udpConn, err := net.ListenUDP("udp", udpAddr)
+	if err != nil {
+		return err
+	}
+	defer udpConn.Close()
+
+	// see quic http3 ListenAndServeTLS
+	hErr := make(chan error, 1)
+	qErr := make(chan error, 1)
+	go func() {
+		hErr <- ws.srv.ListenAndServeTLS("", "")
+	}()
+	go func() {
+		qErr <- ws.quicSrv.Serve(udpConn)
+	}()
+
+	select {
+	case err := <-hErr:
+		ws.quicSrv.Close()
+		return err
+	case err := <-qErr:
+		// Cannot close the HTTP server or wait for requests to complete properly :/
+		return err
+	}
 }
+
 func (ws *webServer) Stop(ctx context.Context) error {
 	ws.smStop()
 	<-ws.GetSessionManager().Done()
 	if ws.grpcSrvStarted {
 		ws.GetGrpcServer().Stop()
+	}
+	if ws.quicSrv.TLSConfig != nil {
+		defer ws.quicSrv.Shutdown(ctx)
 	}
 	return ws.srv.Shutdown(ctx)
 }

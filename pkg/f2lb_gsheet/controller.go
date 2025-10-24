@@ -68,6 +68,7 @@ type Controller interface {
 	GetDelegationCycle() *DelegationCycle
 
 	SetRefresherChannel(chan<- string) error
+	SetRefresherChannelV2(chan<- string) error
 	SetRefresherInterval(time.Duration) error
 	GetLastRefreshTime() time.Time
 	IsRunning() bool
@@ -114,6 +115,7 @@ type controller struct {
 	refreshInterval time.Duration
 	tick            *time.Ticker
 	refresherCh     chan<- string
+	refresherV2Ch   chan<- string
 	mu              sync.RWMutex
 	isRefreshing    bool
 	lastRefreshTime time.Time
@@ -169,6 +171,14 @@ func (c *controller) SetRefresherChannel(ch chan<- string) error {
 		return IsRunningErr
 	}
 	c.refresherCh = ch
+	return nil
+}
+
+func (c *controller) SetRefresherChannelV2(ch chan<- string) error {
+	if c.IsRunning() {
+		return IsRunningErr
+	}
+	c.refresherV2Ch = ch
 	return nil
 }
 
@@ -356,7 +366,6 @@ func (c *controller) Refresh() error {
 
 	hintsMapping := getHintsMapping(poolsHintsPath)
 
-	var koiosErr error
 	wg.Add(4)
 	// wg.Add(1)
 	go func() {
@@ -501,6 +510,11 @@ func (c *controller) Refresh() error {
 				c.refresherCh <- "ALL"
 			}
 
+			if c.refresherV2Ch != nil {
+				c.V(2).Info("Controller sending refresh message to all the clients via websocket", "in", time.Since(startRefreshAt).String())
+				c.refresherV2Ch <- "ALL"
+			}
+
 		}()
 
 		c.V(2).Info("Controller refresh filled main Queue\n", "in", time.Since(startRefreshAt).String())
@@ -525,9 +539,6 @@ func (c *controller) Refresh() error {
 	}()
 
 	wg.Wait()
-	if koiosErr != nil {
-		return koiosErr
-	}
 
 	{
 		c.V(3).Info("Preparing stake pool set")
@@ -632,6 +643,9 @@ func (c *controller) Refresh() error {
 	if c.refresherCh != nil {
 		c.refresherCh <- "ALL"
 	}
+	if c.refresherV2Ch != nil {
+		c.refresherV2Ch <- "ALL"
+	}
 	c.V(2).Info("Controller caches are ready?",
 		"account", c.accountCache.Ready(),
 		"pool", c.poolCache.Ready(),
@@ -679,15 +693,12 @@ func (c *controller) Start() error {
 		return err
 	}
 	go func() {
-		for {
-			select {
-			case <-c.tick.C:
-				// this is a kind of hard refresh
-				c.mainQueue.ResetCaches()
-				c.addonQueue.ResetCaches()
-				if err := c.Refresh(); err != nil {
-					c.Error(err, "Controller Refresh failed")
-				}
+		for range c.tick.C {
+			// this is a kind of hard refresh
+			c.mainQueue.ResetCaches()
+			c.addonQueue.ResetCaches()
+			if err := c.Refresh(); err != nil {
+				c.Error(err, "Controller Refresh failed")
 			}
 		}
 	}()
@@ -700,6 +711,8 @@ func (c *controller) Start() error {
 		if _, block, slot, err := c.kc.GetTip(); err == nil {
 			c.koiosTipBlockHeightCached = block
 			c.koiosTipSlotCached = slot
+		} else {
+			c.Error(err, "[koios] GetTip failed")
 		}
 		t := time.NewTicker(koiosTipRefreshInterval)
 		for {
@@ -710,6 +723,8 @@ func (c *controller) Start() error {
 				if _, block, slot, err := c.kc.GetTip(); err == nil {
 					c.koiosTipBlockHeightCached = block
 					c.koiosTipSlotCached = slot
+				} else {
+					c.Error(err, "[koios] GetTip failed")
 				}
 			}
 		}
@@ -756,7 +771,7 @@ func (c *controller) getPoolInfos(tickers []string) {
 
 	t2p, err, _ := c.kc.GetTickerToPoolIdMapFor(tickers...)
 	if err != nil {
-		c.Error(err, "Controller.getPoolInfos", "n tickers", len(tickers))
+		c.Error(err, "[koios] Controller.getPoolInfos failed", "n tickers", len(tickers))
 		return
 	}
 	for _, t := range tickers {
@@ -776,6 +791,9 @@ func (c *controller) getPoolInfos(tickers []string) {
 	}
 	if c.refresherCh != nil {
 		c.refresherCh <- "ALL"
+	}
+	if c.refresherV2Ch != nil {
+		c.refresherV2Ch <- "ALL"
 	}
 	c.V(2).Info("Controller got pool infos", "in", time.Since(startPoolInfoAt).String())
 }
@@ -829,6 +847,7 @@ func (c *controller) getAccountInfos(saddrs []string) {
 				defer stakeAddressInfoWaitGroup.Done()
 				tx, err := c.kc.GetLastDelegationTx(r.StakeAddrs[0])
 				if err != nil {
+					c.Error(err, "[koios] GetLastDelegationTx failed")
 					return
 				}
 				txsCh <- txItem{r.StakeAddrs[0], tx}
@@ -844,6 +863,8 @@ func (c *controller) getAccountInfos(saddrs []string) {
 					saddr2time[saddr] = t
 				}
 			}
+		} else {
+			c.Error(err, "[koios] GetTxsTimes failed")
 		}
 	}
 
@@ -894,6 +915,9 @@ func (c *controller) getAccountInfos(saddrs []string) {
 	}
 	if c.refresherCh != nil {
 		c.refresherCh <- "ALL"
+	}
+	if c.refresherV2Ch != nil {
+		c.refresherV2Ch <- "ALL"
 	}
 	c.V(2).Info("Controller got account infos", "in", time.Since(startAccountInfoAt).String())
 }

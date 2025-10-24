@@ -1,26 +1,26 @@
 syntax = "proto3";
 
-package pb;
+package v2;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "go-f2lb/pb";
+option go_package = "go-f2lb/api/v2";
 
 service MemberService {
   rpc List(google.protobuf.Empty) returns (Members) {
     option (google.api.http) = {
-      get: "/api/v1/members"
+      get: "/api/v2/members"
     };
   }
   rpc Active(google.protobuf.Empty) returns (Member) {
     option (google.api.http) = {
-      get: "/api/v1/active-member"
+      get: "/api/v2/active-member"
     };
   }
   rpc Top(google.protobuf.Empty) returns (Member) {
     option (google.api.http) = {
-      get: "/api/v1/top-member"
+      get: "/api/v2/top-member"
     };
   }
 }

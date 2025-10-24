@@ -39,6 +39,7 @@ type (
 		Len() uint32
 		Pending() uint32
 		AddedItems() uint32
+		ResetCounts()
 		Ready() bool
 		WaitReady(time.Duration) bool
 		IsRunning() bool
@@ -131,9 +132,10 @@ type poolCache struct {
 	refresherFinished  chan any
 	refresherCtxCancel func()
 
-	addeditems uint32
-	nitems     uint32
-	cache      *sync.Map
+	resetCountsMu sync.RWMutex
+	addeditems    uint32
+	nitems        uint32
+	cache         *sync.Map
 	// keys are bech32 ids
 	cache2 *sync.Map
 
@@ -192,6 +194,7 @@ func (pc *poolCache) cacheSyncer() {
 	defer pc.cacheSyncerWg.Done()
 	for ai := range pc.infoCh {
 		pc.V(3).Info("cache syncer", "got", ai)
+		pc.resetCountsMu.RLock()
 		switch v := ai.(type) {
 		case string:
 			// delete from cache
@@ -237,6 +240,7 @@ func (pc *poolCache) cacheSyncer() {
 			}
 			maybeNotifyWaiter(pc)
 		}
+		pc.resetCountsMu.RUnlock()
 	}
 }
 
@@ -551,6 +555,8 @@ func (pc *poolCache) addMany(saddrs []any) {
 	if !pc.running {
 		return
 	}
+	pc.resetCountsMu.RLock()
+	defer pc.resetCountsMu.RUnlock()
 	for _, saddrI := range saddrs {
 		switch v := saddrI.(type) {
 		case string:
@@ -590,7 +596,7 @@ func (pc *poolCache) delMany(saddrs []string) {
 		return
 	}
 	for _, saddr := range saddrs {
-		if _, ok := pc.cache.Load(saddr); !ok {
+		if _, ok := pc.cache.Load(saddr); ok && pc.addeditems > 0 {
 			atomic.AddUint32(&pc.addeditems, ^uint32(0))
 		}
 		pc.infoCh <- saddr
@@ -637,6 +643,18 @@ func (pc *poolCache) Pending() uint32 {
 }
 func (pc *poolCache) AddedItems() uint32 { return pc.addeditems }
 func (pc *poolCache) IsRunning() bool    { return pc.running }
+func (pc *poolCache) ResetCounts() {
+	pc.resetCountsMu.Lock()
+	defer pc.resetCountsMu.Unlock()
+	items := 0
+	pc.cache.Range(func(_, _ any) bool {
+		items++
+		return true
+	})
+	atomic.SwapUint32(&pc.addeditems, uint32(items))
+	atomic.SwapUint32(&pc.nitems, uint32(items))
+}
+
 func (pc *poolCache) Ready() bool {
 	pc.V(5).Info("PoolCache.Status",
 		"ready", pc.nitems == pc.addeditems, "nitems", pc.nitems, "addeditems", pc.addeditems, "pending", pc.Pending())
@@ -750,7 +768,6 @@ func (c *poolCache) maybeStoreToDisk() {
 		}
 		f.Close()
 	}
-	return
 }
 
 func (pc *poolCache) Start() {

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package pb;
+package v2;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
@@ -10,32 +10,32 @@ import "google/protobuf/struct.proto";
 import "members.proto";
 import "supporters.proto";
 
-option go_package = "go-f2lb/pb";
+option go_package = "go-f2lb/api/v2";
 
 service ControlMsgService {
-  rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
+  rpc Control(google.protobuf.Empty) returns (stream ControlMsg) {}
   rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc RefreshMember(StakeAddr) returns (MemberOrEmpty) {
     option (google.api.http) = {
-      post: "/api/v1/refresh-member/{stakeAddress}"
+      post: "/api/v2/refresh-member/{stakeAddress}"
     };
   }
   rpc RefreshAllMembers(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Auth(StakeAddr) returns (User) {
     option (google.api.http) = {
-      post: "/api/v1/auth"
-      body: "stakeAddress"
+      post: "/api/v2/auth"
+      //body: "stakeAddress"
     };
   }
   rpc WhoAmI(google.protobuf.Empty) returns (User) {
     option (google.api.http) = {
-      get: "/api/v1/who-am-i"
+      get: "/api/v2/who-am-i"
     };
   }
   rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {
     option (google.api.http) = {
-      post: "/api/v1/authn"
-      body: "*"
+      post: "/api/v2/authn"
+      //body: "*"
     };
   }
   rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
@@ -43,41 +43,41 @@ service ControlMsgService {
   rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
   rpc GetPoolStats(PoolTicker) returns (PoolStats) {
     option (google.api.http) = {
-      get: "/api/v1/pool/{ticker}/stats"
+      get: "/api/v2/pool/{ticker}/stats"
     };
   }
   rpc CheckPool(PoolBech32IdOrHexIdOrTicker) returns (PoolStats) {
     option (google.api.http) = {
-      post: "/api/v1/pool/{idOrTicker}/stats"
+      post: "/api/v2/pool/{idOrTicker}/stats"
     };
   }
   rpc CheckAllPools(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/api/v1/logout"
+      post: "/api/v2/logout"
     };
   }
 
   rpc NoncePrev(google.protobuf.Empty) returns (google.protobuf.StringValue) {
     option (google.api.http) = {
-      get: "/api/v1/nonce.prev"
+      get: "/api/v2/nonce.prev"
     };
   }
   rpc NonceCurrent(google.protobuf.Empty) returns (google.protobuf.StringValue) {
     option (google.api.http) = {
-      get: "/api/v1/nonce.current"
+      get: "/api/v2/nonce.current"
     };
   }
   rpc NonceNext(google.protobuf.Empty) returns (google.protobuf.StringValue) {
     option (google.api.http) = {
-      get: "/api/v1/nonce.next"
+      get: "/api/v2/nonce.next"
     };
   }
 
   rpc ReportTip(TipPayload) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/api/v1/report/tip"
-      body: "*"
+      post: "/api/v2/report/tip"
+      //body: "*"
     };
   }
 }

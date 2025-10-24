@@ -1,0 +1,188 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "members.v1.proto";
+import "supporters.v1.proto";
+
+option go_package = "go-f2lb/api/v1";
+
+service ControlMsgService {
+  rpc Control(stream google.protobuf.Empty) returns (stream ControlMsg) {}
+  rpc Refresh(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc RefreshMember(StakeAddr) returns (MemberOrEmpty) {
+    option (google.api.http) = {
+      post: "/api/v1/refresh-member/{stakeAddress}"
+    };
+  }
+  rpc RefreshAllMembers(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Auth(StakeAddr) returns (User) {
+    option (google.api.http) = {
+      post: "/api/v1/auth"
+      body: "stakeAddress"
+    };
+  }
+  rpc WhoAmI(google.protobuf.Empty) returns (User) {
+    option (google.api.http) = {
+      get: "/api/v1/who-am-i"
+    };
+  }
+  rpc Authn(AuthnSignature) returns (google.protobuf.BoolValue) {
+    option (google.api.http) = {
+      post: "/api/v1/authn"
+      body: "*"
+    };
+  }
+  rpc BuildDelegationTx(Delegation) returns (PartiallySignedTx) {}
+  rpc CanceledTx(TxId) returns (google.protobuf.Empty) {}
+  rpc SubmittedTx(TxId) returns (google.protobuf.Empty) {}
+  rpc GetPoolStats(PoolTicker) returns (PoolStats) {
+    option (google.api.http) = {
+      get: "/api/v1/pool/{ticker}/stats"
+    };
+  }
+  rpc CheckPool(PoolBech32IdOrHexIdOrTicker) returns (PoolStats) {
+    option (google.api.http) = {
+      post: "/api/v1/pool/{idOrTicker}/stats"
+    };
+  }
+  rpc CheckAllPools(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/logout"
+    };
+  }
+
+  rpc NoncePrev(google.protobuf.Empty) returns (google.protobuf.StringValue) {
+    option (google.api.http) = {
+      get: "/api/v1/nonce.prev"
+    };
+  }
+  rpc NonceCurrent(google.protobuf.Empty) returns (google.protobuf.StringValue) {
+    option (google.api.http) = {
+      get: "/api/v1/nonce.current"
+    };
+  }
+  rpc NonceNext(google.protobuf.Empty) returns (google.protobuf.StringValue) {
+    option (google.api.http) = {
+      get: "/api/v1/nonce.next"
+    };
+  }
+
+  rpc ReportTip(TipPayload) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/report/tip"
+      body: "*"
+    };
+  }
+}
+
+message ControlMsg {
+  string date = 1;
+  string epoch = 2;
+  string slot = 3;
+
+  enum Type {
+    NONE = 0;
+    REFRESH = 1;
+  }
+  Type type = 4;
+  string data = 5;
+}
+
+// Auth
+message User {
+    enum Type {
+    VISITOR = 0;
+    SPO = 1;
+    SUPPORTER = 2;
+  }
+  Type type = 1;
+  string stakeKey = 2;
+  string stakeAddress = 3;
+  Member member = 4;
+  Supporter supporter = 5;
+  bool isAdmin = 6;
+  string delegatedPool = 7;
+  bool isVerified = 8;
+}
+
+message StakeAddr {
+  string stakeAddress = 1;
+}
+
+// Tx
+message Delegation {
+  string stakeAddress = 1;
+  string poolId = 2;
+  string utxoIdHint = 3;
+}
+
+message PartiallySignedTx {
+  string cborHex = 1;
+}
+
+message TxId {
+  string hash = 1;
+}
+
+// Authentication Signature (COSE Signature)
+message AuthnSignature {
+  string stakeAddress = 1;
+  string signature = 2;
+  string key = 3;
+}
+
+// Pinger check
+message PoolBech32 {
+  string id = 1;
+}
+
+message PoolBech32IdOrHexIdOrTicker {
+  string idOrTicker = 1;
+}
+
+message PoolTicker {
+  string ticker = 1;
+}
+
+message RelayStats {
+  string target = 1;
+  google.protobuf.Duration responseTime = 2;
+  string status = 3;
+  uint32 tip = 4;
+  string inSync = 5;
+  string error = 6;
+}
+
+message PoolStats {
+  repeated RelayStats relays = 1;
+  bool hasErrors = 2;
+  repeated string errors = 3;
+  bool up = 4;
+  string inSync = 5;
+}
+
+
+
+// on-demand refresh member
+message MemberOrEmpty {
+  oneof member_or_empty {
+    Member member = 1;
+    google.protobuf.Empty empty = 2;
+  }
+}
+
+// report tip
+message TipPayload {
+  string type = 1;
+  string pool = 2;
+  string signature = 3;
+  string publicKey = 4;
+  google.protobuf.Struct data = 5;
+}

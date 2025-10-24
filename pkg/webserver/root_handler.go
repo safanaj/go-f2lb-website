@@ -95,6 +95,7 @@ func (h *rootHandler) maybeGoForGrpcWebWrappedServer(w http.ResponseWriter, req 
 		h.grpcwebHandler.ServeHTTP(w, req)
 		return true
 	}
+	log.V(4).Info("A content not for GRPC-Web", "proto", req.Proto, "method", req.Method, "path", req.URL.Path)
 	return false
 }
 
@@ -121,6 +122,7 @@ func (h *rootHandler) AsMiddleware() func(*gin.Context) {
 			log.V(4).Info("Gone for GrpcWebWrappedServer", "responseWritten", c.Writer.Written(), "isAborted", c.IsAborted())
 			return
 		}
+		log.V(4).Info("A content not for GRPC-Web", "proto", c.Request.Proto, "method", c.Request.Method, "path", c.Request.URL.Path)
 		c.Next()
 	}
 }
