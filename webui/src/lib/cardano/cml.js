@@ -155,8 +155,7 @@ const getDelegationTx = async (api, wasm, addr_bech32, pool_bech32, console) => 
   txBuilder.add_cert(certs)
   certs.free()
 
-  for (let i = 0; i < utxos.len(); i++) {
-    const utxo = utxos.get(i)
+  for (const utxo of utxos) {
     const sib = wasm.SingleInputBuilder.new(utxo.input(), utxo.output())
     const ibr = sib.payment_key()
     utxo.free()
@@ -164,8 +163,7 @@ const getDelegationTx = async (api, wasm, addr_bech32, pool_bech32, console) => 
     txBuilder.add_utxo(ibr)
     ibr.free()
   }
-  utxos.free()
-
+  _freeWasmUtxos(utxos)
   txBuilder.select_utxos(wasm.CoinSelectionStrategyCIP2.RandomImprove)
   const stb = txBuilder.build(wasm.ChangeSelectionAlgo.Default, changeAddr)
   txBuilder.free()
