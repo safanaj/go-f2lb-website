@@ -758,6 +758,8 @@ func (s *controlServiceServer) ReportTip(ctx context.Context, req *connect.Reque
 		Data:      tp.GetData().AsMap(),
 	}
 
+	logging.GetLogger().V(3).Info("v2.ReportTip", "payload", payload)
+
 	if payload.Signature == "" {
 		return nil, fmt.Errorf("empty signature")
 	}

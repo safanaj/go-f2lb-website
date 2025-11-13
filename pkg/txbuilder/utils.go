@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
+	"filippo.io/age"
+	"filippo.io/age/armor"
 
 	"github.com/safanaj/cardano-go"
 
@@ -20,11 +20,12 @@ import (
 )
 
 var (
-	SecretsFilePathIsDir         = errors.New("Secrets file path is directory")
-	SecretsFilePathIsNotReadable = errors.New("Secrets file path is not readable")
-	SecretsFileWrongContent      = errors.New("Secrets file content is invalid")
-	CalledTwice                  = errors.New("PGP prompt function called twice")
-	NonSymmetric                 = errors.New("PGP non symmetriuc encryption")
+	ErrSecretsFilePathIsDir         = errors.New("Secrets file path is directory")
+	ErrSecretsFilePathIsNotReadable = errors.New("Secrets file path is not readable")
+	ErrSecretsFileWrongContent      = errors.New("Secrets file content is invalid")
+	ErrCalledTwice                  = errors.New("PGP prompt function called twice")
+	ErrNonSymmetric                 = errors.New("Age non symmetric encryption")
+	ErrEmptyPassphrase              = errors.New("Age empty passphrase")
 )
 
 type protocolParameters struct {
@@ -125,42 +126,31 @@ func getUTxOs(ctx context.Context, addr cardano.Address) ([]*cardano.UTxO, error
 }
 
 func loadSecrets() (map[string]string, error) {
+	if passphrase == "" {
+		return nil, ErrEmptyPassphrase
+	}
+
 	secFile, err := os.Open(secretsFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	promptFunc := func() openpgp.PromptFunction {
-		called := false
-		return func(_ []openpgp.Key, symmetric bool) ([]byte, error) {
-			if called {
-				return nil, CalledTwice
-			}
-			called = true
-			if !symmetric {
-				return nil, NonSymmetric
-			}
-			return []byte(passphrase), nil
-		}
-	}()
-
-	block, err := armor.Decode(secFile)
+	identity, err := age.NewScryptIdentity(passphrase)
 	if err != nil {
 		return nil, err
 	}
 
-	md, err := openpgp.ReadMessage(block.Body, nil, promptFunc, nil)
+	reader, err := age.Decrypt(armor.NewReader(secFile), identity)
 	if err != nil {
 		return nil, err
 	}
 
-	msgBytes, err := io.ReadAll(md.UnverifiedBody)
+	msgBytes, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
 
 	secFile.Close()
-	// secFile = ioutil.NopCloser(strings.NewReader(string(msgBytes)))
 
 	var secData map[string]string
 	if err := json.Unmarshal(msgBytes, &secData); err != nil {
@@ -168,11 +158,11 @@ func loadSecrets() (map[string]string, error) {
 	}
 
 	if _, ok := secData["addr_xsk"]; !ok {
-		return nil, SecretsFileWrongContent
+		return nil, ErrSecretsFileWrongContent
 	}
 
 	if _, ok := secData["stake_vkh"]; !ok {
-		return nil, SecretsFileWrongContent
+		return nil, ErrSecretsFileWrongContent
 	}
 
 	return secData, nil

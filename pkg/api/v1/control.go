@@ -29,6 +29,7 @@ import (
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_members"
 	"github.com/safanaj/go-f2lb/pkg/libsodium"
+	"github.com/safanaj/go-f2lb/pkg/logging"
 	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
 	"github.com/safanaj/go-f2lb/pkg/webserver"
@@ -636,6 +637,8 @@ func (s *controlServiceServer) ReportTip(ctx context.Context, tp *TipPayload) (*
 		PublicKey: tp.GetPublicKey(),
 		Data:      tp.GetData().AsMap(),
 	}
+
+	logging.GetLogger().V(3).Info("v1.ReportTip", "payload", payload)
 
 	if payload.Signature == "" {
 		return nil, fmt.Errorf("empty signature")

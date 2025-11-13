@@ -1,4 +1,4 @@
-VERSION ?= 0.5.1
+VERSION ?= 0.5.2
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = \
@@ -41,6 +41,12 @@ installdepstoolslatest:
 	CGO_ENABLED=0 go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 	cd webui && bun add -d @bufbuild/buf @bufbuild/protoc-gen-es
 
+grpc_gw_ver=$(shell go list -m github.com/grpc-ecosystem/grpc-gateway/v2 | cut -d' ' -f2)
+installdepstoolsforoldv1:
+	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@$(grpc_gw_ver)
+	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@$(grpc_gw_ver)
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
 go-deps:
 	$(GO) mod tidy -v
 
@@ -50,8 +56,9 @@ go-vendor:
 go-deps-verify: go-deps
 	$(GO) mod verify
 
-go-generate: go-deps
+go-generate: go-deps-verify go-vendor
 	$(GO) generate ./...
+	$(MAKE) go-deps-verify go-vendor
 
 pkg/libsodium/_c_libsodium_built/libsodium.a:
 	$(MAKE) go-generate
@@ -166,7 +173,7 @@ build: api/.built webui/build build-go-nomod
 
 build-dbg: api/.built webui/build build-go-nomod-dbg
 
-static-release: vendor webui/build proto/.built pkg/libsodium/_c_libsodium_built/libsodium.a
+static-release: vendor webui/build api/.built pkg/libsodium/_c_libsodium_built/libsodium.a
 	@echo "--> Compiling the static binary for release"
 	$(ENVVAR) GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) build -mod=vendor -a -tags netgo \
 		-gcflags "-e" \

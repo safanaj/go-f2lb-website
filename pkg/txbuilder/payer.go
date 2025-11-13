@@ -71,9 +71,9 @@ func NewPayer(ctx context.Context, logger logging.Logger) (*Payer, error) {
 	if fi, err := os.Stat(secretsFilePath); err != nil {
 		return nil, err
 	} else if fi.IsDir() {
-		return nil, SecretsFilePathIsDir
+		return nil, ErrSecretsFilePathIsDir
 	} else if fi.Mode().Perm()&0400 == 0 {
-		return nil, SecretsFilePathIsNotReadable
+		return nil, ErrSecretsFilePathIsNotReadable
 	}
 
 	secretsData, err := loadSecrets()

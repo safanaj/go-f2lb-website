@@ -9,6 +9,7 @@ require (
 	connectrpc.com/grpchealth v1.4.0
 	connectrpc.com/grpcreflect v1.2.0
 	connectrpc.com/vanguard v0.3.0
+	filippo.io/age v1.2.1
 	github.com/blinklabs-io/gouroboros v0.135.2
 	github.com/blockfrost/blockfrost-go v0.1.1
 	github.com/cardano-community/koios-go-client/v4 v4.0.0
