@@ -2,6 +2,7 @@
  // @ts-nocheck
  //
  import { themeData } from '$lib/state.svelte';
+ import { waitFor } from '$lib/utils';
 
  const availableThemes = new Set([...themeData.available])
  const initializeTheme = () => {
@@ -116,7 +117,7 @@
      epochDataInfo.data = {...dat, ...{epoch: cmsg.epoch, slot: cmsg.slot, date: cmsg.date}}
        // console.log(`ControlMsg received, notes and tip: `, dat,
        //             {...dat.notes, koios_tip: dat.koios_tip_block_height})
-       // 
+       //
        await handleControlMsgReceived(cmsg.type == ControlMsg_Type.REFRESH, dat.tips)
      // console.log(`ControlMsg received and handled: slot ${epochDataInfo.data.slot}: top: ${memberInfo.top.ticker} top delegated to: ${memberInfo.top.delegatedPool}`, memberInfo)
    }
@@ -125,7 +126,7 @@
    console.log("+layout.svelte onMount")
    let initialHash = ((window||{}).location||{}).hash || ''
    if (initialHash !== '') {
-     waitFor(() => mainQueueMembersSet.length > 0, 2)
+     waitFor(() => mainQueueMembersSet.size > 0 || addonQueueMembersSet.size > 0, 2)
        .then(() => goto(initialHash))
    }
    pageLoaderObj.el = pageLoaderEl
