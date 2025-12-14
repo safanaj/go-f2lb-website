@@ -16,8 +16,8 @@
 		"build-storybook": "storybook build"
 	},
 	"devDependencies": {
-		"@bufbuild/buf": "^1.59.0",
-		"@bufbuild/protoc-gen-es": "^2.10.1",
+		"@bufbuild/buf": "^1.61.0",
+		"@bufbuild/protoc-gen-es": "^2.10.2",
 		"@chromatic-com/storybook": "^4.1.1",
 		"@creativebulma/bulma-divider": "^1.1.0",
 		"@creativebulma/bulma-tooltip": "^1.2.0",

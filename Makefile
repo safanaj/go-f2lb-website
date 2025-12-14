@@ -1,4 +1,4 @@
-VERSION ?= 0.5.2
+VERSION ?= 0.5.3
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = \
@@ -182,3 +182,6 @@ static-release: vendor webui/build api/.built pkg/libsodium/_c_libsodium_built/l
 
 start: build
 	./$(COMPONENT)
+
+f2lb-tip-poster:
+	$(ENVVAR) go build -v -o $@ ./tools/$@/...

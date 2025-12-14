@@ -28,9 +28,9 @@ func main() {
 	tdir, _ = os.Getwd()
 
 	script := fmt.Sprintf(`
-git clone https://github.com/input-output-hk/libsodium.git
+git clone https://github.com/IntersectMBO/libsodium.git # https://github.com/input-output-hk/libsodium.git
 cd libsodium
-git checkout 1.0.16-519-g66f017f1
+#git checkout draft-irtf-cfrg-vrf-03 # 1.0.16-519-g66f017f1
 ./autogen.sh
 ./configure --enable-static --disable-shared
 make -j%d
@@ -53,5 +53,6 @@ make -j%d
 	}
 
 	os.Chdir(curdir)
+	//fmt.Println(tdir)
 	os.RemoveAll(tdir)
 }

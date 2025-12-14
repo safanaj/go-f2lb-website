@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -727,6 +728,8 @@ type sigType string
 
 const (
 	plainSigType        sigType = ""
+	f2lbSigType         sigType = "f2lb"
+	minimalF2lbSigType  sigType = "minimal-f2lb"
 	minimalSigType      sigType = "minimal"
 	minimalCip22SigType sigType = "minimal-cip22" // to support cncli
 	cip8SigType         sigType = "cip8"
@@ -780,9 +783,9 @@ func (s *controlServiceServer) ReportTip(ctx context.Context, req *connect.Reque
 	}
 
 	switch payload.Type {
-	case minimalSigType, minimalCip22SigType, cip30SigType:
+	case minimalSigType, minimalCip22SigType, cip30SigType, minimalF2lbSigType:
 		// this is ok
-	case plainSigType, cip22SigType:
+	case plainSigType, cip22SigType, f2lbSigType:
 		// we need also slotNo and blockHash
 		if _, ok := payload.Data["slotNo"]; !ok {
 			return nil, fmt.Errorf("missing slotNo")
@@ -832,7 +835,13 @@ func (s *controlServiceServer) ReportTip(ctx context.Context, req *connect.Reque
 
 	// check for valid public key
 	invalidPubKeyErr := map[string]string{"error": "invalid public key"}
-	if strings.HasPrefix(payload.PublicKey, "5820") && len(payload.PublicKey) == 68 {
+	if payload.Type == f2lbSigType || payload.Type == minimalF2lbSigType {
+		pubKeyBytes, err := utils.GetBytesFromCBORHex(payload.PublicKey)
+		if err != nil {
+			return nil, fmt.Errorf(invalidPubKeyErr["error"])
+		}
+		vKey = pubKeyBytes
+	} else if strings.HasPrefix(payload.PublicKey, "5820") && len(payload.PublicKey) == 68 {
 		// we assume that the public key is a CBORHex of 32 bytes,
 		// and assume that in this case it is the VRF public key
 		useSodium = true
@@ -927,6 +936,19 @@ func (s *controlServiceServer) ReportTip(ctx context.Context, req *connect.Reque
 		_, err = libsodium.CryptoVrfVerify(vKey, sigBytes, dataHashBytes[:])
 		if err != nil {
 			return nil, fmt.Errorf("invalid signture, verifiction failed: " + err.Error() + ", details data: " + string(seedData))
+		}
+	} else if payload.Type == f2lbSigType || payload.Type == minimalF2lbSigType {
+		vkh := utils.GetPublicKeyHash(vKey)
+		if vkh != pool.VrfKeyHash() {
+			return nil, fmt.Errorf("provided public key is not matching pool VRF key hash, details: " +
+				fmt.Sprintf("%s != %s (pool vrf key hash from koios)", vkh, pool.VrfKeyHash()))
+		}
+		seedData, err := json.Marshal(payload.Data)
+		if err != nil {
+			return nil, err
+		}
+		if !ed25519.Verify(vKey, seedData, sigBytes) {
+			return nil, fmt.Errorf("invalid signture, verifiction failed, detils data: %s", string(seedData))
 		}
 	} else {
 		pubKey := crypto.PubKey(vKey)

@@ -1,13 +1,19 @@
 package utils
 
 import (
+	"bytes"
 	"context"
+	"crypto/ed25519"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
+	"golang.org/x/crypto/blake2b"
 	"gopkg.in/yaml.v3"
+
+	"github.com/fxamacker/cbor/v2"
 
 	"github.com/safanaj/cardano-go"
 )
@@ -79,12 +85,109 @@ func StakeAddressToStakeKeyHash(val string) (string, error) {
 	default:
 		return "", fmt.Errorf("Unsupported addess type: %v", addr.Type)
 	}
-	return "", fmt.Errorf("Ops! Unsupported addess type: %T", addr)
 }
+
 func StakeAddressToStakeKeyHashOrDie(val string) string {
 	kh, err := StakeAddressToStakeKeyHash(val)
 	CheckErr(err)
 	return kh
+}
+
+var (
+	cborEnc, _ = cbor.CanonicalEncOptions().EncMode()
+	cborDec, _ = cbor.DecOptions{MapKeyByteString: cbor.MapKeyByteStringAllowed}.DecMode()
+)
+
+func GetBytesFromCBORHex(cborHex string) ([]byte, error) {
+	cborData, err := hex.DecodeString(cborHex)
+	if err != nil {
+		return nil, err
+	}
+	var data []byte
+	if err := cborDec.NewDecoder(bytes.NewReader(cborData)).Decode(&data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func GetCBORHexFromBytes(data []byte) (string, error) {
+	var cborData bytes.Buffer
+	if err := cborEnc.NewEncoder(&cborData).Encode(data); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(cborData.Bytes()), nil
+}
+
+type VRFKeyFromJSON struct {
+	Type       string `json:"type"`
+	Descrition string `json:"description"`
+	CBORHex    string `json:"cborHex"`
+}
+
+func GetVRFSigningKeyAsEdDSAPrivateKeyFromJSONFile(fn string) (ed25519.PrivateKey, error) {
+	f, err := os.Open(fn)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var vrfKey VRFKeyFromJSON
+	if err := json.NewDecoder(f).Decode(&vrfKey); err != nil {
+		return nil, err
+	}
+	kType := "VrfSigningKey_PraosVRF"
+	if vrfKey.Type != kType {
+		return nil, fmt.Errorf("invalid key expected type %s bytes got %s",
+			kType, vrfKey.Type)
+	}
+
+	data, err := GetBytesFromCBORHex(vrfKey.CBORHex)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) != ed25519.PrivateKeySize {
+		return nil, fmt.Errorf("invalid key expected %d bytes got %d",
+			ed25519.PrivateKeySize, len(data))
+	}
+	return ed25519.PrivateKey(data), nil
+}
+
+func GetVRFVerificationKeyAsEdDSAPrivateKeyFromJSONFile(fn string) (ed25519.PublicKey, error) {
+	f, err := os.Open(fn)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var vrfKey VRFKeyFromJSON
+	if err := json.NewDecoder(f).Decode(&vrfKey); err != nil {
+		return nil, err
+	}
+	kType := "VrfVerificationKey_PraosVRF"
+	if vrfKey.Type != kType {
+		return nil, fmt.Errorf("invalid key expected type %s bytes got %s",
+			kType, vrfKey.Type)
+	}
+	data, err := GetBytesFromCBORHex(vrfKey.CBORHex)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("invalid key expected %d bytes got %d",
+			ed25519.PublicKeySize, len(data))
+	}
+	return ed25519.PublicKey(data), nil
+}
+
+func GetPublicKeyHash(vkey ed25519.PublicKey) string {
+	hash := blake2b.Sum256(vkey)
+	return hex.EncodeToString(hash[:])
+}
+
+func GetPublicKey224Hash(vkey ed25519.PublicKey) (string, error) {
+	digest, err := blake2b.New(224/8, vkey)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(digest.Sum(nil)), nil
 }
 
 type Epoch uint64
