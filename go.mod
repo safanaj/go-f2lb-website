@@ -4,6 +4,8 @@ go 1.24.6
 
 toolchain go1.24.7
 
+replace github.com/safanaj/go-f2lb-website => .
+
 require (
 	connectrpc.com/connect v1.18.1
 	connectrpc.com/grpchealth v1.4.0
