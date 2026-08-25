@@ -227,7 +227,7 @@
 
 	<!-- additional icons useful anchors/shortcuts-->
         <span class="icon is-small">
-          <a href={"https://pool.pm/" + member.poolIdHex} target="_blank">
+          <a href={"https://pool.pm/" + member.poolIdBech32} target="_blank">
             <img src={poolpmLogo} alt="pool.pm" />
           </a>
         </span>
