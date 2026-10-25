@@ -48,7 +48,7 @@
  const toastErr = (err, opts) => {
    toastMsg(err.toString(), {type: 'is-danger'})
  }
- 
+
  const doDelegation = () => {
    console.log("doDelegation")
    pageLoaderObj.el.classList.toggle('is-active')
@@ -74,11 +74,11 @@
    const txHash = wasm.hash_transaction(tx_.body()).to_hex()
    const payer_vkey_hex = asHexAndFree(tx_.witness_set().vkeys().get(0))
    tx_.free()
-   
+
    const txId = {hash: txHash}
      return {txId, payer_vkey_hex}
  }
- 
+
  const getSignedTxWithWitnessSet = (tx_hex, payer_vkey_hex, delegator_vkey_hex, tracker_vkey_hex) => {
    if (tracker_vkey_hex === "") {
      const witset = assembleWitnessSet(wasm, payer_vkey_hex, delegator_vkey_hex)
@@ -87,7 +87,7 @@
      } catch (err) {
        pageLoaderObj.el.classList.toggle('is-active')
        toastErr(err)
-     }     
+     }
    } else {
      const witset = assembleWitnessSet(wasm, payer_vkey_hex, delegator_vkey_hex, tracker_vkey_hex)
      try {
@@ -199,7 +199,7 @@
    ctrlCli.canceledTx(res.txId)
  }
 
- 
+
 </script>
 
 {#key signedTxCborHex}
@@ -242,7 +242,7 @@
           {#key connectedWallet.stakeKey}
             {#if wrongPool}
               <div class="block mt-3">
-                <button class="button" onclick={doDelegation}>Delegate to the SPO on top of the queue, currently {mainServed.ticker}</button>
+                <button class="button" onclick={doDelegation}>Delegate to the SPO on top of the queue, currently {(mainServed||{}).ticker}</button>
                 {#if hasPayer}
                   <div class="divider">OR</div>
                   <div class="field is-grouped is-justify-content-center">
