@@ -4,12 +4,12 @@
 
 <script>
  import { page } from '$app/state'
- import { supportersSet } from '$lib/state.svelte'
- import Supporter from '$lib/Supporter.svelte'
+ import { supportersSet } from '#lib/state.svelte.js'
+ import Supporter from '#lib/Supporter.svelte'
  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
  import { createClient } from "@connectrpc/connect";
  import { createConnectTransport } from "@connectrpc/connect-web";
- import { SupporterService } from "$lib/api/v2/supporters_pb.js";
+ import { SupporterService } from "#lib/api/v2/supporters_pb.js";
 
  const supCli = createClient(SupporterService, createConnectTransport({baseUrl: page.url.origin}));
 

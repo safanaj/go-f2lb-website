@@ -28,6 +28,7 @@ import (
 	"github.com/safanaj/go-f2lb/pkg/f2lb_gsheet"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 
+	"github.com/safanaj/go-f2lb/pkg/db"
 	"github.com/safanaj/go-f2lb/pkg/pinger"
 	"github.com/safanaj/go-f2lb/pkg/txbuilder"
 	"github.com/safanaj/go-f2lb/pkg/utils"
@@ -63,6 +64,7 @@ func addFlags() {
 	blockfrostutils.AddFlags(flag.CommandLine)
 	txbuilder.AddFlags(flag.CommandLine)
 	pinger.AddFlags(flag.CommandLine)
+	db.AddFlags(flag.CommandLine)
 }
 
 func main() {

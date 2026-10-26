@@ -10,17 +10,17 @@
  import {
    mainQueueMembersSet, addonQueueMembersSet,
    memberInfo, epochDataInfo, connectedWallet
- } from '$lib/state.svelte'
- import Member from '$lib/Member.svelte'
- import TxSubmitConfirmation from '$lib/cardano/TxSubmitConfirmation.svelte'
- import {User_Type} from '$lib/api/v2/control_pb';
+ } from '#lib/state.svelte.js'
+ import Member from '#lib/Member.svelte'
+ import TxSubmitConfirmation from '#lib/cardano/TxSubmitConfirmation.svelte'
+ import {User_Type} from '#lib/api/v2/control_pb.js';
  import FaArrowRight from 'svelte-icons/fa/FaArrowRight.svelte'
  import { getContext, onMount } from 'svelte';
  import { toast } from 'bulma-toast'
  import {
    getDelegationSignedTx, getSignedTx,
    assembleWitnessSet, asHexAndFree, getUtxoHint
- } from '$lib/cardano/cml'
+ } from '#lib/cardano/cml.js'
 
  let epochData = $derived(epochDataInfo.data)
  let mainServed = $derived(memberInfo.top || mainQueueMembersSet.values().next().value);

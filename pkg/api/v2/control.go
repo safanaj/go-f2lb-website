@@ -184,10 +184,20 @@ func (s *controlServiceServer) RefreshMember(ctx context.Context, req *connect.R
 func (s *controlServiceServer) RefreshAllMembers(ctx context.Context, unused *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	s.sm.UpdateExpirationByContext(ctx)
 	for _, sp := range s.ctrl.GetStakePoolSet().StakePools() {
+		addedDone := make(chan struct{})
 		go func(saddr, poolid string) {
+			defer close(addedDone)
 			s.ctrl.GetAccountCache().Add(saddr)
 			s.ctrl.GetPoolCache().Add(poolid)
 		}(sp.MainStakeAddress(), sp.PoolIdBech32())
+		go func(saddr string) {
+			<-addedDone
+			if _, ok := s.ctrl.GetAccountCache().Get(saddr); ok {
+				if err := s.ctrl.GetAccountCache().RefreshMemberFromDB(sp.MainStakeAddress()); err != nil {
+					logging.GetLogger().Error(err, "RefreshMemberFromDB failed")
+				}
+			}
+		}(sp.MainStakeAddress())
 	}
 	return connect.NewResponse(&emptypb.Empty{}), nil
 }

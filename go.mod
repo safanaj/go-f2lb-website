@@ -21,6 +21,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/iand/logfmtr v0.2.2
 	github.com/improbable-eng/grpc-web v0.15.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/otiai10/copy v1.14.0
 	github.com/quic-go/quic-go v0.64.1
 	github.com/safanaj/cardano-go v0.1.23
@@ -80,6 +81,9 @@ require (
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.5 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

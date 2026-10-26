@@ -4,12 +4,12 @@
 
 <script>
  import { page } from '$app/state'
- import { addonQueueMembersSet, epochDataInfo } from '$lib/state.svelte'
- import Member from '$lib/Member.svelte'
+ import { addonQueueMembersSet, epochDataInfo } from '#lib/state.svelte.js'
+ import Member from '#lib/Member.svelte'
  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
  import { createClient } from "@connectrpc/connect";
  import { createConnectTransport } from "@connectrpc/connect-web";
- import { AddonQueueService } from "$lib/api/v2/addon_queue_pb.js";
+ import { AddonQueueService } from "#lib/api/v2/addon_queue_pb.js";
 
  const aqCli = createClient(AddonQueueService, createConnectTransport({baseUrl: page.url.origin}));
  const epochData = $derived(epochDataInfo.data)

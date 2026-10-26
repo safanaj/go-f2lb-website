@@ -19,6 +19,7 @@ import (
 	ku "github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
 
 	// "github.com/safanaj/go-f2lb/pkg/ccli"
+	"github.com/safanaj/go-f2lb/pkg/db"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 )
 
@@ -41,6 +42,7 @@ type (
 		WaitReady(time.Duration) bool
 		IsRunning() bool
 		RefreshMember(string) error
+		RefreshMemberFromDB(string) error
 		Refresh()
 		ResetCounts()
 		Start()
@@ -139,6 +141,8 @@ type accountCache struct {
 	// timeTxsToGet         uint32
 
 	readyWaiterCh chan any
+
+	dbconn db.DBConn
 }
 
 var (
@@ -308,6 +312,12 @@ func (c *accountCache) accountsInfosGetter(end context.Context) {
 						adaAmount:             uint64(ai.TotalAda),
 						status:                ai.Status,
 					}
+
+					if i := c.dbconn.GetStakeAddressInfo(ai.Bech32); i != nil && i.StakeAddress() == ai.Bech32 {
+						aInfo.delegatedPoolIdBech32 = i.DelegatedPool()
+						aInfo.adaAmount = i.AdaAmount()
+						c.V(3).Info("updating account info from db", "aInfo", aInfo, "i", i)
+					}
 					c.infoCh <- aInfo
 				}
 				return nil
@@ -367,8 +377,35 @@ func (ac *accountCache) RefreshMember(saddr string) error {
 			status:                ai.Status,
 			storeDone:             make(chan struct{}),
 		}
+
+		if i := ac.dbconn.GetStakeAddressInfo(ai.Bech32); i != nil && i.StakeAddress() == ai.Bech32 {
+			aInfo.delegatedPoolIdBech32 = i.DelegatedPool()
+			aInfo.adaAmount = i.AdaAmount()
+			ac.V(3).Info("updating account info from db", "aInfo", aInfo, "i", i)
+		}
+
 		ac.infoCh <- aInfo
 		<-aInfo.storeDone
+	}
+	return nil
+}
+
+func (ac *accountCache) RefreshMemberFromDB(saddr string) error {
+	info, ok := ac.Get(saddr)
+	if !ok {
+		return fmt.Errorf("stake address %s is missing from cache", saddr)
+	}
+	if i := ac.dbconn.GetStakeAddressInfo(info.StakeAddress()); i != nil && i.StakeAddress() == info.StakeAddress() {
+		aInfo := &accountInfo{
+			stakeAddress:          i.StakeAddress(),
+			delegatedPoolIdBech32: i.DelegatedPool(),
+			adaAmount:             i.AdaAmount(),
+			status:                info.Status(),
+			storeDone:             make(chan struct{}),
+		}
+		ac.infoCh <- aInfo
+		<-aInfo.storeDone
+		ac.V(3).Info("cache updated from db", "info", aInfo)
 	}
 	return nil
 }
@@ -796,6 +833,7 @@ func (ac *accountCache) WithOptions(
 		refreshInterval:   refreshInterval,
 		workersInterval:   workersInterval,
 		accountInfosToGet: accountInfosToGet,
+		dbconn:            ac.dbconn,
 	}
 	if ac.cache == nil {
 		newAccountCache.cache = new(sync.Map)
@@ -818,8 +856,10 @@ func New(
 	accountInfosToGet uint32,
 	logger logging.Logger,
 	cachesStoreDir string,
+	dbconn db.DBConn,
 ) AccountCache {
-	ac, _ := (&accountCache{Logger: logger, cachesStoreDir: cachesStoreDir}).WithOptions(
+	logger.Info("gonna use dbconn", "conn", dbconn)
+	ac, _ := (&accountCache{Logger: logger, cachesStoreDir: cachesStoreDir, dbconn: dbconn}).WithOptions(
 		kc, bfc, workers, cacheSyncers, refreshInterval, workersInterval, accountInfosToGet)
 	return ac
 }

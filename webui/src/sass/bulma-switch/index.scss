@@ -1,8 +1,7 @@
-@use 'bulma/sass/utilities/initial-variables' as iv;
-@use 'bulma/sass/utilities/derived-variables' as dv;
-@use 'bulma/sass/utilities/controls' as ctrl;
+@use "bulma/sass/utilities/initial-variables" as iv;
+@use "bulma/sass/utilities/derived-variables" as dv;
+@use "bulma/sass/utilities/controls" as ctrl;
 @use "bulma/sass/utilities/css-variables" as cv;
-
 
 $switch-background: iv.$grey-light !default;
 $switch-border: 0.1rem solid transparent !default;
@@ -19,7 +18,8 @@ $switch-focus: 1px dotted iv.$grey-light !default;
   $switch-width: $switch-height * 2;
   $paddle-height: $switch-height - ($switch-paddle-offset * 2);
   $paddle-width: $switch-height - ($switch-paddle-offset * 2);
-  $paddle-active-offest: $switch-width - $paddle-width - ($switch-paddle-offset * 1.5);
+  $paddle-active-offest: $switch-width - $paddle-width -
+    ($switch-paddle-offset * 1.5);
 
   + label {
     position: relative;
@@ -44,7 +44,7 @@ $switch-focus: 1px dotted iv.$grey-light !default;
       border: $switch-border;
       border-radius: $switch-radius;
       background: $switch-background;
-      content: '';
+      content: "";
     }
     &::after,
     &:after {
@@ -58,7 +58,7 @@ $switch-focus: 1px dotted iv.$grey-light !default;
       border-radius: $switch-radius;
       background: $switch-paddle-background;
       transition: $switch-paddle-transition;
-      content: '';
+      content: "";
     }
     .switch-active,
     .switch-inactive {
@@ -163,7 +163,7 @@ $switch-focus: 1px dotted iv.$grey-light !default;
     }
   }
 }
-.switch[type='checkbox'] {
+.switch[type="checkbox"] {
   outline: 0;
   user-select: none;
   display: inline-block;
@@ -282,7 +282,7 @@ $switch-focus: 1px dotted iv.$grey-light !default;
   }
 }
 .field-body {
-  .switch[type='checkbox'] {
+  .switch[type="checkbox"] {
     + label {
       margin-top: 0.375em;
     }

@@ -9,9 +9,9 @@
  import FaRegTimesCircle from 'svelte-icons/fa/FaRegTimesCircle.svelte'
  import { toast } from 'bulma-toast'
 
- import poolpmLogo from '$lib/assets/pool.pm.ico';
- import pooltoolioLogo from '$lib/assets/pooltool_io_logo_blue.svg';
- import rawcardanoappLogo from '$lib/assets/rawcardano_app_logo.png';
+ import poolpmLogo from '#lib/assets/pool.pm.ico';
+ import pooltoolioLogo from '#lib/assets/pooltool_io_logo_blue.svg';
+ import rawcardanoappLogo from '#lib/assets/rawcardano_app_logo.png';
 
  export const isFirst = false;
  /**

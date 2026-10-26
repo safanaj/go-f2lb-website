@@ -1,7 +1,7 @@
 <script>
  import {
    epochDataInfo
- } from '$lib/state.svelte'
+ } from '#lib/state.svelte.js'
 
  let data = $derived(epochDataInfo.data)
  let progress = $derived((parseInt(data.slot) * 100 / 432000).toFixed(2))

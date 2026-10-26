@@ -16,6 +16,7 @@ import (
 	"github.com/safanaj/go-f2lb/pkg/caches/blockfrostutils"
 	"github.com/safanaj/go-f2lb/pkg/caches/koiosutils"
 	"github.com/safanaj/go-f2lb/pkg/caches/poolcache"
+	"github.com/safanaj/go-f2lb/pkg/db"
 	"github.com/safanaj/go-f2lb/pkg/f2lb_members"
 	"github.com/safanaj/go-f2lb/pkg/logging"
 	"github.com/safanaj/go-f2lb/pkg/pinger"
@@ -132,9 +133,14 @@ func NewController(ctx context.Context, logger logging.Logger) Controller {
 	cctx, cctxCancel := context.WithCancel(ctx)
 	kc := koiosutils.New(cctx)
 	bfc := blockfrostutils.New(cctx)
+	dbc, err := db.NewDBConn(cctx, logger.WithName("db"))
+	if err != nil {
+		logger.Error(err, "create db conn failed")
+	}
+	logger.Info("db", "conn", dbc)
 	ac := accountcache.New(kc, bfc, uint32(acWorkers), uint32(acCacheSyncers),
 		acRefreshInterval, acWorkersInterval, uint32(acAccountInfosToGet),
-		logger.WithName("accountcache"), cachesStoreDirPath)
+		logger.WithName("accountcache"), cachesStoreDirPath, dbc)
 	pc := poolcache.New(kc, uint32(pcWorkers), uint32(pcCacheSyncers),
 		pcRefreshInterval, pcWorkersInterval, uint32(pcPoolInfosToGet),
 		logger.WithName("poolcache"), cachesStoreDirPath)

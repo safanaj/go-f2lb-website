@@ -1,8 +1,12 @@
 /* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */ /* Import only what you need from Bulma */
 
 @forward "bulma/sass/utilities";
-@use "bulma/sass/base" with ( $body-overflow-y: auto );
-@use "bulma/sass/components" with ( $modal-content-width: 1280px );
+@use "bulma/sass/base" with (
+  $body-overflow-y: auto
+);
+@use "bulma/sass/components" with (
+  $modal-content-width: 1280px
+);
 @forward "bulma/sass/elements";
 @forward "bulma/sass/form";
 @forward "bulma/sass/grid";
@@ -15,24 +19,24 @@
 @use "./sass/bulma-tooltip";
 @use "./sass/bulma-switch";
 
-html[data-theme=giaco] {
-    background-color: #fad82f;
+html[data-theme="giaco"] {
+  background-color: #fad82f;
 }
 
-html[data-theme=giaco] .box.themed {
-    background-color: #fad82f;
+html[data-theme="giaco"] .box.themed {
+  background-color: #fad82f;
 }
 
-html[data-theme=giaco] .box-out {
-    background-color: #0b1d85;
+html[data-theme="giaco"] .box-out {
+  background-color: #0b1d85;
 }
 
-html[data-theme=giaco] .box-in {
-    background-color: #bbcfff;
+html[data-theme="giaco"] .box-in {
+  background-color: #bbcfff;
 }
 
-html[data-theme=giaco] .box-user {
-    color: lightcyan;
+html[data-theme="giaco"] .box-user {
+  color: lightcyan;
 }
 
 // html[data-theme=dark] nav {
@@ -40,31 +44,31 @@ html[data-theme=giaco] .box-user {
 // }
 
 html nav.head-nav {
-	--background: hsl(233, 100%, 63%);
+  --background: hsl(233, 100%, 63%);
 }
 
 html nav.head-nav path {
-	--fill: hsl(233, 100%, 63%);
+  --fill: hsl(233, 100%, 63%);
 }
 
-html[data-theme=dark] nav.head-nav {
-	--background: var(--bulma-black);
+html[data-theme="dark"] nav.head-nav {
+  --background: var(--bulma-black);
 }
 
-html[data-theme=dark] nav.head-nav path {
-	--fill: var(--bulma-black);
+html[data-theme="dark"] nav.head-nav path {
+  --fill: var(--bulma-black);
 }
 
-html[data-theme=light] nav {
-  --background: rgba(255, 255, 255, .7);
+html[data-theme="light"] nav {
+  --background: rgba(255, 255, 255, 0.7);
 }
 
-html[data-theme=light] nav path {
-  --fill: rgba(255, 255, 255, .7);
+html[data-theme="light"] nav path {
+  --fill: rgba(255, 255, 255, 0.7);
 }
 
 div.box.box-in.real-top {
-    border-style: outset;
-    border-color: hsla(102, 100%, 55%, 0.6);
-    border-width: thick;
+  border-style: outset;
+  border-color: hsla(102, 100%, 55%, 0.6);
+  border-width: thick;
 }

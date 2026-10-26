@@ -4,12 +4,12 @@
 
 <script>
  import { page } from '$app/state'
- import { mainQueueMembersSet, epochDataInfo, memberInfo } from '$lib/state.svelte'
- import Member from '$lib/Member.svelte'
+ import { mainQueueMembersSet, epochDataInfo, memberInfo } from '#lib/state.svelte.js'
+ import Member from '#lib/Member.svelte'
  import FaArrowLeft from 'svelte-icons/fa/FaArrowLeft.svelte'
  import { createClient } from "@connectrpc/connect";
  import { createConnectTransport } from "@connectrpc/connect-web";
- import { MainQueueService } from "$lib/api/v2/main_queue_pb.js";
+ import { MainQueueService } from "#lib/api/v2/main_queue_pb.js";
 
  const mqCli = createClient(MainQueueService, createConnectTransport({baseUrl: page.url.origin}));
  const epochData = $derived(epochDataInfo.data)

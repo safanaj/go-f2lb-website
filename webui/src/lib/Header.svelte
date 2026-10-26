@@ -1,7 +1,7 @@
 <script>
  import { tick, getContext } from 'svelte';
  import { page } from '$app/state';
- import f2lbLogo from '$lib/assets/f2lb_small.png';
+ import f2lbLogo from '#lib/assets/f2lb_small.png';
  import { toast } from 'bulma-toast'
  import { Buffer } from 'buffer';
  import FaMoon from 'svelte-icons/fa/FaMoon.svelte'
@@ -9,18 +9,19 @@
  import FaAngry from 'svelte-icons/fa/FaAngry.svelte'
  import FaSignature from 'svelte-icons/fa/FaSignature.svelte'
  import FaUserCheck from 'svelte-icons/fa/FaUserCheck.svelte'
- import CardanoConnect from '$lib/cardano/CardanoConnect.svelte';
+ import CardanoConnect from '#lib/cardano/CardanoConnect.svelte';
  import { createClient } from "@connectrpc/connect";
  import { createConnectTransport } from "@connectrpc/connect-web";
- import { ControlMsgService } from "$lib/api/v2/control_pb.js";
+ import { ControlMsgService } from "#lib/api/v2/control_pb.js";
  import { Wallet } from '@cardano-foundation/cardano-connect-with-wallet-core';
  import {
    themeData, connectedWallet,
-   mainQueueMembersSet, addonQueueMembersSet
- } from '$lib/state.svelte'
+   mainQueueMembersSet, addonQueueMembersSet,
+   refreshSet
+ } from '#lib/state.svelte.js'
 
  const tEncoder = new TextEncoder()
- 
+
  const ctrlCli = createClient(ControlMsgService, createConnectTransport({baseUrl: page.url.origin}));
 
  let themeName = $derived(themeData.current)
@@ -56,6 +57,7 @@
 		  if (m.ticker == member.ticker) {
 		    foundInMQ = true
 		    Object.assign(m, member)
+		    refreshSet(mainQueueMembersSet).then(tick)
 		    break
 		  }
 		}
@@ -63,6 +65,7 @@
 		  if (m.ticker == member.ticker) {
 		    foundInAQ = true
 		    Object.assign(m, member)
+		    refreshSet(addonQueueMembersSet).then(tick)
 		    break
 		  }
 		}
@@ -85,11 +88,11 @@
 		  dismissible: true,
 		  type: 'is-danger',
 		})
-	      }     
+	      }
 	    }).then(tick)
    }
  }
- 
+
  const doRefreshAllMembers = () => {
    ctrlCli.refreshAllMembers().then(tick)
  }
@@ -145,7 +148,7 @@
    return window.cookieStore.get("ruuid").then(c => c.value).catch(() => "").then(sid => {
      if (sid === "") {
        sid = connectedWallet.stakeAddr
-     }     
+     }
      return api.signData(connectedWallet.stakeAddr, tEncoder.encode(sid).toHex()).then(sig => {
        return ctrlCli.authn({
  	 signature: sig.signature,

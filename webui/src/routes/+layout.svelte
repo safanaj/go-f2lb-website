@@ -1,8 +1,8 @@
 <script module>
  // @ts-nocheck
  //
- import { themeData } from '$lib/state.svelte';
- import { waitFor } from '$lib/utils';
+ import { themeData } from '#lib/state.svelte.js';
+ import { waitFor } from '#lib/utils.js';
 
  const availableThemes = new Set([...themeData.available])
  const initializeTheme = () => {
@@ -28,25 +28,25 @@
 
 <script>
  import '../app.scss';
- // import favicon from '$lib/assets/favicon.svg';
+ // import favicon from '#lib/assets/favicon.svg';
  import { onMount, tick, setContext } from 'svelte';
- import EpochBar from "$lib/EpochBar.svelte";
- import Header from "$lib/Header.svelte";
+ import EpochBar from "#lib/EpochBar.svelte";
+ import Header from "#lib/Header.svelte";
  import { page } from '$app/state';
  import { goto } from '$app/navigation';
 
  import { createClient } from "@connectrpc/connect";
  import { createConnectTransport } from "@connectrpc/connect-web";
- import { ControlMsgService, ControlMsg_Type, User_Type } from "$lib/api/v2/control_pb.js";
- import { AddonQueueService } from "$lib/api/v2/addon_queue_pb.js";
- import { MainQueueService } from "$lib/api/v2/main_queue_pb.js";
- import { MemberService } from "$lib/api/v2/members_pb.js";
- import { SupporterService } from "$lib/api/v2/supporters_pb.js";
+ import { ControlMsgService, ControlMsg_Type, User_Type } from "#lib/api/v2/control_pb.js";
+ import { AddonQueueService } from "#lib/api/v2/addon_queue_pb.js";
+ import { MainQueueService } from "#lib/api/v2/main_queue_pb.js";
+ import { MemberService } from "#lib/api/v2/members_pb.js";
+ import { SupporterService } from "#lib/api/v2/supporters_pb.js";
 
  import {
    mainQueueMembersSet, addonQueueMembersSet, supportersSet,
-   memberInfo, epochDataInfo
- } from '$lib/state.svelte'
+   memberInfo, epochDataInfo, refreshSet
+ } from '#lib/state.svelte.js'
 
  // react on themeData.current changes
  $effect(initializeTheme)
@@ -109,17 +109,20 @@
        m.blockHeight = tips[m.ticker]
      }
    })
+
+   if (resetMainQueue) { refreshSet(mainQueueMembersSet) }
+   if (resetAddonQueue) { refreshSet(addonQueueMembersSet) }
  }
 
  (async () => {
    for await (const cmsg of ctrlCli.control({})) {
      let dat = JSON.parse(cmsg.data)
-     epochDataInfo.data = {...dat, ...{epoch: cmsg.epoch, slot: cmsg.slot, date: cmsg.date}}
-       // console.log(`ControlMsg received, notes and tip: `, dat,
-       //             {...dat.notes, koios_tip: dat.koios_tip_block_height})
-       //
-       await handleControlMsgReceived(cmsg.type == ControlMsg_Type.REFRESH, dat.tips)
-     // console.log(`ControlMsg received and handled: slot ${epochDataInfo.data.slot}: top: ${memberInfo.top.ticker} top delegated to: ${memberInfo.top.delegatedPool}`, memberInfo)
+     epochDataInfo.data = {...dat, ...{epoch: cmsg.epoch, slot: cmsg.slot, date: cmsg.date}};
+     if (cmsg.type == ControlMsg_Type.REFRESH) {
+       console.log(`ControlMsg received, notes and tip: `, dat,
+		   {...dat.notes, koios_tip: dat.koios_tip_block_height})
+     }
+     await handleControlMsgReceived(cmsg.type == ControlMsg_Type.REFRESH, dat.tips);
    }
  })();
  onMount(() => {
@@ -149,11 +152,7 @@
 
 <main>
 
-  <!-- {#if page.url.pathname !== '/' && page.url.pathname !== '/about'} -->
-  <!--   <UserBox user={$cardanoWallet.user} /> -->
-  <!-- {/if} -->
-
-{@render children?.()}
+  {@render children?.()}
 
 </main>
 
