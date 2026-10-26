@@ -20,14 +20,15 @@ golang:
 
 clean:
 	rm -f $(COMPONENT) pkg/api/v1/*.pb.go pkg/api/v1/*.pb.gw.go pkg/api/v2/*.connect.go pkg/api/v2/*.pb.go
-	rm -f webui/src/lib/api/v1/*_pb.* webui/src/lib/api/v1/*_pb_service.* webui/src/lib/api/*_pb.*
+	rm -f webui/src/lib/api/v1/*_pb.* webui/src/lib/api/v1/*_pb_service.*
 	rm -f api/.built
-	rm -rf webui/dist webui/build webui/version.json
+	rm -rf webui/dist webui/build webui/version.json webui/src/lib/api/v2
 	rm -f package-lock.json
 
 clean-all: clean
 	rm -rf webui/node_modules webui/.svelte-kit vendor api/v1/google api/v1/openapiv2 pkg/libsodium/_c_libsodium_built
-	rm -f package-lock.json
+	rm -f package-lock.json api/v1/all.protoset
+	rm -rf api/v2/oav3
 
 lint:
 	golint && ( cd webui && bun install && bun run lint )
