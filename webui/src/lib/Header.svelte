@@ -34,21 +34,43 @@
  let isAdmin = $derived(connectedWallet.user?.isAdmin === true)
  let isVerified = $derived(connectedWallet.user?.isVerified === true)
  let isMemberSPO = $derived(connectedWallet.user?.member !== undefined && connectedWallet.stakeAddr === connectedWallet.user?.member?.stakeAddr)
+
  const refreshUser = () => {
    if (connectedWallet.stakeAddr !== "") {
-     ctrlCli.auth({stakeAddress: connectedWallet.stakeAddr})
-	    .then(user => { connectedWallet.user = user }).then(tick)
+     return ctrlCli.auth({stakeAddress: connectedWallet.stakeAddr})
+		   .then(user => { connectedWallet.user = user }).then(tick)
    }
+   return Promise.resolve()
+ }
+
+ // SPO-only fast path: graft a freshly-refreshed Member onto the logged-in user
+ // WITHOUT a second auth() call — only when it is the SAME stake-key identity,
+ // preserving the server-only fields a Member does not carry (isVerified,
+ // isAdmin, type).
+ const inPlaceRefreshUser = async (member) => {
+   const u = connectedWallet.user
+   if (!u || member === undefined) return false
+   if (u.stakeKey !== member.stakeKey) return false   // not the same identity → don't graft
+   connectedWallet.user = {
+     ...u,
+     type: u.type,
+     isAdmin: u.isAdmin,
+     isVerified: u.isVerified,
+     member,
+     delegatedPool: member.delegatedPool,
+   }
+   await tick()
+   return true
  }
 
  const doRefresh = () => {
-   ctrlCli.refresh()
+   ctrlCli.refresh().then(tick)
  }
 
  const doRefreshMember = () => {
    if (connectedWallet.stakeAddr) {
      ctrlCli.refreshMember({stakeAddress: connectedWallet.stakeAddr})
-	    .then(res => {
+	    .then(async res => {
 	      if (res.memberOrEmpty.case == 'member') {
 		let member = res.memberOrEmpty.value
 		let foundInMQ = false
@@ -57,7 +79,7 @@
 		  if (m.ticker == member.ticker) {
 		    foundInMQ = true
 		    Object.assign(m, member)
-		    refreshSet(mainQueueMembersSet).then(tick)
+		    refreshSet(mainQueueMembersSet)
 		    break
 		  }
 		}
@@ -65,10 +87,13 @@
 		  if (m.ticker == member.ticker) {
 		    foundInAQ = true
 		    Object.assign(m, member)
-		    refreshSet(addonQueueMembersSet).then(tick)
+		    refreshSet(addonQueueMembersSet)
 		    break
 		  }
 		}
+
+		// update the logged-in user's delegatedPool only for the same identity
+		if (!(await inPlaceRefreshUser(member))) await refreshUser()  // key changed or non-SPO → full auth
 
 		if (foundInAQ || foundInMQ) {
 		  toast({
@@ -81,6 +106,7 @@
 		}
 	      } else {
 		console.log("refresh member: stake address not found")
+		await refreshUser()
 		toast({
 		  message: "Unexpected Error: member not found",
 		  position: "top-center",
