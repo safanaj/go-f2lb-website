@@ -27,6 +27,6 @@ export default defineConfig({
   build: { minify: false },
   css: { devSourcemap: true },
   define: {
-    __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_VERSION__: JSON.stringify(JSON.parse(appVersion)),
   },
 });
