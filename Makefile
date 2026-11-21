@@ -1,4 +1,4 @@
-VERSION ?= 0.5.3.4
+VERSION ?= 0.5.3.5
 COMPONENT = go-f2lb-website
 FLAGS =
 ENVVAR = \
@@ -31,7 +31,7 @@ clean-all: clean
 	rm -rf api/v2/oav3
 
 lint:
-	golint && ( cd webui && bun install && bun run lint )
+	go vet ./... && ( cd webui && bun install && bun run lint )
 
 installdepstoolslatest:
 	go install github.com/bufbuild/buf/cmd/buf@latest
@@ -119,7 +119,7 @@ webui/node_modules:
 	cd webui && bun add -d @bufbuild/buf @bufbuild/protoc-gen-es
 
 webui/version.json:
-	echo "$(VERSION)" > $@
+	echo \"$(VERSION)\" > $@
 
 build-webui: webui/version.json webui/node_modules api/.built
 	cd webui ; bun run build

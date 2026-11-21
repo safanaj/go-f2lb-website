@@ -1,9 +1,8 @@
 <script>
- import { tick, getContext } from 'svelte';
+ import { tick } from 'svelte';
  import { page } from '$app/state';
  import f2lbLogo from '#lib/assets/f2lb_small.png';
  import { toast } from 'bulma-toast'
- import { Buffer } from 'buffer';
  import FaMoon from 'svelte-icons/fa/FaMoon.svelte'
  import FaSun from 'svelte-icons/fa/FaSun.svelte'
  import FaAngry from 'svelte-icons/fa/FaAngry.svelte'
@@ -13,7 +12,6 @@
  import { createClient } from "@connectrpc/connect";
  import { createConnectTransport } from "@connectrpc/connect-web";
  import { ControlMsgService } from "#lib/api/v2/control_pb.js";
- import { Wallet } from '@cardano-foundation/cardano-connect-with-wallet-core';
  import {
    themeData, connectedWallet,
    mainQueueMembersSet, addonQueueMembersSet,

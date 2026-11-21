@@ -11,13 +11,15 @@ export const themeData = $state({
 
 export const refreshSet = (sset) => {
   return new Promise((resolve) => {
-    let elts = []
-    sset.forEach(e => elts.push(e))
-    sset.clear()
-    resolve(elts)
-  }).then((elts) => elts.forEach((e) => {
-    sset.add(e)
-  }));
+    let elts = [];
+    sset.forEach((e) => elts.push(e));
+    sset.clear();
+    resolve(elts);
+  }).then((elts) =>
+    elts.forEach((e) => {
+      sset.add(e);
+    }),
+  );
 };
 
 class EpochDataInfo {

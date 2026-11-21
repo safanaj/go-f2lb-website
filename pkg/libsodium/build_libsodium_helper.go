@@ -31,7 +31,7 @@ func main() {
 git clone https://github.com/IntersectMBO/libsodium.git # https://github.com/input-output-hk/libsodium.git
 cd libsodium
 #git checkout draft-irtf-cfrg-vrf-03 # 1.0.16-519-g66f017f1
-./autogen.sh
+DO_NOT_UPDATE_CONFIG_SCRIPTS=1 ./autogen.sh
 ./configure --enable-static --disable-shared
 make -j%d
 `, runtime.NumCPU())

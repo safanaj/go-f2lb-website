@@ -3,8 +3,8 @@ package libsodium
 //go:generate go run ./build_libsodium_helper.go _c_libsodium_built
 
 /*
-#cgo CFLAGS: -Wall
-#cgo LDFLAGS: -l:libsodium.a
+#cgo CFLAGS: -Wall -I./_c_libsodium_built/include
+#cgo LDFLAGS: -L./_c_libsodium_built -l:libsodium.a
 #include <sodium/core.h>
 #include <sodium/crypto_vrf.h>
 #include <sodium/crypto_vrf_ietfdraft03.h>
